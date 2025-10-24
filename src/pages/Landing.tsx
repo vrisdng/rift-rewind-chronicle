@@ -1,0 +1,71 @@
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import heroImage from "@/assets/hero-bg.jpg";
+import magicOrb from "@/assets/magic-orb.png";
+import { Sparkles } from "lucide-react";
+
+const Landing = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/70 to-background" />
+      </div>
+
+      {/* Floating Orb */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 opacity-30 animate-float">
+        <img src={magicOrb} alt="" className="w-full h-full animate-pulse-glow" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <div className="animate-fade-in">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 mb-8 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">2025 Season Review</span>
+          </div>
+
+          {/* Main Heading */}
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 text-glow">
+            Your League Story
+            <br />
+            <span className="bg-gradient-magical bg-clip-text text-transparent">
+              Awaits
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Dive into your year — the stats, the stories, the moments that defined your climb.
+          </p>
+
+          {/* CTA Button */}
+          <Button 
+            variant="hero" 
+            size="lg"
+            className="text-lg px-12 py-6 h-auto animate-pulse-glow"
+            onClick={() => navigate("/dashboard")}
+          >
+            Reveal My Year
+          </Button>
+
+          {/* Additional Info */}
+          <p className="mt-8 text-sm text-muted-foreground">
+            Experience your journey like never before
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom Gradient */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+    </div>
+  );
+};
+
+export default Landing;
