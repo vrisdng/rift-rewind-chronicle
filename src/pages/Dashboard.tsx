@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { Trophy, Sword, Eye, Target } from "lucide-react";
 
 const Dashboard = () => {
@@ -125,7 +126,7 @@ const Dashboard = () => {
         </div>
 
         {/* Journey Timeline Placeholder */}
-        <Card className="p-8 card-glow">
+        <Card className="p-8 card-glow mb-8">
           <h2 className="text-2xl font-bold mb-4">The Journey</h2>
           <p className="text-muted-foreground mb-6">
             Your climb through the ranks — from your first match to reaching Diamond II
@@ -134,6 +135,16 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Timeline visualization coming soon</p>
           </div>
         </Card>
+
+        <div className="flex justify-center">
+          <Button 
+            variant="hero" 
+            size="lg"
+            onClick={() => window.location.href = "/deep-insights"}
+          >
+            Continue to Deep Insights →
+          </Button>
+        </div>
       </div>
     </div>
   );
