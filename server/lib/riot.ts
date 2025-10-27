@@ -91,7 +91,7 @@ class RiotClient {
   private platformUrl: string;
 
   constructor(config: RiotClientConfig) {
-    this.apiKey = config.apiKey;
+    this.apiKey = process.env.RIOT_API_KEY || config.apiKey;
     this.region = config.region || "asia";
     this.platform = config.platform || "sg2";
     this.baseUrl = getBaseUrl(this.region);
@@ -306,3 +306,5 @@ export async function getMatchHistory(
 // Export types and classes
 export type { ChampionMastery, Summoner, RiotClientConfig, MatchInfo };
 export { RiotClient, RiotAPIError };
+
+export default RiotClient;
