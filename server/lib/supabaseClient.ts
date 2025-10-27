@@ -4,7 +4,6 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
 import type {
   DBPlayer,
   DBMatch,

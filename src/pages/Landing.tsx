@@ -46,11 +46,6 @@ const Landing = () => {
           : `Analyzed ${result.data.totalGames} matches successfully`,
       });
 
-      // Navigate to dashboard with player data
-      // setTimeout(() => {
-      //   navigate("/dashboard", { state: { playerData: result.data } });
-      // }, 1500);
-
     } catch (error: any) {
       console.error('Failed to analyze player:', error);
       toast({
@@ -182,14 +177,16 @@ const Landing = () => {
           )}
 
           {/* CTA Button */}
-          <Button 
-            variant="hero" 
-            size="lg"
-            className="text-lg px-12 py-6 h-auto animate-pulse-glow"
-            onClick={() => navigate("/dashboard")}
-          >
+          {playerData && (
+            <Button
+              variant="hero"
+              size="lg"
+              className="text-lg px-12 py-6 h-auto animate-pulse-glow"
+              onClick={() => navigate("/dashboard", { state: { playerData } })}
+            >
             Reveal My Year
           </Button>
+          )}
 
           {/* Additional Info */}
           <p className="mt-8 text-sm text-muted-foreground">
