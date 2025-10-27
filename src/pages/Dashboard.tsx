@@ -313,7 +313,7 @@ const Dashboard = () => {
           <Button 
             variant="hero" 
             size="lg"
-            onClick={() => window.location.href = "/deep-insights"}
+            onClick={() => navigate("/deep-insights", { state: { playerData } })}
           >
             Continue to Deep Insights →
           </Button>

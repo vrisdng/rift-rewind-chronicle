@@ -18,7 +18,7 @@ cd server && npm install && cd ..
 # Start both frontend (Vite) and backend (Express) concurrently
 npm run dev
 
-# Frontend only (port 5173)
+# Frontend only (port 8080)
 vite
 
 # Backend only (port 3000)

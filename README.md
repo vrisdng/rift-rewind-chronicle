@@ -71,7 +71,7 @@ cp server/.env.example server/.env
 npm run dev
 ```
 
-Visit http://localhost:5173 to use the app.
+Visit http://localhost:8080 to use the app.
 
 ## Environment Variables
 
