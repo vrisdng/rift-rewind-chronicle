@@ -237,15 +237,27 @@ export async function getCachedPlayerStats(
     return null;
   }
 
-  return convertDBPlayerToStats(dbPlayer);
+  return await convertDBPlayerToStats(dbPlayer);
 }
 
 /**
  * Convert DB player to PlayerStats format
  */
-function convertDBPlayerToStats(dbPlayer: any): PlayerStats {
-  const matches = []; // Would need to fetch from DB if needed
+async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
+  // Fetch recent matches
+  const matches = await getMatches(dbPlayer.puuid);
+  
+  // Calculate stats from match history
+  const roleStats = calculateRoleStats(matches);
+  const avgStats = calculateAverageStats(matches);
+  const avgKDA = calculateAverageKDA(matches);
+  const longestWinStreak = findLongestWinStreak(matches);
+  const longestLossStreak = findLongestLossStreak(matches);
+  const currentStreak = getCurrentStreak(matches);
+  const performanceTrend = calculatePerformanceTrends(matches);
 
+  const derived = dbPlayer.derived_metrics || {};
+  
   return {
     puuid: dbPlayer.puuid,
     riotId: dbPlayer.riot_id,
@@ -256,27 +268,27 @@ function convertDBPlayerToStats(dbPlayer: any): PlayerStats {
     losses: dbPlayer.total_games - Math.round((dbPlayer.win_rate / 100) * dbPlayer.total_games),
     winRate: dbPlayer.win_rate,
     topChampions: dbPlayer.top_champions || [],
-    championPoolSize: (dbPlayer.top_champions || []).length,
+    championPoolSize: derived.championPoolDepth || (dbPlayer.top_champions || []).length,
     mainRole: dbPlayer.main_role,
-    roleDistribution: [],
-    avgKDA: 0,
-    avgKills: 0,
-    avgDeaths: 0,
-    avgAssists: 0,
-    avgCS: 0,
-    avgVisionScore: 0,
-    avgGameDuration: 0,
-    longestWinStreak: 0,
-    longestLossStreak: 0,
-    currentStreak: { type: 'win', length: 0, startDate: '', endDate: '' },
-    performanceTrend: [],
-    derivedMetrics: dbPlayer.derived_metrics || {},
+    roleDistribution: roleStats,
+    avgKDA: avgKDA,
+    avgKills: avgStats.avgKills,
+    avgDeaths: avgStats.avgDeaths,
+    avgAssists: avgStats.avgAssists,
+    avgCS: avgStats.avgCS,
+    avgVisionScore: avgStats.avgVisionScore,
+    avgGameDuration: avgStats.avgGameDuration,
+    longestWinStreak,
+    longestLossStreak,
+    currentStreak,
+    performanceTrend,
+    derivedMetrics: derived,
     archetype: {
       name: dbPlayer.archetype || 'Unknown',
-      description: '',
-      distance: 0,
-      matchPercentage: 0,
-      icon: '🎮',
+      description: dbPlayer.archetype_description || '',
+      distance: dbPlayer.archetype_distance || 0,
+      matchPercentage: derived.consistency || 0,
+      icon: dbPlayer.archetype_icon || '🎮',
     },
     insights: dbPlayer.insights || undefined,
     generatedAt: dbPlayer.generated_at,

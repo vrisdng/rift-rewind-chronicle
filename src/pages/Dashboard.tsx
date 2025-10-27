@@ -13,7 +13,7 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
-
+  
   useEffect(() => {
     const data = location.state?.playerData;
     if (!data) {
