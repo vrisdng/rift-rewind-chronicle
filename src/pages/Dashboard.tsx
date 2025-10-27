@@ -1,11 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Trophy, Sword, Eye, Target, TrendingUp, Sparkles, Zap } from "lucide-react";
+import { Trophy, Sword, Eye, Target, TrendingUp, Sparkles, Zap, Brain, Crosshair } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { PlayerStats } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { MetricsRadar } from "@/components/ui/metrics-radar";
+import { MetricProgress } from "@/components/ui/metric-progress";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -246,6 +248,39 @@ const Dashboard = () => {
           </Card>
         )}
 
+        {/* Player Metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          <MetricsRadar 
+            metrics={playerData.derivedMetrics}
+            title="Your Playstyle Radar"
+          />
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
+            <div className="space-y-6">
+              <MetricProgress
+                label="Early Game Strength"
+                value={playerData.derivedMetrics.earlyGameStrength}
+                description="Your effectiveness in the first 15 minutes"
+              />
+              <MetricProgress
+                label="Late Game Scaling"
+                value={playerData.derivedMetrics.lateGameScaling}
+                description="Your impact in the late game"
+              />
+              <MetricProgress
+                label="Consistency"
+                value={playerData.derivedMetrics.consistency}
+                description="How reliably you perform across games"
+              />
+              <MetricProgress
+                label="Champion Pool Depth"
+                value={playerData.derivedMetrics.championPoolDepth}
+                description="Effectiveness across different champions"
+              />
+            </div>
+          </Card>
+        </div>
+
         {/* AI Story Arc */}
         {playerData.insights?.story_arc && (
           <Card className="p-8 card-glow mb-8">
@@ -253,6 +288,24 @@ const Dashboard = () => {
             <p className="text-lg leading-relaxed text-muted-foreground">
               {playerData.insights.story_arc}
             </p>
+          </Card>
+        )}
+
+        {/* Surprising Insights */}
+        {playerData.insights?.surprising_insights && (
+          <Card className="p-8 card-glow mb-8">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Brain className="w-6 h-6" />
+              Surprising Insights
+            </h2>
+            <ul className="space-y-4">
+              {playerData.insights.surprising_insights.map((insight, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <Crosshair className="w-5 h-5 mt-1 text-primary flex-shrink-0" />
+                  <p className="text-muted-foreground">{insight}</p>
+                </li>
+              ))}
+            </ul>
           </Card>
         )}
 
