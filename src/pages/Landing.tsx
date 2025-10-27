@@ -47,9 +47,9 @@ const Landing = () => {
       });
 
       // Navigate to dashboard with player data
-      setTimeout(() => {
-        navigate("/dashboard", { state: { playerData: result.data } });
-      }, 1500);
+      // setTimeout(() => {
+      //   navigate("/dashboard", { state: { playerData: result.data } });
+      // }, 1500);
 
     } catch (error: any) {
       console.error('Failed to analyze player:', error);

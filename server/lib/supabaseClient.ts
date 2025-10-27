@@ -4,6 +4,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
 import type {
   DBPlayer,
   DBMatch,
@@ -12,11 +13,15 @@ import type {
   AnalyzePlayerResponse,
 } from '../types/index.js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.warn('⚠️  Supabase credentials not found. Database operations will fail.');
+if (!SUPABASE_URL) {
+  throw new Error('SUPABASE_URL is not set in environment variables');
+}
+
+if (!SUPABASE_SERVICE_KEY) {
+  throw new Error('SUPABASE_SERVICE_KEY is not set in environment variables');
 }
 
 // Create singleton Supabase client

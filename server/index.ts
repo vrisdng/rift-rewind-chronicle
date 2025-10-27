@@ -6,8 +6,6 @@ import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.js';
 import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.js';
 import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.js';
 
-// Load environment variables from .env file
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -229,11 +227,4 @@ app.listen(PORT, () => {
   console.log(`  ✅ Riot API Key: ${!!process.env.RIOT_API_KEY ? 'Configured' : '❌ Missing'}`);
   console.log(`  ✅ Supabase: ${!!process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
   console.log(`  ✅ AWS Bedrock: ${!!process.env.AWS_ACCESS_KEY_ID ? 'Configured' : '❌ Missing (using mocks)'}`);
-  console.log(`\n📖 API Endpoints:`);
-  console.log(`  GET  /api/health - Health check`);
-  console.log(`  POST /api/analyze - Analyze player`);
-  console.log(`  GET  /api/player/:riotId/:tagLine - Get cached player`);
-  console.log(`  GET  /api/summoner/:gameName/:tagLine - Quick summoner lookup`);
-  console.log(`  POST /api/group - Create friend group`);
-  console.log(`  GET  /api/group/:groupId - Get friend group\n`);
 });

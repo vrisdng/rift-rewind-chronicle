@@ -89,18 +89,22 @@ class RiotClient {
   private platform: string;
   private baseUrl: string;
   private platformUrl: string;
+  private accountUrl: string;  // New property for account endpoints
+
 
   constructor(config: RiotClientConfig) {
-    this.apiKey = process.env.RIOT_API_KEY || config.apiKey;
-    this.region = config.region || "asia";
-    this.platform = config.platform || "sg2";
-    this.baseUrl = getBaseUrl(this.region);
-    this.platformUrl = getPlatformUrl(this.platform);
-
-    if (!this.apiKey) {
-      throw new Error("Riot API key is required");
-    }
+  this.apiKey = config.apiKey || process.env.RIOT_API_KEY || "";
+  this.region = config.region || "sea";
+  this.platform = config.platform || "sg2";
+  this.baseUrl = getBaseUrl(this.region);
+  this.platformUrl = getPlatformUrl(this.platform);
+  this.accountUrl = "https://asia.api.riotgames.com"; // Initialize accountUrl
+  
+  if (!this.apiKey) {
+    throw new Error("Riot API key is required");
   }
+}
+
 
   private async makeRequest<T>(url: string): Promise<T> {
     try {
@@ -134,7 +138,7 @@ class RiotClient {
    * Returns gameName and tagLine
    */
   async getAccountByPuuid(puuid: string): Promise<RiotAccount> {
-    const url = `${this.baseUrl}/riot/account/v1/accounts/by-puuid/${puuid}`;
+    const url = `${this.accountUrl}/riot/account/v1/accounts/by-puuid/${puuid}`;
     return this.makeRequest<RiotAccount>(url);
   }
 
@@ -144,7 +148,7 @@ class RiotClient {
   async getAccountByRiotId(gameName: string, tagLine: string): Promise<RiotAccount> {
     const encodedGameName = encodeURIComponent(gameName);
     const encodedTagLine = encodeURIComponent(tagLine);
-    const url = `${this.baseUrl}/riot/account/v1/accounts/by-riot-id/${encodedGameName}/${encodedTagLine}`;
+    const url = `${this.accountUrl}/riot/account/v1/accounts/by-riot-id/${encodedGameName}/${encodedTagLine}`;
     return this.makeRequest<RiotAccount>(url);
   }
 
@@ -231,6 +235,7 @@ class RiotClient {
 
     const queryString = params.toString();
     const url = `${this.baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids${queryString ? `?${queryString}` : ""}`;
+    console.log("Fetching match IDs from URL:", url);
     return this.makeRequest<string[]>(url);
   }
 
@@ -257,7 +262,7 @@ let cachedClient: RiotClient | undefined;
 function createClient(config?: Partial<RiotClientConfig>): RiotClient {
   return new RiotClient({
     apiKey: config?.apiKey || RIOT_API_KEY,
-    region: config?.region || "asia",
+    region: config?.region || "sea",
     platform: config?.platform || "sg2",
   });
 }

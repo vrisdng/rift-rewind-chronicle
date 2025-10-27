@@ -32,7 +32,7 @@ import {
 } from './supabaseClient.js';
 
 const MAX_MATCHES_TO_FETCH = 100; // Limit for API calls
-const RANKED_SOLO_QUEUE = 420;
+// const RANKED_SOLO_QUEUE = 420; // toggle for different queues
 
 /**
  * Analyze a player completely: fetch matches, calculate metrics, generate insights
@@ -68,7 +68,7 @@ export async function analyzePlayer(
 
   const matchIds = await client.getMatchIdsByPuuid(puuid, {
     count: MAX_MATCHES_TO_FETCH,
-    queue: RANKED_SOLO_QUEUE,
+    // queue: RANKED_SOLO_QUEUE,
   });
 
   onProgress?.({

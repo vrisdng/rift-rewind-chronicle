@@ -5,6 +5,7 @@
  */
 
 import type { AIInsights } from '../types/index.js';
+import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
@@ -86,25 +87,25 @@ export async function invokeBedrockClaude(prompt: string): Promise<AIInsights> {
     const endpoint = `https://bedrock-runtime.${AWS_REGION}.amazonaws.com/model/${MODEL_ID}/invoke`;
 
     // For full implementation, use AWS SDK:
-    // import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-    //
-    // const client = new BedrockRuntimeClient({
-    //   region: AWS_REGION,
-    //   credentials: {
-    //     accessKeyId: AWS_ACCESS_KEY_ID,
-    //     secretAccessKey: AWS_SECRET_ACCESS_KEY,
-    //   },
-    // });
-    //
-    // const command = new InvokeModelCommand({
-    //   modelId: MODEL_ID,
-    //   contentType: 'application/json',
-    //   accept: 'application/json',
-    //   body: JSON.stringify(request),
-    // });
-    //
-    // const response = await client.send(command);
-    // const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    
+    
+    const client = new BedrockRuntimeClient({
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      },
+    });
+    
+    const command = new InvokeModelCommand({
+      modelId: MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(request),
+    });
+    
+    const response = await client.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
     // Placeholder for now - replace with actual AWS SDK call
     console.log('📝 Bedrock prompt (first 200 chars):', prompt.substring(0, 200));
