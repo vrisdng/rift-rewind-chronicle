@@ -8,6 +8,7 @@ import type { PlayerStats } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { MetricsRadar } from "@/components/ui/metrics-radar";
 import { MetricProgress } from "@/components/ui/metric-progress";
+import { ProComparison, StrengthsWeaknesses } from "@/components/ui/pro-comparison";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -169,6 +170,31 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
+
+        {/* Pro Player Comparison - NEW! */}
+        {playerData.proComparison && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold mb-8">Your Pro Player Twin</h2>
+            <ProComparison
+              primary={playerData.proComparison.primary}
+              secondary={playerData.proComparison.secondary}
+              similarity={playerData.proComparison.similarity}
+              description={playerData.proComparison.description}
+              playfulComparison={playerData.playfulComparison}
+            />
+          </div>
+        )}
+
+        {/* Strengths & Weaknesses - NEW! */}
+        {playerData.topStrengths && playerData.needsWork && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold mb-8">The Full Picture</h2>
+            <StrengthsWeaknesses
+              topStrengths={playerData.topStrengths}
+              needsWork={playerData.needsWork}
+            />
+          </div>
+        )}
 
         {/* Performance Trend */}
         {playerData.performanceTrend && playerData.performanceTrend.length > 0 && (

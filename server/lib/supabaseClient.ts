@@ -311,28 +311,6 @@ export async function needsRefresh(
   return hoursSince > maxAgeHours;
 }
 
-/**
- * Update analysis cache
- */
-export async function updateAnalysisCache(
-  puuid: string,
-  matchCount: number
-): Promise<void> {
-  const supabase = getSupabaseClient();
-  const { error } = await supabase
-    .from('analysis_cache')
-    .upsert({
-      puuid,
-      last_analyzed: new Date().toISOString(),
-      match_count: matchCount,
-      needs_refresh: false,
-    });
-
-  if (error) {
-    console.error('Error updating analysis cache:', error);
-    throw error;
-  }
-}
 
 /**
  * Mark player for refresh
@@ -398,7 +376,6 @@ export default {
   createFriendGroup,
   getFriendGroup,
   needsRefresh,
-  updateAnalysisCache,
   markForRefresh,
   getTotalPlayers,
   getTotalMatches,

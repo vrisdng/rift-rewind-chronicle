@@ -73,7 +73,13 @@ export async function invokeBedrockClaude(prompt: string): Promise<AIInsights> {
     // Extract the content from Claude's response
     const content = responseBody.content?.[0]?.text || '';
     
+    if (!content) {
+      console.warn('⚠️  Empty response from Bedrock. Response body:', responseBody);
+      return getMockInsights();
+    }
+    
     console.log('✅ Successfully invoked Bedrock Claude');
+    console.log('📝 Response length:', content.length, 'characters');
     
     // Parse the AI response to structured format
     return parseAIResponse(content);
@@ -148,20 +154,32 @@ export function estimateBedrockCost(inputTokens: number, outputTokens: number): 
  */
 export function parseAIResponse(responseText: string): AIInsights {
   try {
-    // Claude's response should be a JSON string
-    // First, try to extract JSON from markdown code blocks if present
+    // Claude's response should be clean JSON (no markdown blocks)
     let jsonText = responseText.trim();
     
-    // Remove markdown code block markers if present
-    const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
-    if (jsonMatch) {
-      jsonText = jsonMatch[1];
+    // Handle cases where Claude might wrap in markdown despite instructions
+    // Check for code block markers and extract if present
+    if (jsonText.startsWith('```')) {
+      const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1].trim();
+      }
     }
     
-    // Try to parse as JSON
+    // Find the first { and last } to extract just the JSON object
+    // This handles cases where Claude adds explanatory text before/after
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    }
+    
+    // Parse the cleaned JSON
     const parsed = JSON.parse(jsonText);
 
-    return {
+    // Map to our interface (handle both snake_case and camelCase)
+    const insights: AIInsights = {
       story_arc: parsed.story_arc || parsed.storyArc || '',
       surprising_insights: parsed.surprising_insights || parsed.surprisingInsights || [],
       improvement_tips: parsed.improvement_tips || parsed.improvementTips || [],
@@ -169,11 +187,19 @@ export function parseAIResponse(responseText: string): AIInsights {
       season_prediction: parsed.season_prediction || parsed.seasonPrediction || '',
       title: parsed.title || 'Your League Journey',
     };
-  } catch (error) {
-    console.warn('⚠️  Failed to parse AI response as JSON. Using mock insights...');
-    if (responseText) {
-      console.warn('   Response preview:', responseText.substring(0, 200));
+
+    // Validate we got all required fields
+    if (!insights.story_arc || !insights.title) {
+      throw new Error('Missing required fields in AI response');
     }
+
+    console.log('✅ Successfully parsed AI insights');
+    return insights;
+    
+  } catch (error) {
+    console.error('❌ Failed to parse AI response as JSON:', error);
+    console.error('   Response text:', responseText.substring(0, 500));
+    console.error('   Full error:', error);
     return getMockInsights();
   }
 }

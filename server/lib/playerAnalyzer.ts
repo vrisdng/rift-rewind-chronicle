@@ -18,7 +18,7 @@ import {
   calculateAverageKDA,
   calculateAverageStats,
 } from './matchAnalyzer.js';
-import { calculateDerivedMetrics, determineArchetype } from './playerMetrics.js';
+import { calculateDerivedMetrics, determinePlayerIdentity } from './playerMetrics.js';
 import { detectWatershedMoment } from './watershedDetector.js';
 import { generatePlayerInsights } from './insightGenerator.js';
 import {
@@ -28,8 +28,7 @@ import {
   insertMatches,
   markWatershedMoment,
   needsRefresh,
-  updateAnalysisCache,
-} from './supabaseClient.js';
+} from './supabaseClient.ts';
 
 const MAX_MATCHES_TO_FETCH = 100; // Limit for API calls
 // const RANKED_SOLO_QUEUE = 420; // toggle for different queues
@@ -57,10 +56,10 @@ export async function analyzePlayer(
   if (!shouldRefresh) {
     onProgress?.({ stage: 'cache', progress: 100, message: 'Using cached data' });
 
-    const cachedPlayer = await getPlayerByRiotId(riotId, tagLine);
-    if (cachedPlayer) {
-      return convertDBPlayerToStats(cachedPlayer);
-    }
+    // const cachedPlayer = await getPlayerByRiotId(riotId, tagLine);
+    // if (cachedPlayer) {
+    //   return convertDBPlayerToStats(cachedPlayer);
+    // }
   }
 
   // Step 2: Fetch match history
@@ -128,11 +127,11 @@ export async function analyzePlayer(
   const losses = matches.length - wins;
   const winRate = (wins / matches.length) * 100;
 
-  // Step 5: Calculate derived metrics
+  // Step 5: Calculate derived metrics and player identity
   onProgress?.({ stage: 'metrics', progress: 75, message: 'Analyzing playstyle...' });
 
   const derivedMetrics = calculateDerivedMetrics(matches);
-  const archetype = determineArchetype(derivedMetrics);
+  const playerIdentity = determinePlayerIdentity(derivedMetrics);
 
   // Step 6: Detect watershed moment
   onProgress?.({ stage: 'watershed', progress: 80, message: 'Finding breakthrough moments...' });
@@ -167,8 +166,13 @@ export async function analyzePlayer(
     currentStreak,
     performanceTrend,
     derivedMetrics,
-    archetype,
+    archetype: playerIdentity.archetype,
     watershedMoment: watershedMoment || undefined,
+    // New identity fields
+    proComparison: playerIdentity.proComparison,
+    topStrengths: playerIdentity.topStrengths,
+    needsWork: playerIdentity.needsWork,
+    playfulComparison: playerIdentity.playfulComparison,
     generatedAt: new Date().toISOString(),
   };
 
@@ -195,7 +199,7 @@ export async function analyzePlayer(
  * Save player analysis to database
  */
 async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promise<void> {
-  // Save player data
+  // Save player data with new identity fields
   await upsertPlayer({
     puuid: stats.puuid,
     riot_id: stats.riotId,
@@ -209,6 +213,11 @@ async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promi
     narrative_story: stats.insights?.story_arc || '',
     insights: stats.insights as any,
     archetype: stats.archetype.name,
+    // New identity fields
+    pro_comparison: stats.proComparison as any,
+    top_strengths: stats.topStrengths as any,
+    needs_work: stats.needsWork as any,
+    playful_comparison: stats.playfulComparison,
     generated_at: stats.generatedAt,
   });
 
@@ -219,9 +228,6 @@ async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promi
   if (stats.watershedMoment) {
     await markWatershedMoment(stats.watershedMoment.matchId, true);
   }
-
-  // Update cache
-  await updateAnalysisCache(stats.puuid, matches.length);
 }
 
 /**
@@ -290,6 +296,11 @@ async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
       matchPercentage: derived.consistency || 0,
       icon: dbPlayer.archetype_icon || '🎮',
     },
+    // New identity fields from database
+    proComparison: dbPlayer.pro_comparison || undefined,
+    topStrengths: dbPlayer.top_strengths || undefined,
+    needsWork: dbPlayer.needs_work || undefined,
+    playfulComparison: dbPlayer.playful_comparison || undefined,
     insights: dbPlayer.insights || undefined,
     generatedAt: dbPlayer.generated_at,
   };
