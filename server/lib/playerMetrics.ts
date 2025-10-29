@@ -1,7 +1,6 @@
 /**
  * Player Metrics Calculator
  * Calculates derived metrics and determines player archetypes
- * Enhanced with pro player comparisons for engaging, shareable results
  * Uses pure mathematics (no AI embeddings) for cost efficiency
  */
 
@@ -10,23 +9,13 @@ import type {
   DerivedMetrics,
   ArchetypeProfile,
   PlayerArchetype,
+  ProPlayerProfile,
 } from '../types/index.js';
 
-// ==================== TYPE DEFINITIONS ====================
+import { WORLDS_2024_PRO_PLAYERS } from '../constants/pro-player.ts';
+import { ARCHETYPES } from '../constants/archetype.ts';
 
-/**
- * Professional player profile from Worlds 2024
- */
-export interface ProPlayerProfile {
-  name: string;
-  team: string;
-  role: 'Top' | 'Jungle' | 'Mid' | 'ADC' | 'Support';
-  region: 'LCK' | 'LPL' | 'LEC' | 'LCS' | 'PCS' | 'VCS';
-  playstyle: string;
-  metrics: Partial<DerivedMetrics>;
-  achievements?: string;
-  icon: string;
-}
+// ==================== TYPE DEFINITIONS ====================
 
 /**
  * Player identity including archetype and pro comparison
@@ -64,631 +53,6 @@ const METRIC_WEIGHTS: Record<keyof DerivedMetrics, number> = {
   championPoolDepth: 0.5,
 };
 
-// ==================== PRO PLAYER PROFILES ====================
-
-/**
- * Worlds 2024 professional player profiles
- * Metrics estimated from professional analysis and statistics
- */
-export const WORLDS_2024_PRO_PLAYERS: ProPlayerProfile[] = [
-  // ==================== T1 (WORLDS 2024 CHAMPIONS) ====================
-  {
-    name: 'Faker',
-    team: 'T1',
-    role: 'Mid',
-    region: 'LCK',
-    playstyle: 'The Unkillable Demon King - Clutch playmaker with legendary status',
-    metrics: {
-      clutchFactor: 98,
-      consistency: 92,
-      aggression: 85,
-      teamfighting: 90,
-      lateGameScaling: 85,
-      roaming: 82,
-      comebackRate: 95,
-    },
-    achievements: '5x Worlds Champion (2024 MVP)',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Zeus',
-    team: 'T1', // Left to HLE after Worlds 2024
-    role: 'Top',
-    region: 'LCK',
-    playstyle: 'Dominant lane carry with exceptional snowball potential',
-    metrics: {
-      earlyGameStrength: 95,
-      aggression: 92,
-      snowballRate: 90,
-      consistency: 88,
-      teamfighting: 85,
-      lateGameScaling: 80,
-      clutchFactor: 87,
-    },
-    achievements: 'Worlds 2024 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Oner',
-    team: 'T1',
-    role: 'Jungle',
-    region: 'LCK',
-    playstyle: 'Aggressive jungler with perfect objective control',
-    metrics: {
-      aggression: 88,
-      roaming: 92,
-      earlyGameStrength: 90,
-      vision: 85,
-      consistency: 87,
-      clutchFactor: 88,
-      snowballRate: 85,
-    },
-    achievements: 'Worlds 2024 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Gumayusi',
-    team: 'T1',
-    role: 'ADC',
-    region: 'LCK',
-    playstyle: 'High-variance mechanical genius with clutch teamfighting',
-    metrics: {
-      clutchFactor: 92,
-      aggression: 88,
-      teamfighting: 93,
-      consistency: 75,
-      lateGameScaling: 88,
-      farming: 90,
-      earlyGameStrength: 82,
-    },
-    achievements: 'Worlds 2024 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Keria',
-    team: 'T1',
-    role: 'Support',
-    region: 'LCK',
-    playstyle: 'Vision mastermind and aggressive playmaking support',
-    metrics: {
-      vision: 98,
-      roaming: 93,
-      aggression: 88,
-      clutchFactor: 90,
-      teamfighting: 95,
-      consistency: 90,
-      earlyGameStrength: 88,
-    },
-    achievements: 'Worlds 2024 Champion',
-    icon: '🇰🇷',
-  },
-
-  // ==================== BLG (WORLDS 2024 RUNNERS-UP) ====================
-  {
-    name: 'Bin',
-    team: 'BLG',
-    role: 'Top',
-    region: 'LPL',
-    playstyle: 'High-risk, high-reward Jax master with extreme variance',
-    metrics: {
-      aggression: 96,
-      clutchFactor: 88,
-      earlyGameStrength: 92,
-      consistency: 55,
-      snowballRate: 90,
-      teamfighting: 85,
-      lateGameScaling: 75,
-    },
-    achievements: 'Worlds 2024 Finalist, LPL Champion',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'Xun',
-    team: 'BLG',
-    role: 'Jungle',
-    region: 'LPL',
-    playstyle: 'Aggressive jungler with strong early game pressure',
-    metrics: {
-      aggression: 90,
-      earlyGameStrength: 92,
-      roaming: 88,
-      vision: 80,
-      snowballRate: 87,
-      consistency: 80,
-      clutchFactor: 82,
-    },
-    achievements: 'Worlds 2024 Finalist',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'Knight',
-    team: 'BLG',
-    role: 'Mid',
-    region: 'LPL',
-    playstyle: 'Consistent DPS machine with exceptional teamfighting',
-    metrics: {
-      teamfighting: 96,
-      consistency: 94,
-      farming: 92,
-      lateGameScaling: 90,
-      clutchFactor: 88,
-      aggression: 78,
-      earlyGameStrength: 82,
-    },
-    achievements: 'Worlds 2024 Finalist, LPL MVP',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'Elk',
-    team: 'BLG',
-    role: 'ADC',
-    region: 'LPL',
-    playstyle: 'Aggressive lane-dominant ADC with strong positioning',
-    metrics: {
-      aggression: 90,
-      earlyGameStrength: 88,
-      teamfighting: 92,
-      consistency: 85,
-      lateGameScaling: 85,
-      farming: 88,
-      clutchFactor: 85,
-    },
-    achievements: 'Worlds 2024 Finalist',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'ON',
-    team: 'BLG',
-    role: 'Support',
-    region: 'LPL',
-    playstyle: 'Aggressive roaming support with strong engage',
-    metrics: {
-      roaming: 94,
-      aggression: 90,
-      vision: 82,
-      clutchFactor: 85,
-      teamfighting: 88,
-      earlyGameStrength: 88,
-      consistency: 80,
-    },
-    achievements: 'Worlds 2024 Finalist',
-    icon: '🇨🇳',
-  },
-
-  // ==================== GEN.G (SEMIFINALS) ====================
-  {
-    name: 'Chovy',
-    team: 'Gen.G',
-    role: 'Mid',
-    region: 'LCK',
-    playstyle: 'Perfect CS machine with exceptional scaling',
-    metrics: {
-      farming: 99,
-      consistency: 96,
-      lateGameScaling: 92,
-      teamfighting: 90,
-      aggression: 65,
-      clutchFactor: 87,
-      earlyGameStrength: 75,
-    },
-    achievements: 'MSI 2024 Champion, LCK MVP',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Peyz',
-    team: 'Gen.G',
-    role: 'ADC',
-    region: 'LCK',
-    playstyle: 'Rising star ADC with aggressive teamfighting',
-    metrics: {
-      aggression: 88,
-      teamfighting: 90,
-      earlyGameStrength: 87,
-      lateGameScaling: 85,
-      consistency: 83,
-      clutchFactor: 85,
-      farming: 88,
-    },
-    achievements: 'MSI 2024 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Canyon',
-    team: 'Gen.G',
-    role: 'Jungle',
-    region: 'LCK',
-    playstyle: 'Cerebral jungler with perfect pathing and vision control',
-    metrics: {
-      vision: 95,
-      consistency: 94,
-      roaming: 90,
-      earlyGameStrength: 88,
-      clutchFactor: 90,
-      teamfighting: 88,
-      aggression: 80,
-    },
-    achievements: 'MSI 2024 Champion, Worlds 2020 Champion',
-    icon: '🇰🇷',
-  },
-
-  // ==================== HLE (HANWHA LIFE ESPORTS - SEMIFINALS) ====================
-  {
-    name: 'Doran',
-    team: 'HLE',
-    role: 'Top',
-    region: 'LCK',
-    playstyle: 'Versatile top with strong teamfighting and reliability',
-    metrics: {
-      teamfighting: 90,
-      consistency: 87,
-      lateGameScaling: 85,
-      farming: 85,
-      earlyGameStrength: 80,
-      aggression: 75,
-      clutchFactor: 82,
-    },
-    achievements: 'Worlds 2024 Semifinalist',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Zeka',
-    team: 'HLE',
-    role: 'Mid',
-    region: 'LCK',
-    playstyle: 'Clutch performer who thrives under pressure',
-    metrics: {
-      clutchFactor: 94,
-      teamfighting: 89,
-      consistency: 82,
-      aggression: 80,
-      lateGameScaling: 85,
-      comebackRate: 88,
-      farming: 83,
-    },
-    achievements: 'Worlds 2022 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Viper',
-    team: 'HLE',
-    role: 'ADC',
-    region: 'LCK',
-    playstyle: 'Consistent ADC with exceptional positioning',
-    metrics: {
-      consistency: 93,
-      teamfighting: 92,
-      lateGameScaling: 90,
-      farming: 92,
-      clutchFactor: 88,
-      aggression: 70,
-      earlyGameStrength: 78,
-    },
-    achievements: 'Worlds 2021 Champion',
-    icon: '🇰🇷',
-  },
-
-  // ==================== WEIBO GAMING (QUARTERFINALS) ====================
-  {
-    name: 'TheShy',
-    team: 'Weibo Gaming',
-    role: 'Top',
-    region: 'LPL',
-    playstyle: 'Legendary aggressive carry with high variance',
-    metrics: {
-      aggression: 97,
-      clutchFactor: 88,
-      earlyGameStrength: 93,
-      consistency: 60,
-      snowballRate: 92,
-      lateGameScaling: 75,
-      teamfighting: 82,
-    },
-    achievements: 'Worlds 2018 Champion',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'Xiaohu',
-    team: 'Weibo Gaming',
-    role: 'Mid',
-    region: 'LPL',
-    playstyle: 'Versatile veteran with deep champion pool',
-    metrics: {
-      championPoolDepth: 94,
-      consistency: 90,
-      teamfighting: 88,
-      farming: 85,
-      lateGameScaling: 87,
-      clutchFactor: 87,
-      earlyGameStrength: 78,
-    },
-    achievements: 'MSI 2021 Champion',
-    icon: '🇨🇳',
-  },
-
-  // ==================== TOP ESPORTS (SWISS STAGE) ====================
-  {
-    name: 'JackeyLove',
-    team: 'Top Esports',
-    role: 'ADC',
-    region: 'LPL',
-    playstyle: 'Aggressive lane dominant ADC with clutch potential',
-    metrics: {
-      aggression: 92,
-      clutchFactor: 90,
-      earlyGameStrength: 90,
-      teamfighting: 90,
-      consistency: 78,
-      lateGameScaling: 85,
-      farming: 88,
-    },
-    achievements: 'Worlds 2019 Champion',
-    icon: '🇨🇳',
-  },
-  {
-    name: '369',
-    team: 'Top Esports',
-    role: 'Top',
-    region: 'LPL',
-    playstyle: 'Reliable carry top with strong teamfighting',
-    metrics: {
-      consistency: 90,
-      teamfighting: 90,
-      lateGameScaling: 88,
-      farming: 88,
-      snowballRate: 85,
-      earlyGameStrength: 83,
-      aggression: 80,
-    },
-    achievements: 'LPL Champion',
-    icon: '🇨🇳',
-  },
-
-  // ==================== G2 ESPORTS (QUARTERFINALS) ====================
-  {
-    name: 'Caps',
-    team: 'G2 Esports',
-    role: 'Mid',
-    region: 'LEC',
-    playstyle: 'Baby Faker - High-risk playmaker with explosive potential',
-    metrics: {
-      aggression: 94,
-      clutchFactor: 90,
-      consistency: 68,
-      roaming: 88,
-      earlyGameStrength: 85,
-      teamfighting: 85,
-      comebackRate: 85,
-    },
-    achievements: 'MSI 2019 Champion, 4x LEC Champion',
-    icon: '🇪🇺',
-  },
-  {
-    name: 'Hans Sama',
-    team: 'G2 Esports',
-    role: 'ADC',
-    region: 'LEC',
-    playstyle: 'Aggressive ADC who thrives in skirmishes',
-    metrics: {
-      aggression: 87,
-      teamfighting: 88,
-      earlyGameStrength: 83,
-      consistency: 82,
-      lateGameScaling: 83,
-      clutchFactor: 83,
-      farming: 84,
-    },
-    achievements: 'Worlds 2024 Quarterfinalist',
-    icon: '🇪🇺',
-  },
-  {
-    name: 'Yike',
-    team: 'G2 Esports',
-    role: 'Jungle',
-    region: 'LEC',
-    playstyle: 'Aggressive early-game jungler with smart pathing',
-    metrics: {
-      earlyGameStrength: 90,
-      aggression: 88,
-      roaming: 88,
-      vision: 82,
-      consistency: 80,
-      snowballRate: 85,
-      teamfighting: 82,
-    },
-    achievements: 'LEC Champion 2024',
-    icon: '🇪🇺',
-  },
-
-  // ==================== FLYQUEST (QUARTERFINALS) ====================
-  {
-    name: 'Bwipo',
-    team: 'FlyQuest',
-    role: 'Top',
-    region: 'LCS',
-    playstyle: 'Versatile veteran with champion pool depth',
-    metrics: {
-      championPoolDepth: 90,
-      consistency: 85,
-      aggression: 82,
-      teamfighting: 87,
-      clutchFactor: 85,
-      earlyGameStrength: 80,
-      lateGameScaling: 78,
-    },
-    achievements: 'Worlds 2018 Finalist, LCS Champion',
-    icon: '🇺🇸',
-  },
-  {
-    name: 'Inspired',
-    team: 'FlyQuest',
-    role: 'Jungle',
-    region: 'LCS',
-    playstyle: 'Smart pathing and vision control specialist',
-    metrics: {
-      vision: 92,
-      consistency: 88,
-      roaming: 87,
-      earlyGameStrength: 85,
-      clutchFactor: 82,
-      teamfighting: 85,
-      aggression: 78,
-    },
-    achievements: 'LCS Champion, LEC MVP',
-    icon: '🇺🇸',
-  },
-
-  // ==================== TEAM LIQUID (SWISS STAGE) ====================
-  {
-    name: 'Impact',
-    team: 'Team Liquid',
-    role: 'Top',
-    region: 'LCS',
-    playstyle: 'Rock-solid veteran with exceptional consistency',
-    metrics: {
-      consistency: 94,
-      teamfighting: 90,
-      lateGameScaling: 88,
-      tiltFactor: 15,
-      clutchFactor: 90,
-      farming: 85,
-      earlyGameStrength: 78,
-    },
-    achievements: 'Worlds 2013 Champion',
-    icon: '🇺🇸',
-  },
-  {
-    name: 'CoreJJ',
-    team: 'Team Liquid',
-    role: 'Support',
-    region: 'LCS',
-    playstyle: 'World-class support with vision mastery',
-    metrics: {
-      vision: 96,
-      consistency: 92,
-      teamfighting: 92,
-      clutchFactor: 88,
-      roaming: 85,
-      earlyGameStrength: 82,
-      aggression: 75,
-    },
-    achievements: 'Worlds 2017 Champion',
-    icon: '🇺🇸',
-  },
-
-  // ==================== DPLUS KIA (SWISS STAGE) ====================
-  {
-    name: 'ShowMaker',
-    team: 'Dplus KIA',
-    role: 'Mid',
-    region: 'LCK',
-    playstyle: 'Clutch mechanical genius with lane dominance',
-    metrics: {
-      clutchFactor: 92,
-      aggression: 88,
-      consistency: 88,
-      teamfighting: 90,
-      earlyGameStrength: 87,
-      lateGameScaling: 85,
-      farming: 88,
-    },
-    achievements: 'Worlds 2020 Champion',
-    icon: '🇰🇷',
-  },
-  {
-    name: 'Deft',
-    team: 'Dplus KIA',
-    role: 'ADC',
-    region: 'LCK',
-    playstyle: 'Legendary ADC with patient scaling',
-    metrics: {
-      lateGameScaling: 94,
-      consistency: 92,
-      teamfighting: 93,
-      farming: 93,
-      clutchFactor: 90,
-      aggression: 70,
-      earlyGameStrength: 75,
-    },
-    achievements: 'Worlds 2022 Champion',
-    icon: '🇰🇷',
-  },
-
-  // ==================== LNG ESPORTS (SWISS STAGE) ====================
-  {
-    name: 'Tarzan',
-    team: 'LNG Esports',
-    role: 'Jungle',
-    region: 'LPL',
-    playstyle: 'Cerebral jungler with perfect macro play',
-    metrics: {
-      vision: 93,
-      consistency: 90,
-      roaming: 90,
-      clutchFactor: 87,
-      earlyGameStrength: 87,
-      teamfighting: 88,
-      aggression: 82,
-    },
-    achievements: 'LPL Champion',
-    icon: '🇨🇳',
-  },
-  {
-    name: 'Gala',
-    team: 'LNG Esports',
-    role: 'ADC',
-    region: 'LPL',
-    playstyle: 'Consistent teamfight ADC with strong positioning',
-    metrics: {
-      teamfighting: 92,
-      consistency: 90,
-      lateGameScaling: 90,
-      farming: 90,
-      clutchFactor: 87,
-      aggression: 75,
-      earlyGameStrength: 80,
-    },
-    achievements: 'MSI 2021 Finalist',
-    icon: '🇨🇳',
-  },
-
-  // ==================== FNATIC (SWISS STAGE) ====================
-  {
-    name: 'Razork',
-    team: 'Fnatic',
-    role: 'Jungle',
-    region: 'LEC',
-    playstyle: 'Aggressive early-game jungler',
-    metrics: {
-      aggression: 88,
-      earlyGameStrength: 88,
-      roaming: 85,
-      snowballRate: 83,
-      consistency: 78,
-      vision: 80,
-      teamfighting: 80,
-    },
-    achievements: 'LEC Champion',
-    icon: '🇪🇺',
-  },
-  {
-    name: 'Humanoid',
-    team: 'Fnatic',
-    role: 'Mid',
-    region: 'LEC',
-    playstyle: 'Lane-dominant mid with strong roaming',
-    metrics: {
-      aggression: 85,
-      roaming: 85,
-      earlyGameStrength: 85,
-      consistency: 82,
-      teamfighting: 85,
-      lateGameScaling: 80,
-      clutchFactor: 82,
-    },
-    achievements: 'LEC Champion',
-    icon: '🇪🇺',
-  },
-];
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -728,7 +92,7 @@ export function matchToProPlayer(metrics: DerivedMetrics): {
   similarity: number;
   description: string;
 } {
-  const proScores = WORLDS_PRO_PLAYERS.map((pro) => {
+  const proScores = WORLDS_2024_PRO_PLAYERS.map((pro) => {
     const distance = calculateWeightedDistance(metrics, pro.metrics);
     const similarity = Math.max(0, 100 - distance);
 
@@ -885,221 +249,6 @@ export function getPlayfulComparison(metrics: DerivedMetrics): string {
 }
 
 
-// ==================== ARCHETYPE DEFINITIONS ====================
-
-export const ARCHETYPES: ArchetypeProfile[] = [
-  {
-    name: 'Calculated Assassin',
-    description: 'High aggression with surgical precision. Knows when to strike.',
-    profile: {
-      aggression: 85,
-      consistency: 70,
-      clutchFactor: 80,
-      farming: 60,
-      vision: 50,
-      earlyGameStrength: 75,
-      lateGameScaling: 65,
-    },
-    icon: '🗡️',
-  },
-  {
-    name: 'Scaling Specialist',
-    description: 'Patient farmer who dominates late game. Weak early, unstoppable late.',
-    profile: {
-      farming: 90,
-      lateGameScaling: 85,
-      earlyGameStrength: 40,
-      consistency: 80,
-      aggression: 35,
-      vision: 65,
-      clutchFactor: 70,
-    },
-    icon: '📈',
-  },
-  {
-    name: 'Vision Mastermind',
-    description: 'Eyes everywhere. Controls the map with superior vision and information.',
-    profile: {
-      vision: 95,
-      roaming: 70,
-      teamfighting: 75,
-      aggression: 50,
-      farming: 60,
-      consistency: 75,
-      earlyGameStrength: 60,
-    },
-    icon: '👁️',
-  },
-  {
-    name: 'Teamfight Commander',
-    description: 'Thrives in chaos. The bigger the fight, the better they perform.',
-    profile: {
-      teamfighting: 90,
-      clutchFactor: 85,
-      aggression: 70,
-      vision: 65,
-      consistency: 75,
-      lateGameScaling: 80,
-      earlyGameStrength: 60,
-    },
-    icon: '⚔️',
-  },
-  {
-    name: 'Early Game Bully',
-    description: 'Dominates the first 15 minutes. Snowballs leads to victory.',
-    profile: {
-      earlyGameStrength: 95,
-      aggression: 85,
-      snowballRate: 80,
-      lateGameScaling: 40,
-      vision: 50,
-      farming: 65,
-      consistency: 60,
-    },
-    icon: '💪',
-  },
-  {
-    name: 'Consistent Performer',
-    description: 'Reliable and steady. Never ints, always contributes.',
-    profile: {
-      consistency: 95,
-      tiltFactor: 20,
-      aggression: 55,
-      farming: 75,
-      vision: 70,
-      earlyGameStrength: 60,
-      lateGameScaling: 60,
-    },
-    icon: '🎯',
-  },
-  {
-    name: 'Clutch Player',
-    description: 'Performs best under pressure. Turns impossible games around.',
-    profile: {
-      clutchFactor: 95,
-      comebackRate: 85,
-      aggression: 75,
-      teamfighting: 80,
-      consistency: 65,
-      earlyGameStrength: 60,
-      lateGameScaling: 70,
-    },
-    icon: '🔥',
-  },
-  {
-    name: 'CS God',
-    description: 'Farming perfection. Highest CS/min in every game.',
-    profile: {
-      farming: 95,
-      consistency: 85,
-      aggression: 40,
-      vision: 55,
-      earlyGameStrength: 60,
-      lateGameScaling: 80,
-      clutchFactor: 60,
-    },
-    icon: '💰',
-  },
-  {
-    name: 'Roaming Terror',
-    description: 'Never stays in lane. Creates pressure across the entire map.',
-    profile: {
-      roaming: 95,
-      aggression: 80,
-      vision: 75,
-      farming: 50,
-      earlyGameStrength: 80,
-      teamfighting: 70,
-      consistency: 60,
-    },
-    icon: '🌪️',
-  },
-  {
-    name: 'Comeback King',
-    description: 'Best when behind. Specializes in turning lost games into wins.',
-    profile: {
-      comebackRate: 90,
-      clutchFactor: 85,
-      lateGameScaling: 80,
-      tiltFactor: 30,
-      consistency: 70,
-      teamfighting: 75,
-      aggression: 65,
-    },
-    icon: '👑',
-  },
-  {
-    name: 'Tilt-Proof Machine',
-    description: 'Unshakeable mental. Performance never drops after losses.',
-    profile: {
-      tiltFactor: 10,
-      consistency: 90,
-      clutchFactor: 75,
-      aggression: 60,
-      farming: 70,
-      vision: 70,
-      earlyGameStrength: 60,
-    },
-    icon: '🧘',
-  },
-  {
-    name: 'Snowball Expert',
-    description: 'Gets ahead early and never lets go. Chokes out opponents.',
-    profile: {
-      snowballRate: 95,
-      earlyGameStrength: 85,
-      aggression: 80,
-      farming: 70,
-      lateGameScaling: 55,
-      consistency: 70,
-      clutchFactor: 65,
-    },
-    icon: '❄️',
-  },
-  {
-    name: 'Safe Scaler',
-    description: 'Plays safe, farms well, scales hard. Avoids risks.',
-    profile: {
-      farming: 85,
-      consistency: 85,
-      lateGameScaling: 85,
-      aggression: 30,
-      earlyGameStrength: 40,
-      tiltFactor: 40,
-      vision: 60,
-    },
-    icon: '🛡️',
-  },
-  {
-    name: 'Chaos Agent',
-    description: 'High variance, high reward. Either pops off or ints.',
-    profile: {
-      aggression: 95,
-      consistency: 30,
-      clutchFactor: 80,
-      earlyGameStrength: 85,
-      tiltFactor: 70,
-      farming: 50,
-      vision: 45,
-    },
-    icon: '🎲',
-  },
-  {
-    name: 'Balanced Tactician',
-    description: 'Well-rounded in all aspects. Master of fundamentals.',
-    profile: {
-      aggression: 65,
-      farming: 70,
-      vision: 70,
-      consistency: 75,
-      earlyGameStrength: 65,
-      lateGameScaling: 65,
-      clutchFactor: 70,
-    },
-    icon: '⚖️',
-  },
-];
-
 // ==================== METRIC CALCULATIONS ====================
 
 /**
@@ -1212,14 +361,15 @@ function calculateConsistency(matches: DBMatch[]): number {
 function calculateEarlyGameStrength(matches: DBMatch[]): number {
   const shortGames = matches.filter((m) => m.duration < 25 * 60);
 
-  if (shortGames.length < 5) {
+  if (shortGames.length < 3) {
     return 50; // Not enough data
   }
 
   const winRate = (shortGames.filter((m) => m.result).length / shortGames.length) * 100;
   const avgPerformance = shortGames.reduce((sum, m) => sum + m.performance_score, 0) / shortGames.length;
 
-  return Math.round((winRate * 0.6 + avgPerformance * 0.4));
+  // Don't over-weight win rate in short games
+  return Math.round((winRate * 0.5 + avgPerformance * 0.5));
 }
 
 /**
@@ -1383,17 +533,22 @@ function calculateTeamfighting(matches: DBMatch[]): number {
  * Snowball Rate: Win rate when ahead early
  */
 function calculateSnowballRate(matches: DBMatch[]): number {
-  // Approximate: Short wins with high performance
+  // More strict definition: Quick wins (<25min) with dominant performance (>80 score)
   const snowballWins = matches.filter((m) =>
-    m.result && m.duration < 30 * 60 && m.performance_score > 70
+    m.result && m.duration < 25 * 60 && m.performance_score > 80
   );
 
-  if (matches.length < 10) {
-    return 50;
+  const totalWins = matches.filter((m) => m.result).length;
+
+  if (totalWins < 5) {
+    return 50; // Not enough data
   }
 
-  const snowballRate = (snowballWins.length / matches.filter((m) => m.result).length) * 100;
-  return Math.min(Math.round(snowballRate * 1.5), 100);
+  // What percentage of wins were snowballs?
+  const snowballRate = (snowballWins.length / totalWins) * 100;
+  
+  // Don't inflate - use raw percentage
+  return Math.round(snowballRate);
 }
 
 // ==================== ARCHETYPE MATCHING ====================
@@ -1424,39 +579,64 @@ function calculateDistance(metrics: DerivedMetrics, profile: Partial<DerivedMetr
  * Emphasizes what the player excels at rather than absolute values
  */
 export function determineArchetypeRelative(metrics: DerivedMetrics): PlayerArchetype {
-  // Find player's top 3 strongest metrics
+  // Find player's top 5 strongest metrics (expanded for better matching)
   const metricEntries = Object.entries(metrics) as [keyof DerivedMetrics, number][];
   metricEntries.sort((a, b) => b[1] - a[1]);
 
-  const topMetrics = metricEntries.slice(0, 3).map(([key]) => key);
+  const topMetrics = metricEntries.slice(0, 5).map(([key]) => key);
+  const bottomMetrics = metricEntries.slice(-3).map(([key]) => key);
 
   // Match archetypes based on what they EMPHASIZE, not absolute values
   const archetypeScores = ARCHETYPES.map((archetype) => {
-    let score = 0;
+    let strengthMatchScore = 0; // How well player's strengths match archetype
+    let profileMatchScore = 0;  // General profile similarity
+    let weaknessMatchScore = 0; // Check for conflicting weaknesses
 
-    // Check if archetype's strong points match player's strong points
-    for (const [metric, value] of Object.entries(archetype.profile)) {
+    // Count how many defining traits match
+    for (const [metric, archetypeValue] of Object.entries(archetype.profile)) {
       const metricKey = metric as keyof DerivedMetrics;
-      const playerValue = metrics[metricKey];
+      const playerValue = metrics[metricKey] || 50;
 
-      // If archetype emphasizes this metric (>75) AND player is good at it
-      if (value > 75 && topMetrics.includes(metricKey)) {
-        score += 30; // Big bonus for matching strengths
+      // If archetype REQUIRES this (>80), check if player has it
+      if (archetypeValue > 80) {
+        if (topMetrics.includes(metricKey) && playerValue > 70) {
+          strengthMatchScore += 3; // Strong match!
+        } else if (playerValue < 50) {
+          strengthMatchScore -= 2; // Player lacks key trait
+        }
       }
 
-      // Penalty for archetype requiring something player lacks
-      if (value > 75 && playerValue < 50) {
-        score -= 15;
+      // If archetype emphasizes this (>70)
+      if (archetypeValue > 70 && playerValue > 65) {
+        strengthMatchScore += 1;
       }
 
-      // Small bonus for general similarity
-      score += Math.max(0, 100 - Math.abs(value - playerValue)) * 0.1;
+      // General similarity (normalized to 0-1)
+      const similarity = 1 - Math.abs(archetypeValue - playerValue) / 100;
+      profileMatchScore += similarity;
+
+      // Check for conflicts: archetype requires low value but player has high
+      if (archetypeValue < 40 && playerValue > 70) {
+        weaknessMatchScore -= 1;
+      }
     }
+
+    // Normalize profile match score
+    const numMetrics = Object.keys(archetype.profile).length;
+    profileMatchScore = (profileMatchScore / numMetrics) * 100;
+
+    // Combine scores with weights
+    const totalScore = 
+      strengthMatchScore * 10 + // Most important: matching key strengths
+      profileMatchScore * 0.5 +  // General similarity
+      weaknessMatchScore * 5;    // Penalty for conflicts
+
+    const matchPercentage = Math.max(0, Math.min(100, Math.round(totalScore)));
 
     return {
       ...archetype,
-      score,
-      matchPercentage: Math.max(0, Math.min(100, Math.round(score))),
+      score: totalScore,
+      matchPercentage,
     };
   });
 
@@ -1471,28 +651,6 @@ export function determineArchetypeRelative(metrics: DerivedMetrics): PlayerArche
   };
 }
 
-/**
- * Determine player archetype using distance metrics (legacy method)
- */
-export function determineArchetype(metrics: DerivedMetrics): PlayerArchetype {
-  const archetypesWithDistances = ARCHETYPES.map((archetype) => {
-    const distance = calculateDistance(metrics, archetype.profile);
-    const matchPercentage = Math.max(100 - distance, 0);
-
-    return {
-      name: archetype.name,
-      description: archetype.description,
-      distance,
-      matchPercentage: Math.round(matchPercentage),
-      icon: archetype.icon,
-    };
-  });
-
-  // Sort by lowest distance (best match)
-  archetypesWithDistances.sort((a, b) => a.distance - b.distance);
-
-  return archetypesWithDistances[0];
-}
 
 /**
  * Get top 3 archetype matches
@@ -1565,20 +723,7 @@ export function determinePlayerIdentity(metrics: DerivedMetrics): PlayerIdentity
 // ==================== EXPORTS ====================
 
 export default {
-  // Core functions
   calculateDerivedMetrics,
-  determinePlayerIdentity,
-  
-  // Legacy functions (maintained for compatibility)
-  determineArchetype,
   determineArchetypeRelative,
   getTopArchetypes,
-  
-  // Pro player matching
-  matchToProPlayer,
-  getPlayfulComparison,
-  
-  // Constants
-  ARCHETYPES,
-  WORLDS_PRO_PLAYERS,
 };
