@@ -3,33 +3,59 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
 import magicOrb from "@/assets/magic-orb.png";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { analyzePlayer, type PlayerStats } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("NA1");
-  const [summonerData, setSummonerData] = useState<any>(null);
+  const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
 
-  const searchSummoner = async () => {
-    if (!gameName) return;
-    
+  const startAnalysis = async () => {
+    if (!gameName || !tagLine) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both game name and tag line",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+    setLoadingMessage("Searching for player...");
+
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/summoner/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
-      );
-      if (!response.ok) {
-        throw new Error(response.statusText);
+      const result = await analyzePlayer(gameName, tagLine, "sg2");
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to analyze player");
       }
-      const data = await response.json();
-      setSummonerData(data);
-    } catch (error) {
-      console.error('Failed to fetch summoner:', error);
+
+      setPlayerData(result.data);
+
+      toast({
+        title: result.cached ? "Data Retrieved" : "Analysis Complete!",
+        description: result.cached
+          ? "Using cached analysis data"
+          : `Analyzed ${result.data.totalGames} matches successfully`,
+      });
+
+    } catch (error: any) {
+      console.error('Failed to analyze player:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Could not analyze player. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -92,31 +118,56 @@ const Landing = () => {
             </div>
             <Button
               variant="secondary"
-              onClick={searchSummoner}
+              onClick={startAnalysis}
               disabled={isLoading}
               className="w-full"
             >
-              <Search className="w-4 h-4 mr-2" />
-              {isLoading ? 'Searching...' : 'Search'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {loadingMessage || 'Analyzing...'}
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Analyze My Year
+                </>
+              )}
             </Button>
           </div>
 
-          {/* Summoner Data Display */}
-          {summonerData && (
-            <div className="mb-8 p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/30 max-w-md mx-auto">
-              <h3 className="text-xl font-bold mb-2">{summonerData.account.gameName} #{summonerData.account.tagLine}</h3>
-              <p className="text-muted-foreground mb-4">Level: {summonerData.summoner.summonerLevel}</p>
-              
+          {/* Player Data Display */}
+          {playerData && (
+            <div className="mb-8 p-6 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/30 max-w-md mx-auto">
+              <h3 className="text-2xl font-bold mb-2">
+                {playerData.riotId} #{playerData.tagLine}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {playerData.archetype.icon} {playerData.archetype.name}
+              </p>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{playerData.totalGames}</div>
+                  <div className="text-sm text-muted-foreground">Games</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{playerData.winRate.toFixed(1)}%</div>
+                  <div className="text-sm text-muted-foreground">Win Rate</div>
+                </div>
+              </div>
+
               {/* Top Champions */}
-              <div className="mb-4">
+              <div>
                 <h4 className="text-lg font-semibold mb-2">Top Champions</h4>
                 <div className="space-y-2">
-                  {summonerData.masteries.map((mastery: any) => (
-                    <div key={mastery.championId} className="flex justify-between items-center">
-                      <span>Champion {mastery.championId}</span>
+                  {playerData.topChampions.slice(0, 3).map((champ) => (
+                    <div key={champ.championName} className="flex justify-between items-center text-sm">
+                      <span className="font-medium">{champ.championName}</span>
                       <div className="text-right">
-                        <div className="font-medium">Level {mastery.championLevel}</div>
-                        <div className="text-sm text-muted-foreground">{mastery.championPoints.toLocaleString()} points</div>
+                        <span className="text-primary">{champ.winRate.toFixed(0)}% WR</span>
+                        <span className="text-muted-foreground ml-2">({champ.games}g)</span>
                       </div>
                     </div>
                   ))}
@@ -126,14 +177,16 @@ const Landing = () => {
           )}
 
           {/* CTA Button */}
-          <Button 
-            variant="hero" 
-            size="lg"
-            className="text-lg px-12 py-6 h-auto animate-pulse-glow"
-            onClick={() => navigate("/dashboard")}
-          >
+          {playerData && (
+            <Button
+              variant="hero"
+              size="lg"
+              className="text-lg px-12 py-6 h-auto animate-pulse-glow"
+              onClick={() => navigate("/dashboard", { state: { playerData } })}
+            >
             Reveal My Year
           </Button>
+          )}
 
           {/* Additional Info */}
           <p className="mt-8 text-sm text-muted-foreground">
