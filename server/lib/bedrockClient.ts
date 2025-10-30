@@ -156,7 +156,7 @@ export function parseAIResponse(responseText: string): AIInsights {
   try {
     // Claude's response should be clean JSON (no markdown blocks)
     let jsonText = responseText.trim();
-    
+
     // Handle cases where Claude might wrap in markdown despite instructions
     // Check for code block markers and extract if present
     if (jsonText.startsWith('```')) {
@@ -165,18 +165,53 @@ export function parseAIResponse(responseText: string): AIInsights {
         jsonText = jsonMatch[1].trim();
       }
     }
-    
+
     // Find the first { and last } to extract just the JSON object
     // This handles cases where Claude adds explanatory text before/after
     const firstBrace = jsonText.indexOf('{');
     const lastBrace = jsonText.lastIndexOf('}');
-    
+
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       jsonText = jsonText.substring(firstBrace, lastBrace + 1);
     }
-    
-    // Parse the cleaned JSON
-    const parsed = JSON.parse(jsonText);
+
+    // Strategy: Try parsing first, if it fails then try to fix it
+    let parsed;
+    try {
+      // Try parsing as-is first
+      parsed = JSON.parse(jsonText);
+    } catch (firstError) {
+      console.log('First parse attempt failed, trying to repair JSON...');
+
+      // Repair strategy: Escape control characters ONLY inside string values
+      // This regex finds string values and escapes newlines/tabs/carriage returns within them
+      const repairedJson = jsonText.replace(
+        /"([^"\\]*(\\.[^"\\]*)*)"/g,
+        (match) => {
+          return match
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
+        }
+      );
+
+      try {
+        parsed = JSON.parse(repairedJson);
+        console.log('✅ Successfully repaired and parsed JSON');
+      } catch (secondError) {
+        // If still failing, try one more aggressive strategy: remove ALL literal newlines
+        console.log('Second parse attempt failed, trying aggressive repair...');
+        const aggressiveRepair = jsonText
+          .replace(/\r\n/g, ' ')
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, ' ')
+          .replace(/\t/g, ' ')
+          .replace(/\s+/g, ' ');  // Collapse multiple spaces
+
+        parsed = JSON.parse(aggressiveRepair);
+        console.log('✅ Successfully parsed with aggressive repair');
+      }
+    }
 
     // Map to our interface (handle both snake_case and camelCase)
     const insights: AIInsights = {

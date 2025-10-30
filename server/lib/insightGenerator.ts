@@ -84,7 +84,13 @@ ${watershedInfo}
 
 Your task: Generate a comprehensive year-in-review that feels personal and insightful.
 
-Return ONLY valid JSON in this exact format (no markdown, no code blocks):
+CRITICAL FORMATTING RULES:
+- Return ONLY valid JSON (no markdown, no code blocks, no extra text)
+- ALL string values MUST be continuous text with NO line breaks
+- Use proper punctuation and spaces instead of newlines in narratives
+- Do not use actual newline characters (\\n) in any strings
+
+Return in this exact format:
 {
   "story_arc": "250-word engaging narrative of their year, written in second person. Tell their story with specific details from the data. Make it dramatic and personal. Reference their playstyle, growth, challenges, and triumphs.",
   "surprising_insights": [

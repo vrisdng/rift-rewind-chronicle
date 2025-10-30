@@ -225,13 +225,16 @@ class RiotClient {
       count?: number;
       queue?: number;
       type?: string;
+      startTime?: number;
+      endTime?: number;
     }
   ): Promise<string[]> {
     const params = new URLSearchParams();
     if (options?.start !== undefined) params.append("start", options.start.toString());
     if (options?.count !== undefined) params.append("count", options.count.toString());
     if (options?.queue !== undefined) params.append("queue", options.queue.toString());
-    if (options?.type) params.append("type", options.type);
+    if (options?.startTime !== undefined) params.append("startTime", options.startTime.toString());
+    if (options?.endTime !== undefined) params.append("endTime", options.endTime.toString());
 
     const queryString = params.toString();
     const url = `${this.baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids${queryString ? `?${queryString}` : ""}`;
@@ -254,7 +257,62 @@ class RiotClient {
     const url = `${this.baseUrl}/lol/match/v5/matches/${matchId}/timeline`;
     return this.makeRequest<any>(url);
   }
+
+  /**
+ * Fetch multiple matches concurrently with rate limiting
+ */
+async fetchMatchesConcurrent(
+  matchIds: string[],
+  concurrency: number = 10
+): Promise<any[]> {
+  const matches: any[] = [];
+  const errors: string[] = [];
+  
+  console.log(`📥 Fetching ${matchIds.length} matches with concurrency ${concurrency}...`);
+  
+  // Process in chunks
+  for (let i = 0; i < matchIds.length; i += concurrency) {
+    const chunk = matchIds.slice(i, i + concurrency);
+    
+    try {
+      const results = await Promise.allSettled(
+        chunk.map(id => this.getMatch(id))
+      );
+      
+      results.forEach((result, idx) => {
+        if (result.status === 'fulfilled') {
+          matches.push(result.value);
+        } else {
+          errors.push(chunk[idx]);
+          console.warn(`❌ Failed to fetch match ${chunk[idx]}`);
+        }
+      });
+      
+      // Rate limit protection: small delay between chunks
+      if (i + concurrency < matchIds.length) {
+        await this.sleep(100); // 100ms between chunks
+      }
+      
+      console.log(`📊 Progress: ${Math.min(i + concurrency, matchIds.length)}/${matchIds.length} matches`);
+    } catch (error) {
+      console.error('Chunk failed:', error);
+    }
+  }
+  
+  console.log(`✅ Successfully fetched ${matches.length}/${matchIds.length} matches`);
+  if (errors.length > 0) {
+    console.warn(`⚠️  Failed matches: ${errors.length}`);
+  }
+  
+  return matches;
 }
+
+private sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+}
+
+
 
 // Singleton instance
 let cachedClient: RiotClient | undefined;
