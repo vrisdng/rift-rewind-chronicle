@@ -10,7 +10,7 @@ import type {
   PlayerStats,
   FriendGroup,
   AnalyzePlayerResponse,
-} from '../types/index.js';
+} from '../types/index.ts';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;

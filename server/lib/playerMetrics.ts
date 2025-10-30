@@ -10,7 +10,7 @@ import type {
   ArchetypeProfile,
   PlayerArchetype,
   ProPlayerProfile,
-} from '../types/index.js';
+} from '../types/index.ts';
 
 import { WORLDS_2024_PRO_PLAYERS } from '../constants/pro-player.ts';
 import { ARCHETYPES } from '../constants/archetype.ts';

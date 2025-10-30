@@ -4,8 +4,8 @@
  * Handles the complete flow from Riot API → Database → AI insights
  */
 
-import { getClient } from './riot.js';
-import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate } from '../types/index.js';
+import { getClient } from './riot.ts';
+import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate } from '../types/index.ts';
 import {
   convertMatchToDBFormat,
   calculateChampionStats,
@@ -17,10 +17,10 @@ import {
   calculatePerformanceTrends,
   calculateAverageKDA,
   calculateAverageStats,
-} from './matchAnalyzer.js';
-import { calculateDerivedMetrics, determinePlayerIdentity } from './playerMetrics.js';
-import { detectWatershedMoment } from './watershedDetector.js';
-import { generatePlayerInsights } from './insightGenerator.js';
+} from './matchAnalyzer.ts';
+import { calculateDerivedMetrics, determinePlayerIdentity } from './playerMetrics.ts';
+import { detectWatershedMoment } from './watershedDetector.ts';
+import { generatePlayerInsights } from './insightGenerator.ts';
 import {
   getPlayerByRiotId,
   upsertPlayer,

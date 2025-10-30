@@ -14,7 +14,7 @@ import type {
   PerformanceTrend,
   WatershedMoment,
   ROLE_MAP,
-} from '../types/index.js';
+} from '../types/index.ts';
 
 // ==================== PERFORMANCE SCORING ====================
 

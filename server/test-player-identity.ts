@@ -3,8 +3,8 @@
  * Run this to verify the new archetype and pro player matching system
  */
 
-import { calculateDerivedMetrics, determinePlayerIdentity } from './lib/playerMetrics.js';
-import type { DBMatch, DerivedMetrics } from './types/index.js';
+import { calculateDerivedMetrics, determinePlayerIdentity } from './lib/playerMetrics.ts';
+import type { DBMatch, DerivedMetrics } from './types/index.ts';
 
 // ==================== TEST CASES ====================
 

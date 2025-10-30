@@ -2,7 +2,7 @@
  * Clear player cache to force re-analysis with new archetype algorithm
  */
 
-import { getSupabaseClient } from './lib/supabaseClient.js';
+import { getSupabaseClient } from './lib/supabaseClient.ts';
 
 async function clearPlayerCache() {
   const supabase = getSupabaseClient();

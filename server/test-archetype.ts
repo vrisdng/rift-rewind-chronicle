@@ -2,9 +2,9 @@
  * Test archetype matching with sample metrics
  */
 
-import { determineArchetypeRelative, calculateDerivedMetrics } from './lib/playerMetrics.js';
-import { ARCHETYPES } from './constants/archetype.js';
-import type { DerivedMetrics } from './types/index.js';
+import { determineArchetypeRelative, calculateDerivedMetrics } from './lib/playerMetrics.ts';
+import { ARCHETYPES } from './constants/archetype.ts';
+import type { DerivedMetrics } from './types/index.ts';
 
 // Test with different player profiles
 const testProfiles: { name: string; metrics: DerivedMetrics }[] = [

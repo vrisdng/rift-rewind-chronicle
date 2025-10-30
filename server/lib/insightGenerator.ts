@@ -10,8 +10,8 @@ import type {
   ChampionStats,
   WatershedMoment,
   AIInsights,
-} from '../types/index.js';
-import { invokeBedrockClaude, parseAIResponse } from './bedrockClient.js';
+} from '../types/index.ts';
+import { invokeBedrockClaude, parseAIResponse } from './bedrockClient.ts';
 
 /**
  * Generate comprehensive player insights using a single AI call

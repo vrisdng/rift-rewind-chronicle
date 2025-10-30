@@ -115,7 +115,7 @@ All test cases passed with excellent accuracy:
 
 ### Main Function
 ```typescript
-import { determinePlayerIdentity } from './lib/playerMetrics.js';
+import { determinePlayerIdentity } from './lib/playerMetrics.ts';
 
 const metrics = calculateDerivedMetrics(matches);
 const identity = determinePlayerIdentity(metrics);

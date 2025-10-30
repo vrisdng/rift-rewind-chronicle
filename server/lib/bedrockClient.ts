@@ -4,7 +4,7 @@
  * Cost-optimized: Single call per player analysis (~$0.04)
  */
 
-import type { AIInsights } from '../types/index.js';
+import type { AIInsights } from '../types/index.ts';
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';

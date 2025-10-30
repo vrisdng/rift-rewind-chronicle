@@ -1,10 +1,10 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import { getClient } from './lib/riot.js';
-import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.js';
-import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.js';
-import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.js';
+import { getClient } from './lib/riot.ts';
+import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
+import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.ts';
+import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
 
 
 const app = express();

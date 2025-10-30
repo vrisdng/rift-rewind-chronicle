@@ -1,7 +1,7 @@
 /**
  * Test parsing AI responses
  */
-import { parseAIResponse } from './lib/bedrockClient.js';
+import { parseAIResponse } from './lib/bedrockClient.ts';
 
 // Test case 1: Clean JSON (what we're getting from Claude)
 const cleanJson = `{
