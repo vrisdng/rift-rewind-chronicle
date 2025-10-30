@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import WrappedDashboard from "./pages/WrappedDashboard";
 import DeepInsights from "./pages/DeepInsights";
 import Highlights from "./pages/Highlights";
 import Archetype from "./pages/Archetype";
@@ -24,7 +25,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<WrappedDashboard />} />
+          <Route path="/dashboard-old" element={<Dashboard />} />
           <Route path="/deep-insights" element={<DeepInsights />} />
           <Route path="/highlights" element={<Highlights />} />
           <Route path="/archetype" element={<Archetype />} />
