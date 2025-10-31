@@ -88,7 +88,7 @@ const WrappedDashboard = () => {
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background">
+    <div className="relative w-full h-screen overflow-y-hidden bg-background">
       <Carousel
         setApi={setApi}
         className="w-full h-full"
@@ -97,7 +97,7 @@ const WrappedDashboard = () => {
           loop: false,
         }}
       >
-        <CarouselContent className="h-screen">
+        <CarouselContent className="h-full">
           {/* Slide 1: Intro */}
           <CarouselItem>
             <IntroSlide playerData={playerData} />

@@ -10,7 +10,7 @@ export const InsightsSlide = ({ playerData }: InsightsSlideProps) => {
   if (!playerData.insights?.surprising_insights) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-dark p-8 overflow-y-auto">
+    <div className="w-full h-screen flex flex-col items-center justify-start bg-gradient-dark p-8 overflow-y-auto">
       <div className="max-w-5xl w-full space-y-12 animate-fade-in py-8">
         {/* Title */}
         <div className="text-center space-y-4">
