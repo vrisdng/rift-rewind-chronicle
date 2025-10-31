@@ -24,12 +24,10 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Radar Chart */}
-          <div className="flex items-center justify-center">
             <MetricsRadar
               metrics={playerData.derivedMetrics}
               title=""
             />
-          </div>
 
           {/* Key Metrics */}
           <Card className="p-8 card-glow">
