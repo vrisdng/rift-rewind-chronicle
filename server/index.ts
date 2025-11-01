@@ -46,15 +46,15 @@ app.post('/api/analyze', async (req, res) => {
     console.log(`📊 Starting analysis for ${riotId}#${tagLine}${forceRegenerateInsights ? ' (force regenerate insights)' : ''}`);
 
     // Check cache first
-    // const cached = await getCachedPlayerStats(riotId, tagLine);
-    // if (cached) {
-    //   console.log(`✅ Returning cached data for ${riotId}#${tagLine}`);
-    //   return res.json({
-    //     success: true,
-    //     data: cached,
-    //     cached: true,
-    //   });
-    // }
+    const cached = await getCachedPlayerStats(riotId, tagLine);
+    if (cached) {
+      console.log(`✅ Returning cached data for ${riotId}#${tagLine}`);
+      return res.json({
+        success: true,
+        data: cached,
+        cached: true,
+      });
+    }
 
     // Perform full analysis
     const playerStats = await analyzePlayer(
