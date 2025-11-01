@@ -14,7 +14,7 @@ import SocialComparisons from "./pages/SocialComparisons";
 import ShareableMoments from "./pages/ShareableMoments";
 import Finale from "./pages/Finale";
 import NotFound from "./pages/NotFound";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
