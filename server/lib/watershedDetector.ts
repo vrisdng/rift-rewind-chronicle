@@ -4,7 +4,7 @@
  * Uses sliding window statistical analysis to detect performance breakpoints
  */
 
-import type { DBMatch, WatershedMoment } from '../types/index.js';
+import type { DBMatch, WatershedMoment } from '../types/index.ts';
 
 const WINDOW_SIZE = 10; // Games before and after to analyze
 const MIN_MATCHES_REQUIRED = 25; // Need enough data to detect patterns

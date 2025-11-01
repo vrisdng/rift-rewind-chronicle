@@ -30,9 +30,16 @@ All colors MUST be HSL.
     --muted: 230 15% 18%;
     --muted-foreground: 215 20% 65%;
 
-    /* Gold accent for achievements */
-    --accent: 45 100% 55%;
-    --accent-foreground: 230 25% 7%;
+    /* Gold - LoL Ranked/Prestige Gold */
+    --accent: 43 96% 56%;          /* LoL Championship Gold */
+    --accent-foreground: 216 33% 8%;
+
+    /* Additional LoL Colors */
+    --lol-gold: 43 96% 56%;
+    --lol-blue: 191 91% 48%;
+    --lol-diamond: 180 100% 45%;
+    --lol-purple: 267 77% 62%;
+    --lol-red: 3 100% 61%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -54,20 +61,158 @@ All colors MUST be HSL.
     
     /* Animations */
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-hextech: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 }
 
 @layer utilities {
+  /* LoL-Themed Text Effects */
   .text-glow {
-    text-shadow: 0 0 20px hsl(var(--primary-glow) / 0.6);
+    text-shadow: 0 0 20px hsl(var(--primary-glow) / 0.6),
+                 0 0 40px hsl(var(--primary-glow) / 0.3);
   }
-  
+
+  .text-glow-gold {
+    text-shadow: 0 0 15px hsl(var(--lol-gold) / 0.6),
+                 0 0 30px hsl(var(--lol-gold) / 0.3);
+  }
+
+  .text-hextech {
+    color: hsl(var(--lol-blue));
+    text-shadow: 0 0 20px hsl(var(--lol-blue) / 0.6);
+  }
+
+  /* LoL-Themed Card Effects */
   .card-glow {
     box-shadow: 0 4px 24px hsl(var(--primary) / 0.15);
   }
-  
-  .achievement-glow {
-    box-shadow: var(--glow-achievement);
+
+  .card-glow-gold {
+    box-shadow: var(--glow-gold);
+    border: 1px solid hsl(var(--lol-gold) / 0.3);
+  }
+
+  .card-hextech {
+    box-shadow: var(--glow-hextech);
+    border: 1px solid hsl(var(--lol-blue) / 0.4);
+    background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--lol-blue) / 0.05) 100%
+    );
+  }
+
+  /* Hexagonal clip path for LoL aesthetic */
+  .hexagon {
+    clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
+  }
+
+  .hexagon-border {
+    position: relative;
+  }
+
+  .hexagon-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
+    background: linear-gradient(135deg, hsl(var(--lol-blue)), hsl(var(--lol-diamond)));
+    z-index: -1;
+  }
+
+  /* LoL-style gradients */
+  .bg-gradient-magical {
+    background: var(--gradient-magical);
+  }
+
+  .bg-gradient-hextech {
+    background: var(--gradient-hextech);
+  }
+
+  .bg-gradient-dark {
+    background: var(--gradient-dark);
+  }
+
+  .bg-gradient-gold {
+    background: var(--gradient-gold);
+  }
+
+  .bg-gradient-ranked {
+    background: var(--gradient-ranked);
+  }
+
+  /* Animated hextech pulse */
+  .animate-hextech-pulse {
+    animation: hextechPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes hextechPulse {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px hsl(var(--lol-blue) / 0.5);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 40px hsl(var(--lol-blue) / 0.8), 0 0 60px hsl(var(--lol-blue) / 0.4);
+    }
+  }
+
+  /* LoL-style shine effect */
+  .shine-effect {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shine-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
+    animation: shine 3s infinite;
+  }
+
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+  }
+
+  /* Angular corners like LoL client */
+  .lol-corners {
+    position: relative;
+  }
+
+  .lol-corners::before,
+  .lol-corners::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid hsl(var(--lol-blue));
+  }
+
+  .lol-corners::before {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .lol-corners::after {
+    bottom: 0;
+    right: 0;
+    border-left: none;
+    border-top: none;
   }
 }
 

@@ -67,6 +67,15 @@ export interface DBPlayer {
   narrative_story: string;
   insights: AIInsights;
   archetype: string;
+  pro_comparison?: {
+    primary: ProPlayerProfile;
+    secondary: ProPlayerProfile;
+    similarity: number;
+    description: string;
+  };
+  top_strengths?: Array<{ metric: string; value: number; percentile: number }>;
+  needs_work?: Array<{ metric: string; value: number; suggestion: string }>;
+  playful_comparison?: string;
   generated_at: string;
 }
 
@@ -126,6 +135,30 @@ export interface PlayerArchetype {
   distance: number;
   matchPercentage: number;
   icon: string;
+}
+
+export interface ProPlayerProfile {
+  name: string;
+  team: string;
+  role: 'Top' | 'Jungle' | 'Mid' | 'ADC' | 'Support';
+  region: 'LCK' | 'LPL' | 'LEC' | 'LCS' | 'PCS' | 'VCS';
+  playstyle: string;
+  metrics: Partial<DerivedMetrics>;
+  achievements?: string;
+  icon: string;
+}
+
+export interface PlayerIdentity {
+  archetype: PlayerArchetype;
+  proComparison: {
+    primary: ProPlayerProfile;
+    secondary: ProPlayerProfile;
+    similarity: number;
+    description: string;
+  };
+  topStrengths: Array<{ metric: string; value: number; percentile: number }>;
+  needsWork: Array<{ metric: string; value: number; suggestion: string }>;
+  playfulComparison: string;
 }
 
 export interface WatershedMoment {
@@ -227,6 +260,17 @@ export interface PlayerStats {
   derivedMetrics: DerivedMetrics;
   archetype: PlayerArchetype;
   watershedMoment?: WatershedMoment;
+
+  // Pro player comparison (new!)
+  proComparison?: {
+    primary: ProPlayerProfile;
+    secondary: ProPlayerProfile;
+    similarity: number;
+    description: string;
+  };
+  topStrengths?: Array<{ metric: string; value: number; percentile: number }>;
+  needsWork?: Array<{ metric: string; value: number; suggestion: string }>;
+  playfulComparison?: string;
 
   // AI-generated content
   insights?: AIInsights;

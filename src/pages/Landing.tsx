@@ -84,10 +84,10 @@ const Landing = () => {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 text-glow">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 text-glow">
             Your League Story
             <br />
-            <span className="bg-gradient-magical bg-clip-text text-transparent">
+            <span className="text-primary-glow">
               Awaits
             </span>
           </h1>

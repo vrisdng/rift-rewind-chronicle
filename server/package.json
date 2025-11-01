@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx --env-file .env index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "wipe": "tsx --env-file .env wipe-all-data.ts",
+    "wipe:quick": "tsx --env-file .env wipe-all-data.ts --quick"
   },
   "keywords": [],
   "author": "",

@@ -1,10 +1,10 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import { getClient } from './lib/riot.js';
-import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.js';
-import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.js';
-import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.js';
+import { getClient } from './lib/riot.ts';
+import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
+import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.ts';
+import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
 
 
 const app = express();
@@ -30,10 +30,11 @@ app.get('/api/health', (req, res) => {
 /**
  * POST /api/analyze
  * Analyze a player completely: fetch matches, calculate metrics, generate insights
+ * Optional: forceRegenerateInsights - if true, will regenerate AI insights even if cached
  */
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { riotId, tagLine, region = 'sg2' } = req.body as AnalyzePlayerRequest;
+    const { riotId, tagLine, region = 'sg2', forceRegenerateInsights = false } = req.body as AnalyzePlayerRequest & { forceRegenerateInsights?: boolean };
 
     if (!riotId || !tagLine) {
       return res.status(400).json({
@@ -42,24 +43,30 @@ app.post('/api/analyze', async (req, res) => {
       });
     }
 
-    console.log(`📊 Starting analysis for ${riotId}#${tagLine}`);
+    console.log(`📊 Starting analysis for ${riotId}#${tagLine}${forceRegenerateInsights ? ' (force regenerate insights)' : ''}`);
 
     // Check cache first
-    const cached = await getCachedPlayerStats(riotId, tagLine);
-    if (cached) {
-      console.log(`✅ Returning cached data for ${riotId}#${tagLine}`);
-      return res.json({
-        success: true,
-        data: cached,
-        cached: true,
-      });
-    }
+    // const cached = await getCachedPlayerStats(riotId, tagLine);
+    // if (cached) {
+    //   console.log(`✅ Returning cached data for ${riotId}#${tagLine}`);
+    //   return res.json({
+    //     success: true,
+    //     data: cached,
+    //     cached: true,
+    //   });
+    // }
 
     // Perform full analysis
-    const playerStats = await analyzePlayer(riotId, tagLine, region, (update: ProgressUpdate) => {
-      console.log(`📈 Progress: ${update.stage} - ${update.message} (${update.progress}%)`);
-      // In production, you could send progress via WebSocket or SSE
-    });
+    const playerStats = await analyzePlayer(
+      riotId,
+      tagLine,
+      region,
+      (update: ProgressUpdate) => {
+        console.log(`📈 Progress: ${update.stage} - ${update.message} (${update.progress}%)`);
+        // In production, you could send progress via WebSocket or SSE
+      },
+      forceRegenerateInsights
+    );
 
     console.log(`✅ Analysis complete for ${riotId}#${tagLine}`);
 

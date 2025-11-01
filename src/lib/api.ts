@@ -32,6 +32,10 @@ export interface PlayerStats {
   archetype: PlayerArchetype;
   watershedMoment?: WatershedMoment;
   insights?: AIInsights;
+  proComparison?: ProComparison;
+  topStrengths?: MetricStrength[];
+  needsWork?: MetricStrength[];
+  playfulComparison?: string;
   generatedAt: string;
 }
 
@@ -112,6 +116,26 @@ export interface AIInsights {
   archetype_explanation: string;
   season_prediction: string;
   title: string;
+}
+
+export interface ProComparison {
+  primary: ProPlayer;
+  secondary?: ProPlayer;
+  similarity: number;
+  description: string;
+}
+
+export interface ProPlayer {
+  name: string;
+  team: string;
+  role: string;
+  region: string;
+}
+
+export interface MetricStrength {
+  metric: string;
+  value: number;
+  description: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';

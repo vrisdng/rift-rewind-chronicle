@@ -230,10 +230,10 @@ const MIN_IMPROVEMENT_THRESHOLD = 15;  // Minimum performance jump
 
 ## Module Import Pattern
 
-All server files use ES modules (`.js` extensions in imports):
+All server files use ES modules (`.ts` extensions in imports):
 ```typescript
-import { getClient } from './lib/riot.js';  // Note .js extension
-import type { PlayerStats } from '../types/index.js';
+import { getClient } from './lib/riot.ts'; 
+import type { PlayerStats } from '../types/index.ts';
 ```
 
 Frontend uses standard TS imports with path aliases:
@@ -259,7 +259,7 @@ import { Button } from '@/components/ui/button';
 - Falls back to mocks gracefully - check logs
 
 **TypeScript errors in server**:
-- Ensure all imports have `.js` extension
+- Ensure all imports have `.ts` extension
 - Server uses `"type": "module"` in package.json
 - Run `npx tsc` to check compilation
 
