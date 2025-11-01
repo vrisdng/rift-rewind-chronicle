@@ -1,3 +1,5 @@
+import type { DerivedMetrics } from "../types/index.ts";
+
 /**
  * Professional player profile from Worlds 2024
  */
