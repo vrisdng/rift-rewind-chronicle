@@ -34,7 +34,7 @@ export interface PlayerStats {
   insights?: AIInsights;
   proComparison?: ProComparison;
   topStrengths?: MetricStrength[];
-  needsWork?: MetricStrength[];
+  needsWork?: MetricWeakness[];
   playfulComparison?: string;
   generatedAt: string;
 }
@@ -50,6 +50,7 @@ export interface ChampionStats {
   avgAssists: number;
   avgCS: number;
   avgDamage: number;
+  splashArtUrl?: string;
 }
 
 export interface RoleStats {
@@ -119,23 +120,33 @@ export interface AIInsights {
 }
 
 export interface ProComparison {
-  primary: ProPlayer;
-  secondary?: ProPlayer;
+  primary: ProPlayerProfile;
+  secondary: ProPlayerProfile;
   similarity: number;
   description: string;
 }
 
-export interface ProPlayer {
+export interface ProPlayerProfile {
   name: string;
   team: string;
-  role: string;
-  region: string;
+  role: 'Top' | 'Jungle' | 'Mid' | 'ADC' | 'Support';
+  region: 'LCK' | 'LPL' | 'LEC' | 'LCS' | 'PCS' | 'VCS';
+  playstyle: string;
+  metrics: Partial<DerivedMetrics>;
+  icon?: string; // Emoji or icon for display
+  achievements?: string; // Notable achievements
 }
 
 export interface MetricStrength {
   metric: string;
   value: number;
-  description: string;
+  percentile: number;
+}
+
+export interface MetricWeakness {
+  metric: string;
+  value: number;
+  suggestion: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';

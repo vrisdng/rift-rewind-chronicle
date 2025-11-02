@@ -123,6 +123,7 @@ export interface ChampionStats {
   avgAssists: number;
   avgCS: number;
   avgDamage: number;
+  splashArtUrl?: string; // Champion splash art URL (e.g., https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Anivia_0.jpg)
 }
 
 /**
