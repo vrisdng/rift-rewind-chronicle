@@ -211,24 +211,6 @@ export async function getPlayer(
 }
 
 /**
- * Quick summoner lookup (legacy)
- */
-export async function getSummoner(gameName: string, tagLine: string) {
-  try {
-    const response = await fetch(`${API_URL}/api/summoner/${gameName}/${tagLine}`);
-
-    if (!response.ok) {
-      throw new Error('Summoner not found');
-    }
-
-    return await response.json();
-  } catch (error: any) {
-    console.error('Error fetching summoner:', error);
-    throw error;
-  }
-}
-
-/**
  * Create friend group
  */
 export async function createFriendGroup(
@@ -277,18 +259,5 @@ export async function getFriendGroup(groupId: string) {
   } catch (error: any) {
     console.error('Error fetching group:', error);
     throw error;
-  }
-}
-
-/**
- * Health check
- */
-export async function healthCheck() {
-  try {
-    const response = await fetch(`${API_URL}/api/health`);
-    return await response.json();
-  } catch (error) {
-    console.error('Health check failed:', error);
-    return { status: 'error' };
   }
 }

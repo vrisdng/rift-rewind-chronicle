@@ -12,18 +12,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// ==================== HEALTH CHECK ====================
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    riotApiConfigured: !!process.env.RIOT_API_KEY,
-    supabaseConfigured: !!process.env.SUPABASE_URL,
-    awsConfigured: !!process.env.AWS_ACCESS_KEY_ID,
-  });
-});
-
 // ==================== PLAYER ANALYSIS ====================
 
 /**
@@ -113,40 +101,6 @@ app.get('/api/player/:riotId/:tagLine', async (req, res) => {
   }
 });
 
-// ==================== SUMMONER INFO (LEGACY) ====================
-
-/**
- * GET /api/summoner/:gameName/:tagLine
- * Quick summoner lookup (no full analysis)
- */
-app.get('/api/summoner/:gameName/:tagLine', async (req, res) => {
-  try {
-    const client = getClient();
-    const { gameName, tagLine } = req.params;
-
-    // First get the Riot account info
-    const account = await client.getAccountByRiotId(gameName, tagLine);
-
-    // Then get the summoner info using the PUUID
-    const summoner = await client.getSummonerByPuuid(account.puuid);
-
-    // Get champion masteries
-    const masteries = await client.getChampionMasteries(account.puuid);
-
-    res.json({
-      account,
-      summoner,
-      masteries: masteries.slice(0, 5), // Return top 5 champions
-    });
-  } catch (error: any) {
-    console.error('Error fetching summoner:', error);
-    if (error.statusCode === 404) {
-      res.status(404).json({ error: 'Summoner not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to fetch summoner data' });
-    }
-  }
-});
 
 // ==================== FRIEND GROUPS ====================
 
