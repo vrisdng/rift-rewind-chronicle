@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Users } from "lucide-react";
+import Chatbot from "@/components/ui/chatbot";
 
 const Finale = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const Finale = () => {
           </Button>
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Zap, Skull } from "lucide-react";
+import Chatbot from "@/components/ui/chatbot";
 
 const Highlights = () => {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ const Highlights = () => {
           </Button>
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 };

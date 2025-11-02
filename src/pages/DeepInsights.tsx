@@ -5,6 +5,7 @@ import { Brain, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PlayerStats } from "@/lib/api";
 import { MetricsRadar } from "@/components/ui/metrics-radar";
+import Chatbot from '@/components/ui/chatbot';
 
 const DeepInsights = () => {
   const location = useLocation();
@@ -98,6 +99,7 @@ const DeepInsights = () => {
         <Button variant="hero" size="lg" onClick={() => navigate("/highlights", { state: { playerData } })}>
           Continue to Highlights →
         </Button>
+        <Chatbot />
       </div>
     </div>
   );

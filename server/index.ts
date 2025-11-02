@@ -3,13 +3,17 @@ import cors from 'cors';
 import { getClient } from './lib/riot.ts';
 import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
 import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.ts';
+import { invokeBedrockClaude, invokeBedrockClaudeStream } from './lib/bedrockClient.ts';
 import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:8080', 'http://localhost:3000'],
+  credentials: true,
+}));
 app.use(express.json());
 
 // ==================== PLAYER ANALYSIS ====================
@@ -187,4 +191,78 @@ app.listen(PORT, () => {
   console.log(`  ✅ Riot API Key: ${!!process.env.RIOT_API_KEY ? 'Configured' : '❌ Missing'}`);
   console.log(`  ✅ Supabase: ${!!process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
   console.log(`  ✅ AWS Bedrock: ${!!process.env.AWS_ACCESS_KEY_ID ? 'Configured' : '❌ Missing (using mocks)'}`);
+});
+
+// ==================== CHAT STREAMING ====================
+
+/**
+ * POST /api/chat
+ * Body: { message: string, history?: Array<{role, content}> }
+ * Streams LLM response as NDJSON (newline-delimited JSON)
+ */
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, history = [] } = req.body as { 
+      message: string; 
+      history?: Array<{ role: 'user' | 'assistant'; content: string }> 
+    };
+
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'Missing message' });
+    }
+
+    console.log(`💬 Chat request: "${message.substring(0, 50)}..."`);
+
+    // Set headers for NDJSON streaming
+    res.set({
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders();
+
+    // Build conversation with system prompt
+    const systemPrompt = "You are RiftRewind's AI assistant. Help users understand their League of Legends gameplay, provide insights, and answer questions about their season stats. Be concise, friendly, and encouraging.";
+    
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      { role: 'user', content: systemPrompt },
+      { role: 'assistant', content: 'I understand. I will help League players with insights about their gameplay.' },
+      ...(history || []),
+      { role: 'user', content: message }
+    ];
+
+    // Stream tokens from Bedrock
+    await invokeBedrockClaudeStream(
+      messages,
+      // onChunk: send each token as NDJSON line
+      (text: string) => {
+        res.write(JSON.stringify({ delta: text }) + '\n');
+      },
+      // onComplete: send done signal
+      () => {
+        res.write(JSON.stringify({ done: true }) + '\n');
+        res.end();
+        console.log(`✅ Chat stream complete`);
+      },
+      // onError: send error
+      (error: Error) => {
+        res.write(JSON.stringify({ error: error.message }) + '\n');
+        res.end();
+        console.error(`❌ Chat stream error:`, error);
+      }
+    );
+
+  } catch (error: any) {
+    console.error('Error in /api/chat:', error);
+    
+    // If headers not sent yet, send JSON error
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, error: error.message || 'Chat failed' });
+    }
+    
+    // Otherwise send error in stream
+    res.write(JSON.stringify({ error: error.message || 'Chat failed' }) + '\n');
+    res.end();
+  }
 });

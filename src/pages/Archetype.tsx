@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Swords } from "lucide-react";
+import Chatbot from "@/components/ui/chatbot";
 
 const Archetype = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const Archetype = () => {
           </Button>
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 };

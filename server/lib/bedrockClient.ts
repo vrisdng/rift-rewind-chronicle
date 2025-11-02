@@ -5,7 +5,7 @@
  */
 
 import type { AIInsights } from '../types/index.ts';
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { BedrockRuntimeClient, InvokeModelCommand, InvokeModelWithResponseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
@@ -99,6 +99,93 @@ export async function invokeBedrockClaude(prompt: string): Promise<AIInsights> {
     }
     
     return getMockInsights();
+  }
+}
+
+/**
+ * Invoke Claude via AWS Bedrock with STREAMING support
+ * Streams tokens in real-time as they're generated
+ */
+export async function invokeBedrockClaudeStream(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  onChunk: (text: string) => void,
+  onComplete?: () => void,
+  onError?: (error: Error) => void
+): Promise<void> {
+  // Check for AWS credentials
+  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+    console.warn('⚠️  AWS credentials not configured. Using mock streaming.');
+    const mockText = "I'm your RiftRewind assistant! I can help you understand your gameplay, suggest improvements, and answer questions about your season. What would you like to know?";
+    
+    // Simulate streaming for development
+    for (let i = 0; i < mockText.length; i += 3) {
+      const chunk = mockText.slice(i, i + 3);
+      onChunk(chunk);
+      await new Promise(r => setTimeout(r, 20));
+    }
+    onComplete?.();
+    return;
+  }
+
+  try {
+    const request: BedrockRequest = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 2000,
+      messages,
+      temperature: 0.7,
+      top_p: 0.9,
+    };
+
+    const client = new BedrockRuntimeClient({
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      },
+    });
+
+    const command = new InvokeModelWithResponseStreamCommand({
+      modelId: MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(request),
+    });
+
+    const response = await client.send(command);
+
+    if (!response.body) {
+      throw new Error('No response body from Bedrock stream');
+    }
+
+    console.log('✅ Bedrock stream started');
+
+    // Process the stream
+    for await (const event of response.body) {
+      if (event.chunk) {
+        const chunk = JSON.parse(new TextDecoder().decode(event.chunk.bytes));
+        
+        // Handle different event types from Claude
+        if (chunk.type === 'content_block_delta') {
+          const text = chunk.delta?.text || '';
+          if (text) {
+            onChunk(text);
+          }
+        } else if (chunk.type === 'message_stop') {
+          console.log('✅ Bedrock stream completed');
+          onComplete?.();
+        } else if (chunk.type === 'error') {
+          console.error('❌ Bedrock stream error:', chunk);
+          onError?.(new Error(chunk.message || 'Stream error'));
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Bedrock streaming failed:', error.message);
+    onError?.(error);
+    
+    // Fallback: send error message
+    onChunk('Sorry, I encountered an error. Please try again.');
+    onComplete?.();
   }
 }
 
@@ -259,6 +346,7 @@ export async function checkBedrockHealth(): Promise<boolean> {
 
 export default {
   invokeBedrockClaude,
+  invokeBedrockClaudeStream,
   parseAIResponse,
   estimateBedrockCost,
   checkBedrockHealth,

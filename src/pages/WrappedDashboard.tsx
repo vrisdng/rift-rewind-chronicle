@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Chatbot from "@/components/ui/chatbot";
 
 // Import individual slides
 import { IntroSlide } from "@/components/slides/IntroSlide";
@@ -210,6 +211,7 @@ const WrappedDashboard = () => {
       <div className="absolute top-4 right-4 z-50 text-sm text-muted-foreground">
         {current + 1} / {count}
       </div>
+      <Chatbot />
     </div>
   );
 };
