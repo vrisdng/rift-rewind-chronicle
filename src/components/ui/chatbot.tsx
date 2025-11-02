@@ -25,6 +25,8 @@ interface ChatbotProps {
 export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [showRoast, setShowRoast] = useState(false);
+  const [currentRoast, setCurrentRoast] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     // Initialize with sessionStorage on mount
     const playerData = (location.state as any)?.playerData;
@@ -47,40 +49,108 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
   const assistantIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const roastTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const roastIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get player data directly from location
   const playerData = (location.state as any)?.playerData;
   const puuid = playerData?.puuid || 'guest';
 
-  // Handle location changes
-  useEffect(() => {
-    if ((location.state as any)?.hideChat) {
-      setOpen(false);
+  // Roast messages based on player data
+  const roasts = playerData ? [
+    `${playerData.winRate}% WR? You sure you're not inting? 💀`,
+    `Avoiding me? Your gameplay won't improve itself...`,
+    `Click me. I dare you. Let's talk about that KDA. 🔥`,
+    `${playerData.avgKDA?.toFixed(1)} KDA... we need to talk.`,
+    `Your ${playerData.topChampions?.[0]?.championName} needs serious help 😬`,
+  ] : [
+    `Afraid to face the truth? I don't bite... much. 🔥`,
+    `Click me if you're brave enough 💀`,
+    `Still here? Let's roast your gameplay.`,
+    `I'm watching your every move... or lack thereof 😈`,
+  ];
+
+  // Handle chat open/close with roast management
+  const handleOpenChat = () => {
+    setOpen(true);
+    setShowRoast(false);
+    // Clear roast timers when opening chat
+    if (roastTimerRef.current) {
+      clearTimeout(roastTimerRef.current);
+      roastTimerRef.current = null;
     }
-  }, [location.state]);
+    if (roastIntervalRef.current) {
+      clearInterval(roastIntervalRef.current);
+      roastIntervalRef.current = null;
+    }
+  };
+
+  const handleCloseChat = () => {
+    setOpen(false);
+    // Start roast timers when closing chat
+    startRoastTimers();
+  };
+
+  // Start roast animation timers
+  const startRoastTimers = () => {
+    if (hide || open) return;
+
+    // Clear existing timers
+    if (roastTimerRef.current) clearTimeout(roastTimerRef.current);
+    if (roastIntervalRef.current) clearInterval(roastIntervalRef.current);
+
+    // Show first roast after 8 seconds (less intrusive)
+    roastTimerRef.current = setTimeout(() => {
+      const randomRoast = roasts[Math.floor(Math.random() * roasts.length)];
+      setCurrentRoast(randomRoast);
+      setShowRoast(true);
+
+      // Hide roast after 6 seconds (longer display)
+      setTimeout(() => setShowRoast(false), 6000);
+    }, 8000);
+
+    // Show subsequent roasts every 25 seconds (less frequent)
+    roastIntervalRef.current = setInterval(() => {
+      const randomRoast = roasts[Math.floor(Math.random() * roasts.length)];
+      setCurrentRoast(randomRoast);
+      setShowRoast(true);
+
+      // Hide roast after 6 seconds
+      setTimeout(() => setShowRoast(false), 6000);
+    }, 25000);
+  };
+
+  // Handle location changes
+  if ((location.state as any)?.hideChat && open) {
+    setOpen(false);
+  }
 
   // Auto-scroll when messages change
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [messages, open]);
+  if (listRef.current && messages.length > 0) {
+    listRef.current.scrollTop = listRef.current.scrollHeight;
+  }
 
   // Save to sessionStorage when messages change
-  useEffect(() => {
-    if (messages.length > 0) {
-      const storageKey = `rift_chat_${puuid}`;
-      try {
-        sessionStorage.setItem(storageKey, JSON.stringify(messages));
-      } catch (err) {
-        console.warn('Failed to save chat history:', err);
-      }
+  if (messages.length > 0) {
+    const storageKey = `rift_chat_${puuid}`;
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch (err) {
+      console.warn('Failed to save chat history:', err);
     }
-  }, [messages, puuid]);
+  }
 
-  // Cleanup on unmount only
-  useEffect(() => {
+  // Initialize roast timers when component mounts or chat closes
+  if (!open && !hide && !roastTimerRef.current && !roastIntervalRef.current) {
+    startRoastTimers();
+  }
+
+  // Minimal cleanup effect only (unavoidable for proper cleanup)
+  React.useEffect(() => {
     return () => {
+      // Cleanup timers on unmount
+      if (roastTimerRef.current) clearTimeout(roastTimerRef.current);
+      if (roastIntervalRef.current) clearInterval(roastIntervalRef.current);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -254,16 +324,36 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
 
   return (
     <div>
-      {/* Bubble button */}
+      {/* Bubble button with animation and roasting speech bubbles */}
       <div className="fixed bottom-6 right-6 z-50">
         {!open && (
-          <button
-            aria-label="Open chat"
-            onClick={() => setOpen(true)}
-            className="w-14 h-14 rounded-full bg-primary/90 hover:scale-105 transition-transform shadow-lg flex items-center justify-center text-white"
-          >
-            <MessageSquare className="w-6 h-6" />
-          </button>
+          <div className="relative">
+            {/* Roasting speech bubble */}
+            {showRoast && (
+              <div className="absolute bottom-16 right-0 mb-2 w-64 animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="relative bg-card/95 backdrop-blur-sm border border-primary/30 rounded-lg p-3 shadow-xl">
+                  <div className="text-sm text-foreground">{currentRoast}</div>
+                  {/* Arrow pointing to bubble */}
+                  <div className="absolute -bottom-2 right-6 w-4 h-4 bg-card/95 border-r border-b border-primary/30 transform rotate-45"></div>
+                </div>
+              </div>
+            )}
+            
+            {/* Animated bubble button with wiggle */}
+            <button
+              aria-label="Open chat"
+              onClick={handleOpenChat}
+              className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary/90 to-primary hover:scale-110 transition-all duration-300 shadow-lg shadow-primary/50 flex items-center justify-center text-white group"
+              style={{
+                animation: showRoast 
+                  ? 'wiggle 0.5s ease-in-out' 
+                  : 'wiggle 3s ease-in-out infinite'
+              }}
+            >
+              <div className="absolute inset-0 rounded-full bg-primary/30 animate-pulse opacity-50"></div>
+              <span className="relative text-2xl group-hover:scale-110 transition-transform">🔥</span>
+            </button>
+          </div>
         )}
 
         {open && (
@@ -276,7 +366,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                   <div className="text-xs text-muted-foreground">Brutally honest. Occasionally helpful.</div>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-muted">
+              <button onClick={handleCloseChat} className="p-1 rounded hover:bg-muted">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -285,12 +375,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
               {/* First-time welcome message with roasting personality */}
               {isFirstTime && (
                 <div className="space-y-3">
-                  {/* Welcome roast */}
-                  <div className="flex justify-start">
-                    <div className="max-w-[85%] p-3 rounded-lg bg-card/50 text-foreground border border-primary/20">
-                      <div className="font-semibold text-primary mb-1 flex items-center gap-2">
-                        🔥 Coach
-                      </div>
+                  {/* Welcome roast with avatar */}
+                  <div className="flex gap-2 justify-start">
+                    {/* Coach avatar */}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                      <span className="text-lg">🔥</span>
+                    </div>
+                    
+                    {/* Welcome message */}
+                    <div className="max-w-[80%] p-3 rounded-lg bg-card/50 text-foreground border border-primary/20">
+                      <div className="font-semibold text-primary mb-1">Coach</div>
                       <div style={{ whiteSpace: 'pre-wrap' }}>{roastingWelcome}</div>
                     </div>
                   </div>
@@ -312,8 +406,20 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
               )}
 
               {messages.map((m) => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-lg ${m.role === 'user' ? 'bg-primary text-white' : 'bg-card/50 text-muted-foreground'}`}>
+                <div key={m.id} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {/* Avatar for assistant */}
+                  {m.role === 'assistant' && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                      <span className="text-lg">🔥</span>
+                    </div>
+                  )}
+                  
+                  {/* Message bubble */}
+                  <div className={`max-w-[75%] p-3 rounded-lg ${
+                    m.role === 'user' 
+                      ? 'bg-primary text-white' 
+                      : 'bg-card/50 text-foreground border border-border'
+                  }`}>
                     {m.isLoading && m.text === '' ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -323,6 +429,13 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                       <div style={{ whiteSpace: 'pre-wrap' }}>{m.text || '...'}</div>
                     )}
                   </div>
+
+                  {/* Avatar for user */}
+                  {m.role === 'user' && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm border-2 border-primary/30">
+                      {playerData?.riotId?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -338,7 +451,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                   disabled={isStreaming}
                 />
                 <Button 
-                  onClick={sendMessage} 
+                  onClick={() => sendMessage()} 
                   disabled={!input.trim() || isStreaming}
                 >
                   Send
