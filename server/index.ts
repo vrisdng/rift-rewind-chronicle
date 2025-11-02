@@ -7,6 +7,48 @@ import { invokeBedrockClaude, invokeBedrockClaudeStream } from './lib/bedrockCli
 import { buildChatbotSystemPrompt } from './prompts/chatbot-system-prompt.ts';
 import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Parse navigation actions from AI response
+ * Format: "NAVIGATE: /path1 | Label 1 | /path2 | Label 2"
+ * Returns array of { label, path } and cleaned text (without NAVIGATE lines)
+ */
+function parseNavigationActions(text: string): { 
+  actions: Array<{ label: string; path: string }>, 
+  cleanedText: string 
+} {
+  const navigationActions: Array<{ label: string; path: string }> = [];
+  
+  // Match lines starting with "NAVIGATE:"
+  const navigateRegex = /NAVIGATE:\s*(.+)/gi;
+  const matches = text.match(navigateRegex);
+  
+  if (!matches) return { actions: navigationActions, cleanedText: text };
+  
+  for (const match of matches) {
+    // Extract content after "NAVIGATE:"
+    const content = match.replace(/NAVIGATE:\s*/i, '').trim();
+    
+    // Split by | to get path/label pairs
+    const parts = content.split('|').map(p => p.trim());
+    
+    // Parse pairs: /path | Label | /path2 | Label2
+    for (let i = 0; i < parts.length - 1; i += 2) {
+      const path = parts[i];
+      const label = parts[i + 1];
+      
+      if (path && label && path.startsWith('/')) {
+        navigationActions.push({ label, path });
+      }
+    }
+  }
+  
+  // Remove NAVIGATE lines from text (including surrounding newlines)
+  const cleanedText = text.replace(/\n*NAVIGATE:\s*(.+)\n*/gi, '\n').trim();
+  
+  return { actions: navigationActions, cleanedText };
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -214,6 +256,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     console.log(`💬 Chat request: "${message.substring(0, 50)}..."`);
+    console.log(`👤 Player context:`, playerContext ? `${playerContext.riotId}#${playerContext.tagLine} (${playerContext.totalGames} games)` : 'None');
 
     // Set headers for NDJSON streaming
     res.set({
@@ -226,6 +269,7 @@ app.post('/api/chat', async (req, res) => {
 
     // Build system prompt using dedicated prompt builder
     const systemPrompt = buildChatbotSystemPrompt(playerContext);
+    console.log(`📋 System prompt built with ${systemPrompt.length} chars, has player data: ${!!playerContext}`);
     
     // Trim history to last 10 messages to avoid token limit issues
     const recentHistory = (history || [])
@@ -238,18 +282,57 @@ app.post('/api/chat', async (req, res) => {
       { role: 'user', content: message }
     ];
 
+    // Accumulate full response to parse navigation actions
+    let fullResponse = '';
+    let streamedText = ''; // Track what we've already sent to client
+
     // Stream tokens from Bedrock
     await invokeBedrockClaudeStream(
       messages,
-      // onChunk: send each token as NDJSON line
+      // onChunk: send each token as NDJSON line and accumulate
       (text: string) => {
         if (!res.writableEnded) {
-          res.write(JSON.stringify({ delta: text }) + '\n');
+          fullResponse += text;
+          
+          // Check if we're currently in a NAVIGATE line
+          const lastNewlineIndex = fullResponse.lastIndexOf('\n');
+          const currentLine = lastNewlineIndex >= 0 
+            ? fullResponse.substring(lastNewlineIndex + 1) 
+            : fullResponse;
+          
+          // If current line starts with NAVIGATE, don't stream it yet
+          if (currentLine.trim().startsWith('NAVIGATE:')) {
+            // Buffer this line, don't send to client
+            return;
+          }
+          
+          // Only send the text that hasn't been streamed yet
+          const textToStream = fullResponse.substring(streamedText.length);
+          if (textToStream) {
+            res.write(JSON.stringify({ delta: textToStream }) + '\n');
+            streamedText = fullResponse;
+          }
         }
       },
-      // onComplete: send done signal
+      // onComplete: parse navigation actions and send done signal
       () => {
         if (!res.writableEnded) {
+          // Parse navigation actions from response
+          const { actions, cleanedText } = parseNavigationActions(fullResponse);
+          
+          // If we found navigation actions
+          if (actions.length > 0) {
+            // If there's unstreamed clean text (after removing NAVIGATE lines), send it
+            if (cleanedText.length > streamedText.length || cleanedText !== streamedText) {
+              res.write(JSON.stringify({ replaceText: cleanedText }) + '\n');
+              console.log(`📝 Replaced text (removed NAVIGATE lines)`);
+            }
+            
+            // Send navigation actions
+            res.write(JSON.stringify({ navigationActions: actions }) + '\n');
+            console.log(`🧭 Sent ${actions.length} navigation action(s):`, actions.map(a => `${a.label} → ${a.path}`).join(', '));
+          }
+          
           res.write(JSON.stringify({ done: true }) + '\n');
           res.end();
           console.log(`✅ Chat stream complete`);

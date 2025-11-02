@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLocation } from 'react-router-dom';
-import { MessageSquare, X, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { MessageSquare, X, Loader2, ArrowRight } from 'lucide-react';
 
 // In development, use relative URLs to leverage Vite proxy
 // In production, use full API URL
@@ -10,11 +10,18 @@ const API_URL = import.meta.env.MODE === 'production'
   ? (import.meta.env.VITE_API_URL || 'http://localhost:3000')
   : ''; // Empty string means relative URLs (uses Vite proxy)
 
+interface NavigationAction {
+  label: string;
+  path: string;
+  description?: string;
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
   isLoading?: boolean; // For optimistic UI
+  navigationActions?: NavigationAction[]; // Suggested pages to navigate to
 }
 
 interface ChatbotProps {
@@ -24,6 +31,7 @@ interface ChatbotProps {
 
 export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showRoast, setShowRoast] = useState(false);
   const [currentRoast, setCurrentRoast] = useState('');
@@ -36,7 +44,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
     try {
       const saved = sessionStorage.getItem(storageKey);
       if (saved) {
-        console.log('✅ Restored chat history from sessionStorage');
         return JSON.parse(saved);
       }
     } catch (err) {
@@ -169,8 +176,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
     setMessages((m) => [...m, userMsg]);
 
     // OPTIMISTIC UI: Create assistant placeholder with loading state
+    const assistantMsgId = `a_${Date.now()}`;
     const assistantMsg: ChatMessage = { 
-      id: `a_${Date.now()}`, 
+      id: assistantMsgId, 
       role: 'assistant', 
       text: '', 
       isLoading: true 
@@ -191,8 +199,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
       // Create abort controller for this request
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-
-      console.log('💬 Sending chat message...');
 
       // POST to /api/chat with NDJSON streaming (include player context)
       const response = await fetch(`${API_URL}/api/chat`, {
@@ -223,7 +229,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
         const { done, value } = await reader.read();
         
         if (done) {
-          console.log('✅ Stream complete');
           break;
         }
 
@@ -242,28 +247,42 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
 
             if (data.delta) {
               // Append token to assistant message
+              setMessages((m) => 
+                m.map(msg => 
+                  msg.id === assistantMsgId 
+                    ? { ...msg, text: (msg.text || '') + data.delta, isLoading: false }
+                    : msg
+                )
+              );
+            } else if (data.replaceText !== undefined) {
+              // Replace full text (used to remove NAVIGATE lines)
+              setMessages((m) => 
+                m.map(msg => 
+                  msg.id === assistantMsgId 
+                    ? { ...msg, text: data.replaceText }
+                    : msg
+                )
+              );
+            } else if (data.navigationActions) {
+              // Add navigation actions to the assistant message
               setMessages((m) => {
-                const copy = [...m];
-                const aiIndex = assistantIndexRef.current;
-                if (aiIndex != null && copy[aiIndex]?.role === 'assistant') {
-                  copy[aiIndex] = {
-                    ...copy[aiIndex],
-                    text: (copy[aiIndex].text || '') + data.delta,
-                    isLoading: false,
-                  };
-                }
-                return copy;
+                const updated = m.map(msg => {
+                  if (msg.id === assistantMsgId) {
+                    return { ...msg, navigationActions: data.navigationActions };
+                  }
+                  return msg;
+                });
+                return updated;
               });
             } else if (data.done) {
               // Stream complete
-              setMessages((m) => {
-                const copy = [...m];
-                const aiIndex = assistantIndexRef.current;
-                if (aiIndex != null && copy[aiIndex]) {
-                  copy[aiIndex] = { ...copy[aiIndex], isLoading: false };
-                }
-                return copy;
-              });
+              setMessages((m) => 
+                m.map(msg => 
+                  msg.id === assistantMsgId 
+                    ? { ...msg, isLoading: false }
+                    : msg
+                )
+              );
               assistantIndexRef.current = null;
             } else if (data.error) {
               throw new Error(data.error);
@@ -405,39 +424,67 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                 </div>
               )}
 
-              {messages.map((m) => (
-                <div key={m.id} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {/* Avatar for assistant */}
-                  {m.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-                      <span className="text-lg">🔥</span>
-                    </div>
-                  )}
-                  
-                  {/* Message bubble */}
-                  <div className={`max-w-[75%] p-3 rounded-lg ${
-                    m.role === 'user' 
-                      ? 'bg-primary text-white' 
-                      : 'bg-card/50 text-foreground border border-border'
-                  }`}>
-                    {m.isLoading && m.text === '' ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Thinking...</span>
+              {messages.map((m) => {
+                return (
+                <React.Fragment key={m.id}>
+                  {/* Message row */}
+                  <div className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {/* Avatar for assistant */}
+                    {m.role === 'assistant' && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                        <span className="text-lg">🔥</span>
                       </div>
-                    ) : (
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{m.text || '...'}</div>
+                    )}
+                    
+                    {/* Message bubble */}
+                    <div className={`p-3 rounded-lg max-w-[75%] ${
+                      m.role === 'user' 
+                        ? 'bg-primary text-white' 
+                        : 'bg-card/50 text-foreground border border-border'
+                    }`}>
+                      {m.isLoading && m.text === '' ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Thinking...</span>
+                        </div>
+                      ) : (
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{m.text || '...'}</div>
+                      )}
+                    </div>
+
+                    {/* Avatar for user */}
+                    {m.role === 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm border-2 border-primary/30">
+                        {playerData?.riotId?.[0]?.toUpperCase() || '?'}
+                      </div>
                     )}
                   </div>
 
-                  {/* Avatar for user */}
-                  {m.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm border-2 border-primary/30">
-                      {playerData?.riotId?.[0]?.toUpperCase() || '?'}
+                  {/* Navigation buttons (rendered separately below message) */}
+                  {m.role === 'assistant' && m.navigationActions && m.navigationActions.length > 0 && (
+                    <div className="flex gap-2 pl-10">
+                      <div className="flex flex-col gap-1.5 max-w-[75%]">
+                        {m.navigationActions.map((action, idx) => {
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                navigate(action.path, { state: { playerData } });
+                                setOpen(false);
+                              }}
+                              className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-sm transition-colors group"
+                            >
+                              <span className="font-medium">{action.label}</span>
+                              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
-                </div>
-              ))}
+                </React.Fragment>
+                );
+              })}
             </div>
 
             <div className="p-3 border-t border-border bg-background/60">
