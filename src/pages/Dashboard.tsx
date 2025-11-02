@@ -135,34 +135,49 @@ const Dashboard = () => {
           <h2 className="text-3xl font-bold mb-8">Champion Essence</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {topChampions.map((champion, index) => (
-              <Card key={champion.championName} className="p-6 card-glow">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-4xl font-bold bg-gradient-magical bg-clip-text text-transparent">
-                    #{index + 1}
+              <Card key={champion.championName} className="relative overflow-hidden p-6 card-glow">
+                {/* Background Splash Art */}
+                {champion.splashArtUrl && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={champion.splashArtUrl}
+                      alt={champion.championName}
+                      className="w-full h-full object-cover opacity-15"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/70" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold">{champion.championName}</h3>
-                    <p className="text-muted-foreground">{champion.games} games</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Win Rate</span>
-                    <span className="font-bold">{champion.winRate.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={champion.winRate} className="h-2" />
-                  <div className="grid grid-cols-3 gap-2 text-xs text-center">
-                    <div>
-                      <div className="font-bold text-primary">{champion.avgKills.toFixed(1)}</div>
-                      <div className="text-muted-foreground">K</div>
+                )}
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="text-4xl font-bold bg-gradient-magical bg-clip-text text-transparent">
+                      #{index + 1}
                     </div>
-                    <div>
-                      <div className="font-bold text-red-400">{champion.avgDeaths.toFixed(1)}</div>
-                      <div className="text-muted-foreground">D</div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold">{champion.championName}</h3>
+                      <p className="text-muted-foreground">{champion.games} games</p>
                     </div>
-                    <div>
-                      <div className="font-bold text-green-400">{champion.avgAssists.toFixed(1)}</div>
-                      <div className="text-muted-foreground">A</div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Win Rate</span>
+                      <span className="font-bold">{champion.winRate.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={champion.winRate} className="h-2" />
+                    <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                      <div>
+                        <div className="font-bold text-primary">{champion.avgKills.toFixed(1)}</div>
+                        <div className="text-muted-foreground">K</div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-red-400">{champion.avgDeaths.toFixed(1)}</div>
+                        <div className="text-muted-foreground">D</div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-green-400">{champion.avgAssists.toFixed(1)}</div>
+                        <div className="text-muted-foreground">A</div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -90,16 +90,34 @@ export function convertMatchToDBFormat(
     puuid,
     game_date: new Date(match.info.gameCreation).toISOString(),
     champion_name: participant.championName,
+    champion_id: participant.championId,
     role: normalizeRole(participant.teamPosition || participant.individualPosition),
-    duration: match.info.gameDuration,
+    game_duration: match.info.gameDuration,
+    queue_id: match.info.queueId,
+    team_id: participant.teamId,
     result: participant.win,
     kills: participant.kills,
     deaths: participant.deaths,
     assists: participant.assists,
+    kda: participant.deaths === 0
+      ? (participant.kills + participant.assists) * 1.2
+      : (participant.kills + participant.assists) / participant.deaths,
     cs: totalCS,
     gold: participant.goldEarned,
     damage_dealt: participant.totalDamageDealtToChampions,
+    damage_taken: participant.totalDamageTaken,
     vision_score: participant.visionScore,
+    wards_placed: participant.wardsPlaced,
+    wards_destroyed: participant.wardsKilled,
+    items: [
+      participant.item0,
+      participant.item1,
+      participant.item2,
+      participant.item3,
+      participant.item4,
+      participant.item5,
+      participant.item6,
+    ],
     performance_score: parseFloat(performanceScore.toFixed(2)),
     is_watershed: false,
   };
@@ -124,6 +142,15 @@ function normalizeRole(role: string): string {
 }
 
 // ==================== CHAMPION STATISTICS ====================
+
+/**
+ * Generate champion splash art URL
+ */
+function getChampionSplashArtUrl(championName: string): string {
+  // Replace spaces and special characters for URL compatibility
+  const cleanName = championName.replace(/['\s]/g, '');
+  return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${cleanName}_0.jpg`;
+}
 
 /**
  * Calculate champion statistics from matches
@@ -164,9 +191,12 @@ export function calculateChampionStats(matches: DBMatch[]): ChampionStats[] {
   const championStats: ChampionStats[] = [];
 
   for (const [championName, stats] of championMap.entries()) {
+    // Get championId from first match with this champion
+    const championId = matches.find(m => m.champion_name === championName)?.champion_id || 0;
+
     championStats.push({
       championName,
-      championId: 0, // We don't have championId in DBMatch
+      championId,
       games: stats.games,
       wins: stats.wins,
       winRate: parseFloat(((stats.wins / stats.games) * 100).toFixed(2)),
@@ -175,6 +205,7 @@ export function calculateChampionStats(matches: DBMatch[]): ChampionStats[] {
       avgAssists: parseFloat((stats.totalAssists / stats.games).toFixed(2)),
       avgCS: parseFloat((stats.totalCS / stats.games).toFixed(2)),
       avgDamage: parseFloat((stats.totalDamage / stats.games).toFixed(2)),
+      splashArtUrl: getChampionSplashArtUrl(championName),
     });
   }
 
@@ -413,7 +444,7 @@ export function calculateAverageStats(matches: DBMatch[]): {
       assists: acc.assists + match.assists,
       cs: acc.cs + match.cs,
       visionScore: acc.visionScore + match.vision_score,
-      duration: acc.duration + match.duration,
+      duration: acc.duration + match.game_duration,
     }),
     { kills: 0, deaths: 0, assists: 0, cs: 0, visionScore: 0, duration: 0 }
   );

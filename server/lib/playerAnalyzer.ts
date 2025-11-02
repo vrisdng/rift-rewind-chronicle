@@ -48,41 +48,56 @@ function get2025StartTimestamp(): number {
 
 /**
  * Fetch ALL match IDs from 2025 (handles pagination)
+ * Fetches from all queue types: RANKED_SOLO, RANKED_FLEX, NORMAL_DRAFT, NORMAL_BLIND
  */
 async function fetchAll2025MatchIds(client: any, puuid: string): Promise<string[]> {
   const startTime = get2025StartTimestamp();
   const endTime = Math.floor(Date.now() / 1000);
   
   let allMatchIds: string[] = [];
-  let start = 0;
   const pageSize = 100; // Max per request
   
   console.log(`📅 Fetching ALL matches from 2025-01-01 onwards...`);
+  console.log(`⏰ Time range: ${new Date(startTime * 1000).toISOString()} to ${new Date(endTime * 1000).toISOString()}`);
+  console.log(`🎮 Queue types: ${Object.entries(QUEUE_TYPES).map(([k, v]) => `${k}(${v})`).join(', ')}`);
   
-  while (true) {
-    const matchIds = await client.getMatchIdsByPuuid(puuid, {
-      start,
-      count: pageSize,
-      startTime,
-      endTime,
-      // queue: RANKED_SOLO_QUEUE, // Uncomment for ranked only
-    });
+  // Fetch matches from each queue type
+  for (const [queueName, queueId] of Object.entries(QUEUE_TYPES)) {
+    console.log(`\n🔍 Fetching ${queueName}...`);
+    let start = 0;
     
-    if (matchIds.length === 0) {
-      break; // No more matches
+    while (true) {
+      try {
+        const matchIds = await client.getMatchIdsByPuuid(puuid, {
+          start,
+          count: pageSize,
+          startTime,
+          endTime,
+          queue: queueId,
+        });
+        
+        if (matchIds.length === 0) {
+          console.log(`📋 No more ${queueName} matches at offset ${start}`);
+          break; // No more matches for this queue
+        }
+        
+        allMatchIds = allMatchIds.concat(matchIds);
+        console.log(`  � ${queueName}: ${matchIds.length} matches (total now: ${allMatchIds.length})`);
+        
+        if (matchIds.length < pageSize) {
+          break; // Last page for this queue
+        }
+        
+        start += pageSize;
+      } catch (error) {
+        console.error(`❌ Error fetching ${queueName} at offset ${start}:`, error);
+        break;
+      }
     }
-    
-    allMatchIds = allMatchIds.concat(matchIds);
-    console.log(`📋 Fetched ${allMatchIds.length} match IDs so far...`);
-    
-    if (matchIds.length < pageSize) {
-      break; // Last page
-    }
-    
-    start += pageSize;
   }
   
-  console.log(`✅ Total match IDs found: ${allMatchIds.length}`);
+  console.log(`\n✅ Total match IDs found across all queues: ${allMatchIds.length}`);
+  
   return allMatchIds;
 }
 
@@ -95,9 +110,9 @@ export async function analyzePlayer(
   tagLine: string,
   region: string = 'sg2',
   onProgress?: (update: ProgressUpdate) => void,
-  forceRegenerateInsights: boolean = false
+  forceRegenerateInsights: boolean = true
 ): Promise<PlayerStats> {
-  const client = getClient({ platform: region as any });
+  const client = getClient({ region: region as any });
 
   // Step 1: Get player account
   onProgress?.({ stage: 'account', progress: 10, message: 'Fetching account info...' });
@@ -130,28 +145,31 @@ export async function analyzePlayer(
 
   const matchIds = await fetchAll2025MatchIds(client, puuid);
 
-  if (matchIds.length === 0) {
+  // Step 3: Check which matches we already have in cache (safe now that player exists)
+  let cachedMatches = await getMatches(puuid);
+  let newMatchIds = matchIds.filter(id => !new Set(cachedMatches.map(m => m.match_id)).has(id));
+  
+  // If no new matches found via API but we have cached matches, use those
+  if (newMatchIds.length === 0 && cachedMatches.length === 0) {
     throw new Error('No matches found in 2025 for this player');
   }
 
-  onProgress?.({
-    stage: 'matches',
-    progress: 30,
-    message: `Found ${matchIds.length} matches in 2025. Downloading details...`,
-  });
+  if (newMatchIds.length === 0 && cachedMatches.length > 0) {
+    console.log(`📊 No new matches found, but using ${cachedMatches.length} cached matches`);
+    onProgress?.({
+      stage: 'processing',
+      progress: 35,
+      message: `Using ${cachedMatches.length} cached matches from previous analysis...`,
+    });
+  } else {
+    console.log(`📊 Cache status: ${cachedMatches.length} cached, ${newMatchIds.length} new matches`);
 
-  // Step 3: Check which matches we already have in cache (safe now that player exists)
-  const cachedMatches = await getMatches(puuid);
-  const cachedMatchIds = new Set(cachedMatches.map(m => m.match_id));
-  const newMatchIds = matchIds.filter(id => !cachedMatchIds.has(id));
-  
-  console.log(`📊 Cache status: ${cachedMatchIds.size} cached, ${newMatchIds.length} new matches`);
-
-  onProgress?.({
-    stage: 'processing',
-    progress: 35,
-    message: `Fetching ${newMatchIds.length} new matches (${cachedMatchIds.size} cached)...`,
-  });
+    onProgress?.({
+      stage: 'processing',
+      progress: 35,
+      message: `Fetching ${newMatchIds.length} new matches (${cachedMatches.length} cached)...`,
+    });
+  }
 
   // Step 4: Fetch new match details concurrently
   let newMatches: DBMatch[] = [];
@@ -182,6 +200,12 @@ export async function analyzePlayer(
   if (allMatches.length === 0) {
     throw new Error('No valid matches found for this player');
   }
+
+  onProgress?.({
+    stage: 'matches',
+    progress: 30,
+    message: `Found ${matchIds.length} matches in 2025. Downloading details...`,
+  });
 
   // Step 5: Calculate statistics
   onProgress?.({ stage: 'stats', progress: 65, message: 'Calculating statistics...' });

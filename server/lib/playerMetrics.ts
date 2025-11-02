@@ -319,7 +319,7 @@ function calculateAggression(matches: DBMatch[]): number {
  */
 function calculateFarming(matches: DBMatch[]): number {
   const csPerMinScores = matches.map((m) => {
-    const csPerMin = m.cs / (m.duration / 60);
+    const csPerMin = m.cs / (m.game_duration / 60);
     // 8+ CS/min = 100, 5 CS/min = 50, 3 CS/min = 0
     return Math.min(Math.max(((csPerMin - 3) / 5) * 100, 0), 100);
   });
@@ -332,7 +332,7 @@ function calculateFarming(matches: DBMatch[]): number {
  */
 function calculateVision(matches: DBMatch[]): number {
   const visionScores = matches.map((m) => {
-    const visionPerMin = m.vision_score / (m.duration / 60);
+    const visionPerMin = m.vision_score / (m.game_duration / 60);
     // 2+ vision/min = 100, 1 vision/min = 50, 0.5 = 0
     return Math.min(Math.max(((visionPerMin - 0.5) / 1.5) * 100, 0), 100);
   });
@@ -359,7 +359,7 @@ function calculateConsistency(matches: DBMatch[]): number {
  * Early Game Strength: Performance in games under 25 minutes
  */
 function calculateEarlyGameStrength(matches: DBMatch[]): number {
-  const shortGames = matches.filter((m) => m.duration < 25 * 60);
+  const shortGames = matches.filter((m) => m.game_duration < 25 * 60);
 
   if (shortGames.length < 3) {
     return 50; // Not enough data
@@ -376,7 +376,7 @@ function calculateEarlyGameStrength(matches: DBMatch[]): number {
  * Late Game Scaling: Performance in games over 35 minutes
  */
 function calculateLateGameScaling(matches: DBMatch[]): number {
-  const longGames = matches.filter((m) => m.duration > 35 * 60);
+  const longGames = matches.filter((m) => m.game_duration > 35 * 60);
 
   if (longGames.length < 5) {
     return 50;
@@ -411,7 +411,7 @@ function calculateComebackRate(matches: DBMatch[]): number {
  */
 function calculateClutchFactor(matches: DBMatch[]): number {
   // Close games: 25-40 minute games
-  const closeGames = matches.filter((m) => m.duration >= 25 * 60 && m.duration <= 40 * 60);
+  const closeGames = matches.filter((m) => m.game_duration >= 25 * 60 && m.game_duration <= 40 * 60);
 
   if (closeGames.length < 5) {
     return 50;
@@ -499,7 +499,7 @@ function calculateImprovementVelocity(matches: DBMatch[]): number {
  */
 function calculateRoaming(matches: DBMatch[]): number {
   const roamScores = matches.map((m) => {
-    const csPerMin = m.cs / (m.duration / 60);
+    const csPerMin = m.cs / (m.game_duration / 60);
     const killParticipation = m.kills + m.assists;
 
     // Low CS (<6) but high KP (>10) suggests roaming
@@ -518,7 +518,7 @@ function calculateRoaming(matches: DBMatch[]): number {
 function calculateTeamfighting(matches: DBMatch[]): number {
   const teamfightScores = matches.map((m) => {
     const kda = m.deaths === 0 ? (m.kills + m.assists) * 1.2 : (m.kills + m.assists) / m.deaths;
-    const damagePerMin = m.damage_dealt / (m.duration / 60);
+    const damagePerMin = m.damage_dealt / (m.game_duration / 60);
 
     const kdaScore = Math.min((kda / 5) * 100, 100);
     const damageScore = Math.min((damagePerMin / 800) * 100, 100);
@@ -535,7 +535,7 @@ function calculateTeamfighting(matches: DBMatch[]): number {
 function calculateSnowballRate(matches: DBMatch[]): number {
   // More strict definition: Quick wins (<25min) with dominant performance (>80 score)
   const snowballWins = matches.filter((m) =>
-    m.result && m.duration < 25 * 60 && m.performance_score > 80
+    m.result && m.game_duration < 25 * 60 && m.performance_score > 80
   );
 
   const totalWins = matches.filter((m) => m.result).length;
