@@ -159,6 +159,8 @@ export async function invokeBedrockClaudeStream(
 
     console.log('✅ Bedrock stream started');
 
+    let streamEnded = false;
+
     // Process the stream
     for await (const event of response.body) {
       if (event.chunk) {
@@ -172,20 +174,27 @@ export async function invokeBedrockClaudeStream(
           }
         } else if (chunk.type === 'message_stop') {
           console.log('✅ Bedrock stream completed');
+          streamEnded = true;
           onComplete?.();
         } else if (chunk.type === 'error') {
           console.error('❌ Bedrock stream error:', chunk);
+          streamEnded = true;
           onError?.(new Error(chunk.message || 'Stream error'));
+          return; // Exit early, don't call onComplete
         }
       }
     }
+
+    // If stream ended without message_stop event, call onComplete
+    if (!streamEnded) {
+      console.log('✅ Bedrock stream completed (no message_stop event)');
+      onComplete?.();
+    }
+
   } catch (error: any) {
     console.error('❌ Bedrock streaming failed:', error.message);
     onError?.(error);
-    
-    // Fallback: send error message
-    onChunk('Sorry, I encountered an error. Please try again.');
-    onComplete?.();
+    // Don't call onComplete here - let onError handle it
   }
 }
 

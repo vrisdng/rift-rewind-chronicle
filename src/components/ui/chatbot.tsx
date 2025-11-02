@@ -88,10 +88,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
     };
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isStreaming) return;
+  const sendMessage = async (messageText?: string) => {
+    const userText = messageText || input.trim();
+    if (!userText || isStreaming) return;
     
-    const userText = input.trim();
     setInput(''); // Clear input immediately for better UX
 
     // OPTIMISTIC UI: Add user message instantly
@@ -232,6 +232,24 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
     }
   };
 
+  // Roasting welcome message with prompt suggestions
+  const isFirstTime = messages.length === 0;
+  const roastingWelcome = playerData ? 
+    `Alright ${playerData.riotId}, let's see what we're working with... ${playerData.winRate}% win rate? *Chef's kiss* 💀 I've seen Bronze players with better stats. But hey, at least you showed up. What do you want to know about your "gameplay"?` :
+    `Well, well, well... looks like someone finally decided to face reality. Ready to hear the truth about your gameplay? I promise I'll go easy on you... just kidding, I won't. 😈`;
+
+  const promptSuggestions = playerData ? [
+    "Roast my gameplay 🔥",
+    `Why is my ${playerData.topChampions?.[0]?.championName || 'main'} trash?`,
+    "What am I doing wrong?",
+    "Help me git gud"
+  ] : [
+    "Roast my gameplay 🔥",
+    "What are my biggest mistakes?",
+    "How bad am I really?",
+    "Give me actually useful tips"
+  ];
+
   if (hide) return null;
 
   return (
@@ -252,10 +270,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
           <div className="w-96 max-w-[90vw] h-[520px] bg-card/90 rounded-xl shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-border bg-gradient-to-b from-background/70 to-background/50">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">🤖</div>
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">🔥</div>
                 <div>
-                  <div className="font-semibold">RiftRewind Assistant</div>
-                  <div className="text-xs text-muted-foreground">AI-powered insights</div>
+                  <div className="font-semibold">RiftRewind Coach</div>
+                  <div className="text-xs text-muted-foreground">Brutally honest. Occasionally helpful.</div>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-muted">
@@ -264,8 +282,33 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
             </div>
 
             <div ref={listRef} className="flex-1 p-3 overflow-auto space-y-3">
-              {messages.length === 0 && (
-                <div className="text-sm text-muted-foreground">Say hi! Ask about your season, tips, or playstyle.</div>
+              {/* First-time welcome message with roasting personality */}
+              {isFirstTime && (
+                <div className="space-y-3">
+                  {/* Welcome roast */}
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] p-3 rounded-lg bg-card/50 text-foreground border border-primary/20">
+                      <div className="font-semibold text-primary mb-1 flex items-center gap-2">
+                        🔥 Coach
+                      </div>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{roastingWelcome}</div>
+                    </div>
+                  </div>
+
+                  {/* Suggestion buttons */}
+                  <div className="flex flex-wrap gap-2 px-2">
+                    {promptSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => sendMessage(suggestion)}
+                        disabled={isStreaming}
+                        className="text-xs px-3 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {messages.map((m) => (

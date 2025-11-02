@@ -243,19 +243,25 @@ app.post('/api/chat', async (req, res) => {
       messages,
       // onChunk: send each token as NDJSON line
       (text: string) => {
-        res.write(JSON.stringify({ delta: text }) + '\n');
+        if (!res.writableEnded) {
+          res.write(JSON.stringify({ delta: text }) + '\n');
+        }
       },
       // onComplete: send done signal
       () => {
-        res.write(JSON.stringify({ done: true }) + '\n');
-        res.end();
-        console.log(`✅ Chat stream complete`);
+        if (!res.writableEnded) {
+          res.write(JSON.stringify({ done: true }) + '\n');
+          res.end();
+          console.log(`✅ Chat stream complete`);
+        }
       },
-      // onError: send error
+
       (error: Error) => {
-        res.write(JSON.stringify({ error: error.message }) + '\n');
-        res.end();
-        console.error(`❌ Chat stream error:`, error);
+        if (!res.writableEnded) {
+          res.write(JSON.stringify({ error: error.message }) + '\n');
+          res.end();
+          console.error(`❌ Chat stream error:`, error);
+        }
       }
     );
 
@@ -267,8 +273,10 @@ app.post('/api/chat', async (req, res) => {
       return res.status(500).json({ success: false, error: error.message || 'Chat failed' });
     }
     
-    // Otherwise send error in stream
-    res.write(JSON.stringify({ error: error.message || 'Chat failed' }) + '\n');
-    res.end();
+    // Otherwise send error in stream (only if stream hasn't ended)
+    if (!res.writableEnded) {
+      res.write(JSON.stringify({ error: error.message || 'Chat failed' }) + '\n');
+      res.end();
+    }
   }
 });
