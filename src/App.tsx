@@ -13,7 +13,6 @@ import SocialComparisons from "./pages/SocialComparisons";
 import ShareableMoments from "./pages/ShareableMoments";
 import Finale from "./pages/Finale";
 import NotFound from "./pages/NotFound";
-import { Analytics } from "@vercel/analytics/next";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +21,6 @@ const App = () => (
 		<TooltipProvider>
 			<Toaster />
 			<Sonner />
-			<Analytics />
 			<BrowserRouter>
 				<Routes>
 					<Route path="/" element={<Landing />} />
