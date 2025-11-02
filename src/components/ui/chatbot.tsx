@@ -124,13 +124,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
 
       console.log('💬 Sending chat message...');
 
-      // POST to /api/chat with NDJSON streaming
+      // POST to /api/chat with NDJSON streaming (include player context)
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userText, 
-          history: conversationHistory 
+          history: conversationHistory,
+          playerContext: playerData // Send full player data including insights
         }),
         signal: abortController.signal,
       });

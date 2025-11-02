@@ -4,6 +4,7 @@ import { getClient } from './lib/riot.ts';
 import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
 import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.ts';
 import { invokeBedrockClaude, invokeBedrockClaudeStream } from './lib/bedrockClient.ts';
+import { buildChatbotSystemPrompt } from './prompts/chatbot-system-prompt.ts';
 import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
 
 
@@ -202,9 +203,10 @@ app.listen(PORT, () => {
  */
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history = [] } = req.body as { 
+    const { message, history = [], playerContext } = req.body as { 
       message: string; 
-      history?: Array<{ role: 'user' | 'assistant'; content: string }> 
+      history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+      playerContext?: any; // PlayerStats with insights
     };
 
     if (!message) {
@@ -222,13 +224,17 @@ app.post('/api/chat', async (req, res) => {
     });
     res.flushHeaders();
 
-    // Build conversation with system prompt
-    const systemPrompt = "You are RiftRewind's AI assistant. Help users understand their League of Legends gameplay, provide insights, and answer questions about their season stats. Be concise, friendly, and encouraging.";
+    // Build system prompt using dedicated prompt builder
+    const systemPrompt = buildChatbotSystemPrompt(playerContext);
+    
+    // Trim history to last 10 messages to avoid token limit issues
+    const recentHistory = (history || [])
+      .filter((msg: any) => msg.content && msg.content.trim().length > 0)
+      .slice(-10);
     
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
       { role: 'user', content: systemPrompt },
-      { role: 'assistant', content: 'I understand. I will help League players with insights about their gameplay.' },
-      ...(history || []),
+      ...recentHistory,
       { role: 'user', content: message }
     ];
 
