@@ -7,6 +7,136 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Spiegel font family */
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_Regular_Italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_SemiBold_Italic.ttf") format("truetype");
+    font-weight: 600;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Spiegel";
+    src: url("/fonts/Spiegel-TTF/Spiegel_TT_Bold_Italic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  /* Beaufort for LoL font family */
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-LightItalic.ttf") format("truetype");
+    font-weight: 300;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-MediumItalic.ttf") format("truetype");
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-BoldItalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-Heavy.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Beaufort for LoL";
+    src: url("/fonts/BeaufortForLoL-TTF/BeaufortforLOL-HeavyItalic.ttf") format("truetype");
+    font-weight: 800;
+    font-style: italic;
+    font-display: swap;
+  }
+
   :root {
     /* Runeterra Dark Theme - Magical Energy Aesthetic */
     --background: 230 25% 7%;
@@ -222,6 +352,15 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
   }
 }
