@@ -6,13 +6,10 @@
  */
 
 const RIOT_API_KEY = process.env.RIOT_API_KEY || "";
-const RIOT_BASE_URL = "https://asia.api.riotgames.com"; // Use appropriate region
-const RIOT_REGIONAL_URL = "https://sea.api.riotgames.com"; // For regional endpoints
 
 interface RiotClientConfig {
   apiKey: string;
   region?: "americas" | "asia" | "europe" | "sea";
-  platform?: string; // e.g., "sg2", "na1", "euw1"
 }
 
 interface ChampionMastery {
@@ -34,20 +31,6 @@ interface RiotAccount {
   tagLine: string;
 }
 
-interface Summoner {
-  id: string;
-  accountId: string;
-  puuid: string;
-  profileIconId: number;
-  revisionDate: number;
-  summonerLevel: number;
-  name?: string;
-}
-
-interface MatchInfo {
-  matchId: string;
-  // Add more match details as needed
-}
 
 class RiotAPIError extends Error {
   constructor(
@@ -78,27 +61,17 @@ function getBaseUrl(region: string): string {
   return regionMap[region] || regionMap.asia;
 }
 
-function getPlatformUrl(platform: string): string {
-  // Platform routing (e.g., sg2, na1, euw1, kr)
-  return `https://${platform}.api.riotgames.com`;
-}
-
 class RiotClient {
   private apiKey: string;
   private region: string;
-  private platform: string;
   private baseUrl: string;
-  private platformUrl: string;
-  private accountUrl: string;  // New property for account endpoints
-
+  private accountUrl: string;
 
   constructor(config: RiotClientConfig) {
   this.apiKey = config.apiKey || process.env.RIOT_API_KEY || "";
   this.region = config.region || "sea";
-  this.platform = config.platform || "sg2";
   this.baseUrl = getBaseUrl(this.region);
-  this.platformUrl = getPlatformUrl(this.platform);
-  this.accountUrl = "https://asia.api.riotgames.com"; // Initialize accountUrl
+  this.accountUrl = "https://asia.api.riotgames.com";
   
   if (!this.apiKey) {
     throw new Error("Riot API key is required");
@@ -153,69 +126,6 @@ class RiotClient {
   }
 
   /**
-   * Get summoner by summoner name
-   */
-  async getSummonerByName(summonerName: string): Promise<Summoner> {
-    const encodedName = encodeURIComponent(summonerName);
-    const url = `${this.platformUrl}/lol/summoner/v4/summoners/by-name/${encodedName}`;
-    return this.makeRequest<Summoner>(url);
-  }
-
-  /**
-   * Get summoner by PUUID
-   */
-  async getSummonerByPuuid(puuid: string): Promise<Summoner> {
-    const url = `${this.platformUrl}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-    return this.makeRequest<Summoner>(url);
-  }
-
-  /**
-   * Get summoner by account ID
-   */
-  async getSummonerByAccountId(accountId: string): Promise<Summoner> {
-    const url = `${this.platformUrl}/lol/summoner/v4/summoners/by-account/${accountId}`;
-    return this.makeRequest<Summoner>(url);
-  }
-
-  /**
-   * Get champion mastery scores for a summoner by PUUID
-   */
-  async getChampionMasteries(puuid: string): Promise<ChampionMastery[]> {
-    const url = `${this.platformUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}`;
-    return this.makeRequest<ChampionMastery[]>(url);
-  }
-
-  /**
-   * Get champion mastery for a specific champion
-   */
-  async getChampionMastery(
-    puuid: string,
-    championId: number
-  ): Promise<ChampionMastery> {
-    const url = `${this.platformUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/by-champion/${championId}`;
-    return this.makeRequest<ChampionMastery>(url);
-  }
-
-  /**
-   * Get total mastery score for a summoner
-   */
-  async getMasteryScore(puuid: string): Promise<number> {
-    const url = `${this.platformUrl}/lol/champion-mastery/v4/scores/by-puuid/${puuid}`;
-    return this.makeRequest<number>(url);
-  }
-
-  /**
-   * Get top champion masteries (limited to count)
-   */
-  async getTopChampionMasteries(
-    puuid: string,
-    count: number = 10
-  ): Promise<ChampionMastery[]> {
-    const url = `${this.platformUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=${count}`;
-    return this.makeRequest<ChampionMastery[]>(url);
-  }
-
-  /**
    * Get match IDs by PUUID
    */
   async getMatchIdsByPuuid(
@@ -233,6 +143,7 @@ class RiotClient {
     if (options?.start !== undefined) params.append("start", options.start.toString());
     if (options?.count !== undefined) params.append("count", options.count.toString());
     if (options?.queue !== undefined) params.append("queue", options.queue.toString());
+    if (options?.type !== undefined) params.append("type", options.type.toString());
     if (options?.startTime !== undefined) params.append("startTime", options.startTime.toString());
     if (options?.endTime !== undefined) params.append("endTime", options.endTime.toString());
 
@@ -321,7 +232,6 @@ function createClient(config?: Partial<RiotClientConfig>): RiotClient {
   return new RiotClient({
     apiKey: config?.apiKey || RIOT_API_KEY,
     region: config?.region || "sea",
-    platform: config?.platform || "sg2",
   });
 }
 
@@ -332,42 +242,10 @@ export function getClient(config?: Partial<RiotClientConfig>): RiotClient {
   return cachedClient;
 }
 
-// Convenience functions
-export async function getAccountByPuuid(puuid: string): Promise<RiotAccount> {
-  const client = getClient();
-  return client.getAccountByPuuid(puuid);
-}
-
-export async function getAccountByRiotId(gameName: string, tagLine: string): Promise<RiotAccount> {
-  const client = getClient();
-  return client.getAccountByRiotId(gameName, tagLine);
-}
-
-export async function getChampionMasteries(puuid: string): Promise<ChampionMastery[]> {
-  const client = getClient();
-  return client.getChampionMasteries(puuid);
-}
-
-export async function getSummonerByName(summonerName: string): Promise<Summoner> {
-  const client = getClient();
-  return client.getSummonerByName(summonerName);
-}
-
-export async function getTopChampions(puuid: string, count: number = 10): Promise<ChampionMastery[]> {
-  const client = getClient();
-  return client.getTopChampionMasteries(puuid, count);
-}
-
-export async function getMatchHistory(
-  puuid: string,
-  count: number = 20
-): Promise<string[]> {
-  const client = getClient();
-  return client.getMatchIdsByPuuid(puuid, { count });
-}
+// Note: Convenience functions removed - use getClient() directly
 
 // Export types and classes
-export type { ChampionMastery, Summoner, RiotClientConfig, MatchInfo };
+export type { ChampionMastery, RiotClientConfig, RiotAccount };
 export { RiotClient, RiotAPIError };
 
 export default RiotClient;

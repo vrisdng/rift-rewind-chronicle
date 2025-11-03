@@ -23,12 +23,12 @@ if (!SUPABASE_SERVICE_KEY) {
   throw new Error('SUPABASE_SERVICE_KEY is not set in environment variables');
 }
 
-// Create singleton Supabase client
+ // Create singleton Supabase client
 let supabaseClient: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (!supabaseClient) {
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    supabaseClient = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

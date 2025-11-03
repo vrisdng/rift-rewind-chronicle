@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Star, TrendingUp, AlertCircle } from 'lucide-react';
-import type { ProPlayerProfile } from '../../server/types';
+import type { ProPlayerProfile } from '@/lib/api';
 
 interface ProComparisonProps {
   primary: ProPlayerProfile;
