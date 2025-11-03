@@ -189,6 +189,15 @@ All colors MUST be HSL.
     }
   }
 
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
   /* Angular corners like LoL client */
   .lol-corners {
     position: relative;

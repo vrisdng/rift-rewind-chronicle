@@ -85,14 +85,14 @@ const Landing = () => {
       <div className="fixed inset-0 w-full h-full bg-black">
         {/* YouTube embed as background - muted and looping */}
         <iframe
-          className="absolute inset-0 w-full h-full pointer-events-none border-0"
+          className="absolute inset-0 w-full h-full pointer-events-none border-0 opacity-0 animate-[fadeIn_3s_ease-in_3s_forwards]"
           style={{
             width: '100vw',
             height: '100vh',
-            transform: 'scale', // Zoom to remove black bars
+            transform: 'scale',
             objectFit: 'cover'
           }}
-          src="https://www.youtube.com/embed/xBCBOoHyeSU?autoplay=1&mute=1&loop=1&playlist=xBCBOoHyeSU&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080"
+          src="https://www.youtube.com/embed/xBCBOoHyeSU?autoplay=1&mute=1&loop=1&playlist=xBCBOoHyeSU&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd1080&start=1"
           title="Background video"
           allow="autoplay; encrypted-media"
         />
@@ -159,7 +159,7 @@ const Landing = () => {
               ) : (
                 <>
                   <Search className="w-5 h-5 mr-2" />
-                  Start Chronicle
+                  Start Rewind
                 </>
               )}
             </Button>
