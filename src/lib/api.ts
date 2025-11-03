@@ -44,7 +44,7 @@ export interface ChampionStats {
   championId: number;
   games: number;
   wins: number;
-  winRate: number;
+  winRate: number; 
   avgKills: number;
   avgDeaths: number;
   avgAssists: number;

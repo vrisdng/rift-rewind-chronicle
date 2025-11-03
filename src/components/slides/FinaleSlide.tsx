@@ -75,9 +75,10 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
             Share Results
           </Button>
           <Button
-            size="lg"
             onClick={onContinue}
-            className="lol-corners bg-gradient-gold hover:opacity-90 text-background font-bold uppercase tracking-wider border-2 border-accent/50 w-full sm:w-auto"
+            variant="outline"
+            size="lg"
+            className="lol-corners bg-card/80 backdrop-blur-sm border-primary/40 hover:bg-card hover:border-primary/60 text-primary w-full sm:w-auto"
           >
             Continue
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />

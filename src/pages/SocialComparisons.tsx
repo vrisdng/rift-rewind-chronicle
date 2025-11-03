@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Users, Award, Link2 } from "lucide-react";
+import Chatbot from "@/components/ui/chatbot";
 
 const SocialComparisons = () => {
   const navigate = useNavigate();
@@ -69,6 +70,7 @@ const SocialComparisons = () => {
           </Button>
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 };

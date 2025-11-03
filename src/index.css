@@ -197,6 +197,18 @@ All colors MUST be HSL.
       opacity: 1;
     }
   }
+  /* Wiggle animation for chatbot bubble */
+  @keyframes wiggle {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(-3deg);
+    }
+    75% {
+      transform: rotate(3deg);
+    }
+  }
 
   /* Angular corners like LoL client */
   .lol-corners {
