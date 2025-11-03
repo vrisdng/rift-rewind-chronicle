@@ -151,8 +151,85 @@ export interface MetricWeakness {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+export interface ProgressUpdate {
+  stage: string;
+  message: string;
+  progress: number;
+}
+
 /**
- * Analyze a player (or get from cache)
+ * Analyze a player with real-time progress updates via SSE
+ */
+export async function analyzePlayerWithProgress(
+  riotId: string,
+  tagLine: string,
+  region: string = 'sg2',
+  onProgress?: (update: ProgressUpdate) => void,
+  onComplete?: (data: PlayerStats, cached: boolean) => void,
+  onError?: (error: string) => void
+): Promise<void> {
+  try {
+    // Use fetch to POST, then read stream
+    const response = await fetch(`${API_URL}/api/analyze-stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ riotId, tagLine, region }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start analysis');
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('Stream not available');
+    }
+
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        const eventMatch = line.match(/^event: (.+)$/m);
+        const dataMatch = line.match(/^data: (.+)$/m);
+
+        if (!eventMatch || !dataMatch) continue;
+
+        const event = eventMatch[1];
+        const data = JSON.parse(dataMatch[1]);
+
+        switch (event) {
+          case 'progress':
+            onProgress?.(data);
+            break;
+          case 'complete':
+            onComplete?.(data.data, data.cached);
+            break;
+          case 'error':
+            onError?.(data.message);
+            break;
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error('Error during streaming analysis:', error);
+    onError?.(error.message || 'Failed to analyze player');
+  }
+}
+
+/**
+ * Analyze a player (or get from cache) - Legacy non-streaming version
  */
 export async function analyzePlayer(
   riotId: string,

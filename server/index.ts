@@ -72,6 +72,76 @@ app.post('/api/analyze', async (req, res) => {
 });
 
 /**
+ * POST /api/analyze-stream
+ * Analyze a player with SSE (Server-Sent Events) for real-time progress updates
+ */
+app.post('/api/analyze-stream', async (req, res) => {
+  try {
+    const { riotId, tagLine, region = 'sg2', forceRegenerateInsights = true } = req.body as AnalyzePlayerRequest & { forceRegenerateInsights?: boolean };
+
+    if (!riotId || !tagLine) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: riotId and tagLine',
+      });
+    }
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Important for Nginx/Render
+
+    // Helper to send SSE messages
+    const sendEvent = (event: string, data: any) => {
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    console.log(`📊 Starting streaming analysis for ${riotId}#${tagLine}`);
+
+    try {
+      // Check cache first (unless forcing regeneration)
+      if (!forceRegenerateInsights) {
+        const cached = await getCachedPlayerStats(riotId, tagLine);
+        if (cached) {
+          console.log(`✅ Returning cached data for ${riotId}#${tagLine}`);
+          sendEvent('complete', { data: cached, cached: true });
+          res.end();
+          return;
+        }
+      }
+
+      // Analyze with progress callback
+      const playerStats = await analyzePlayer(
+        riotId,
+        tagLine,
+        region,
+        (update: ProgressUpdate) => {
+          console.log(`📈 Progress: ${update.stage} - ${update.message} (${update.progress}%)`);
+          sendEvent('progress', update);
+        },
+        forceRegenerateInsights
+      );
+
+      console.log(`✅ Analysis complete for ${riotId}#${tagLine}`);
+      sendEvent('complete', { data: playerStats, cached: false });
+      res.end();
+    } catch (error: any) {
+      console.error('Error during streaming analysis:', error);
+      sendEvent('error', { message: error.message || 'Failed to analyze player' });
+      res.end();
+    }
+  } catch (error: any) {
+    console.error('Error setting up streaming:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to start analysis',
+    });
+  }
+});
+
+/**
  * GET /api/player/:riotId/:tagLine
  * Get cached player data
  */
