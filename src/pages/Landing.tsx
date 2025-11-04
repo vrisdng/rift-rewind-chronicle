@@ -2,10 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
-import magicOrb from "@/assets/magic-orb.png";
 import { Search, Sparkles, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { analyzePlayer, type PlayerStats } from "@/lib/api";
+import { useState,  } from "react";
+import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const Landing = () => {
@@ -16,6 +15,9 @@ const Landing = () => {
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [progressStage, setProgressStage] = useState("");
+
 
   const startAnalysis = async () => {
     if (!gameName || !tagLine) {
@@ -28,146 +30,204 @@ const Landing = () => {
     }
 
     setIsLoading(true);
-    setLoadingMessage("Searching for player...");
+    setProgress(0);
+    setProgressStage("");
+    setLoadingMessage("Starting analysis...");
 
     try {
-      const result = await analyzePlayer(gameName, tagLine, "sg2");
+      await analyzePlayerWithProgress(
+        gameName,
+        tagLine,
+        "sg2",
+        // Progress callback
+        (update) => {
+          setProgress(update.progress);
+          setProgressStage(update.stage);
+          setLoadingMessage(update.message);
+        },
+        // Complete callback
+        (data, cached) => {
+          setPlayerData(data);
+          setIsLoading(false);
 
-      if (!result.success || !result.data) {
-        throw new Error(result.error || "Failed to analyze player");
-      }
-
-      setPlayerData(result.data);
-
-      toast({
-        title: result.cached ? "Data Retrieved" : "Analysis Complete!",
-        description: result.cached
-          ? "Using cached analysis data"
-          : `Analyzed ${result.data.totalGames} matches successfully`,
-      });
-
+          toast({
+            title: cached ? "Data Retrieved" : "Analysis Complete!",
+            description: cached
+              ? "Using cached analysis data"
+              : `Analyzed ${data.totalGames} matches successfully`,
+          });
+        },
+        // Error callback
+        (error) => {
+          setIsLoading(false);
+          console.error('Failed to analyze player:', error);
+          toast({
+            title: "Analysis Failed",
+            description: error || "Could not analyze player. Please try again.",
+            variant: "destructive",
+          });
+        }
+      );
     } catch (error: any) {
+      setIsLoading(false);
       console.error('Failed to analyze player:', error);
       toast({
         title: "Analysis Failed",
         description: error.message || "Could not analyze player. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage("");
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/70 to-background" />
-      </div>
-
-      {/* Floating Orb */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 opacity-30 animate-float">
-        <img src={magicOrb} alt="" className="w-full h-full animate-pulse-glow" />
+    <div className="relative min-h-screen w-full overflow-hidden">
+      {/* Background Video - Full coverage */}
+      <div className="fixed inset-0 w-full h-full bg-black">
+        {/* YouTube embed as background - muted and looping */}
+        <iframe
+          className="absolute inset-0 w-full h-full pointer-events-none border-0 opacity-0 animate-[fadeIn_3s_ease-in_3s_forwards]"
+          style={{
+            width: '100vw',
+            height: '100vh',
+            transform: 'scale',
+            objectFit: 'cover'
+          }}
+          src="https://www.youtube.com/embed/xBCBOoHyeSU?autoplay=1&mute=1&loop=1&playlist=xBCBOoHyeSU&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd1080&start=1"
+          title="Background video"
+          allow="autoplay; encrypted-media"
+        />
+        {/* Minimal vignette overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
-        <div className="animate-fade-in">
+        <div className="animate-fade-in max-w-5xl">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 mb-8 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">2025 Season Review</span>
+          <div className="inline-flex items-center gap-2 px-5 py-2 bg-[#C8AA6E]/10 border-2 border-[#C8AA6E]/40 mb-8 backdrop-blur-sm" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+            <Sparkles className="w-4 h-4 text-[#C8AA6E]" />
+            <span className="text-sm font-bold uppercase tracking-wider text-[#C8AA6E]">Season 2025</span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 text-glow">
-            Your League Story
-            <br />
-            <span className="text-primary-glow">
-              Awaits
+          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-8 uppercase tracking-tight leading-none">
+            <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+              Rift{" "}
+            </span>
+            <span className="text-[#C8AA6E] drop-shadow-[0_0_40px_rgba(200,170,110,0.6)]" style={{ fontStyle: 'italic' }}>
+              Rewind
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Dive into your year — the stats, the stories, the moments that defined your climb.
+          <p className="text-lg md:text-xl text-gray-200 mb-16 max-w-2xl mx-auto font-medium tracking-wide drop-shadow-lg">
+            Your year on the Rift. Every win. Every play. Every legend forged.
           </p>
 
           {/* Summoner Search */}
-          <div className="flex flex-col gap-2 max-w-md mx-auto mb-8">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-3 max-w-xl mx-auto mb-8">
+            <div className="flex gap-3 items-center">
               <Input
                 type="text"
-                placeholder="Game Name..."
+                placeholder="Summoner Name"
                 value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
-                className="bg-background/50 backdrop-blur-sm"
+                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors"
+                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
-              <span className="flex items-center text-muted-foreground">#</span>
+              <span className="text-2xl text-[#C8AA6E] font-bold">#</span>
               <Input
                 type="text"
-                placeholder="Tag (e.g. NA1)"
+                placeholder="TAG"
                 value={tagLine}
                 onChange={(e) => setTagLine(e.target.value)}
-                className="bg-background/50 backdrop-blur-sm w-32"
+                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-14 w-32 text-lg font-semibold uppercase focus:border-[#C8AA6E] transition-colors"
+                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
             </div>
             <Button
-              variant="secondary"
               onClick={startAnalysis}
               disabled={isLoading}
-              className="w-full"
+              className="w-full h-14 bg-[#C8AA6E] hover:bg-[#D4B982] text-[#0A1428] font-black text-lg uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   {loadingMessage || 'Analyzing...'}
                 </>
               ) : (
                 <>
-                  <Search className="w-4 h-4 mr-2" />
-                  Analyze My Year
+                  <Search className="w-5 h-5 mr-2" />
+                  Start Rewind
                 </>
               )}
             </Button>
           </div>
 
+          {/* Progress Bar */}
+          {isLoading && (
+            <div className="max-w-xl mx-auto mb-8 p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+              <div className="space-y-4">
+                {/* Progress Bar */}
+                <div className="w-full bg-[#0A1428] h-3 overflow-hidden border border-[#C8AA6E]/40">
+                  <div
+                    className="bg-gradient-to-r from-[#C8AA6E] to-[#F0E6D2] h-full transition-all duration-500 ease-out shadow-[0_0_20px_rgba(200,170,110,0.6)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                {/* Progress Text */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-300 font-bold uppercase tracking-wide">{progressStage}</span>
+                  <span className="text-[#C8AA6E] font-black text-base">{progress}%</span>
+                </div>
+
+                {/* Loading Message */}
+                {loadingMessage && (
+                  <p className="text-sm text-gray-400 text-center font-medium">
+                    {loadingMessage}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Player Data Display */}
           {playerData && (
-            <div className="mb-8 p-6 rounded-lg bg-background/50 backdrop-blur-sm border border-primary/30 max-w-md mx-auto">
-              <h3 className="text-2xl font-bold mb-2">
-                {playerData.riotId} #{playerData.tagLine}
+            <div className="mb-8 p-8 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E] max-w-2xl mx-auto shadow-[0_0_40px_rgba(200,170,110,0.3)]" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
+              <h3 className="text-3xl font-black mb-2 text-white uppercase tracking-wide">
+                {playerData.riotId} <span className="text-[#C8AA6E]">#{playerData.tagLine}</span>
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-gray-300 mb-6 text-lg font-semibold">
                 {playerData.archetype.icon} {playerData.archetype.name}
               </p>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{playerData.totalGames}</div>
-                  <div className="text-sm text-muted-foreground">Games</div>
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="text-center p-4 bg-[#0A1428]/60 border border-[#C8AA6E]/30">
+                  <div className="text-4xl font-black text-[#C8AA6E]">{playerData.totalGames}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mt-1">Games Played</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{playerData.winRate.toFixed(1)}%</div>
-                  <div className="text-sm text-muted-foreground">Win Rate</div>
+                <div className="text-center p-4 bg-[#0A1428]/60 border border-[#C8AA6E]/30">
+                  <div className="text-4xl font-black text-[#C8AA6E]">{playerData.winRate.toFixed(1)}%</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mt-1">Victory Rate</div>
                 </div>
               </div>
 
               {/* Top Champions */}
               <div>
-                <h4 className="text-lg font-semibold mb-2">Top Champions</h4>
-                <div className="space-y-2">
-                  {playerData.topChampions.slice(0, 3).map((champ) => (
-                    <div key={champ.championName} className="flex justify-between items-center text-sm">
-                      <span className="font-medium">{champ.championName}</span>
+                <h4 className="text-lg font-black mb-3 uppercase tracking-wider text-[#C8AA6E]">Champion Mastery</h4>
+                <div className="space-y-3">
+                  {playerData.topChampions.slice(0, 3).map((champ, idx) => (
+                    <div key={champ.championName} className="flex justify-between items-center p-3 bg-[#0A1428]/40 border-l-4 border-[#C8AA6E]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#C8AA6E] font-black text-xl">#{idx + 1}</span>
+                        <span className="font-bold text-white text-base">{champ.championName}</span>
+                      </div>
                       <div className="text-right">
-                        <span className="text-primary">{champ.winRate.toFixed(0)}% WR</span>
-                        <span className="text-muted-foreground ml-2">({champ.games}g)</span>
+                        <span className="text-[#C8AA6E] font-black text-lg">{champ.winRate.toFixed(0)}%</span>
+                        <span className="text-gray-400 ml-2 text-sm font-semibold">({champ.games})</span>
                       </div>
                     </div>
                   ))}
@@ -179,24 +239,16 @@ const Landing = () => {
           {/* CTA Button */}
           {playerData && (
             <Button
-              variant="hero"
               size="lg"
-              className="text-lg px-12 py-6 h-auto animate-pulse-glow"
+              className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
+              style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
               onClick={() => navigate("/dashboard", { state: { playerData } })}
             >
-            Reveal My Year
-          </Button>
+              Enter
+            </Button>
           )}
-
-          {/* Additional Info */}
-          <p className="mt-8 text-sm text-muted-foreground">
-            Experience your journey like never before
-          </p>
         </div>
       </div>
-
-      {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </div>
   );
 };
