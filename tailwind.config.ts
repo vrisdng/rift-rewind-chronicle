@@ -14,6 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
+        sans: ["Spiegel", "system-ui", "Segoe UI", "sans-serif"],
+        heading: ["Beaufort for LoL", "Spiegel", "system-ui", "Segoe UI", "sans-serif"],
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Cinzel', 'serif'],
       },
