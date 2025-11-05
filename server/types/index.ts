@@ -1,319 +1,146 @@
 /**
- * Shared TypeScript types for Rift Rewind
- * Used across both client and server
+ * Central Type Exports for Rift Rewind
+ *
+ * This file re-exports all types from organized modules:
+ * - riot-api.ts: Types matching Riot API responses (DTOs)
+ * - database.ts: Database schema types (Supabase tables)
+ * - application.ts: Business logic and internal types
+ *
+ * Import pattern:
+ * ```typescript
+ * // Prefer specific imports for clarity:
+ * import type { RiotMatchDTO } from '../types/riot-api.ts';
+ * import type { DBPlayer, DBMatch } from '../types/database.ts';
+ * import type { PlayerStats, DerivedMetrics } from '../types/application.ts';
+ *
+ * // Or use the central export:
+ * import type { PlayerStats } from '../types/index.ts';
+ * ```
  */
 
 // ==================== RIOT API TYPES ====================
+// Raw response types from Riot's APIs
 
-export interface RiotMatch {
-  metadata: {
-    matchId: string;
-    participants: string[];
-  };
-  info: {
-    gameCreation: number;
-    gameDuration: number;
-    gameEndTimestamp: number;
-    gameId: number;
-    gameMode: string;
-    gameType: string;
-    queueId: number;
-    participants: RiotParticipant[];
-  };
-}
+export type {
+  // Account API
+  RiotAccountDTO,
+  RiotSummonerDTO,
 
-export interface RiotParticipant {
-  puuid: string;
-  championName: string;
-  championId: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  totalDamageDealtToChampions: number;
-  totalMinionsKilled: number;
-  neutralMinionsKilled: number;
-  goldEarned: number;
-  visionScore: number;
-  teamPosition: string;
-  individualPosition: string;
-  win: boolean;
-  item0: number;
-  item1: number;
-  item2: number;
-  item3: number;
-  item4: number;
-  item5: number;
-  item6: number;
-  perks: any;
-  challenges?: {
-    kda?: number;
-    killParticipation?: number;
-    [key: string]: any;
-  };
-}
+  // Match API
+  RiotMatchDTO,
+  RiotMatchMetadataDTO,
+  RiotMatchInfoDTO,
+  RiotParticipantDTO,
+  RiotPerksDTO,
+  RiotChallengesDTO,
+  RiotTeamDTO,
+  RiotObjectiveDTO,
+
+  // Champion Mastery API
+  RiotChampionMasteryDTO,
+
+  // Utility types
+  RiotRegion,
+  RiotPlatform,
+} from './riot-api.ts';
+
+export { RIOT_QUEUE_IDS } from './riot-api.ts';
 
 // ==================== DATABASE TYPES ====================
+// Types representing Supabase table schemas
 
-export interface DBPlayer {
-  puuid: string;
-  riot_id: string;
-  tag_line: string;
-  region: string;
-  total_games: number;
-  win_rate: number;
-  main_role: string;
-  top_champions: ChampionStats[];
-  derived_metrics: DerivedMetrics;
-  narrative_story: string;
-  insights: AIInsights;
-  archetype: string;
-  generated_at: string;
-}
+export type {
+  // Table schemas
+  DBPlayer,
+  DBMatch,
+  DBAnalysisCache,
+  DBFriendGroup,
+  DBFriendGroupMember,
+  DBPerformanceTrend,
 
-export interface DBMatch {
-  match_id: string;
-  puuid: string;
-  game_date: string;
-  champion_name: string;
-  role: string;
-  duration: number;
-  result: boolean;
-  kills: number;
-  deaths: number;
-  assists: number;
-  cs: number;
-  gold: number;
-  damage_dealt: number;
-  vision_score: number;
-  performance_score: number;
-  is_watershed: boolean;
-}
+  // Helper types for database operations
+  DBPlayerInsert,
+  DBMatchInsert,
+  DBAnalysisCacheInsert,
+  DBFriendGroupInsert,
+  DBPlayerUpdate,
+  DBMatchUpdate,
+  DBAnalysisCacheUpdate,
+} from './database.ts';
 
-// ==================== ANALYSIS TYPES ====================
+// ==================== APPLICATION TYPES ====================
+// Business logic, analysis, and API types
 
-export interface DerivedMetrics {
-  // Playstyle metrics (0-100)
-  aggression: number;
-  farming: number;
-  vision: number;
-  consistency: number;
+export type {
+  // Player analysis
+  DerivedMetrics,
+  ArchetypeProfile,
+  PlayerArchetype,
+  ProPlayerProfile,
+  PlayerIdentity,
+  WatershedMoment,
 
-  // Performance metrics
-  earlyGameStrength: number;
-  lateGameScaling: number;
-  comebackRate: number;
-  clutchFactor: number;
-  tiltFactor: number;
+  // Stats aggregations
+  ChampionStats,
+  RoleStats,
+  StreakInfo,
+  PerformanceTrend,
 
-  // Meta metrics
-  championPoolDepth: number;
-  improvementVelocity: number;
-  roaming: number;
-  teamfighting: number;
-  snowballRate: number;
-}
+  // AI content
+  AIInsights,
 
-export interface ArchetypeProfile {
-  name: string;
-  description: string;
-  profile: Partial<DerivedMetrics>;
-  icon: string;
-}
+  // Complete player data
+  PlayerStats,
 
-export interface PlayerArchetype {
-  name: string;
-  description: string;
-  distance: number;
-  matchPercentage: number;
-  icon: string;
-}
+  // Friend groups
+  FriendGroup,
+  GroupDynamics,
+  TiltChain,
 
-export interface WatershedMoment {
-  matchId: string;
-  gameDate: string;
-  championName: string;
-  result: boolean;
-  performanceScore: number;
-  beforeAverage: number;
-  afterAverage: number;
-  improvement: number;
-  description: string;
-}
+  // API contracts
+  AnalyzePlayerRequest,
+  AnalyzePlayerResponse,
+  CreateGroupRequest,
+  CreateGroupResponse,
 
-export interface ChampionStats {
-  championName: string;
-  championId: number;
-  games: number;
-  wins: number;
-  winRate: number;
-  avgKills: number;
-  avgDeaths: number;
-  avgAssists: number;
-  avgCS: number;
-  avgDamage: number;
-}
+  // Utilities
+  ProgressUpdate,
+  RoleName,
+} from './application.ts';
 
-export interface RoleStats {
-  role: string;
-  games: number;
-  winRate: number;
-}
+export { ROLE_MAP } from './application.ts';
 
-export interface StreakInfo {
-  type: 'win' | 'loss';
-  length: number;
-  startDate: string;
-  endDate: string;
-}
+// ==================== LEGACY COMPATIBILITY ====================
+// For backwards compatibility during migration
+// TODO: Remove these after updating all imports
 
-export interface PerformanceTrend {
-  date: string;
-  performanceScore: number;
-  winRate: number;
-  gamesPlayed: number;
-}
+/**
+ * @deprecated Use RiotMatchDTO from riot-api.ts instead
+ */
+export type RiotMatch = import('./riot-api.ts').RiotMatchDTO;
 
-// ==================== AI TYPES ====================
+/**
+ * @deprecated Use RiotParticipantDTO from riot-api.ts instead
+ */
+export type RiotParticipant = import('./riot-api.ts').RiotParticipantDTO;
 
-export interface AIInsights {
-  story_arc: string;
-  surprising_insights: string[];
-  improvement_tips: string[];
-  archetype_explanation: string;
-  season_prediction: string;
-  title: string;
-}
+/**
+ * @deprecated Use RiotRegion from riot-api.ts instead
+ */
+export type Region = import('./riot-api.ts').RiotRegion;
 
-// ==================== PLAYER STATS TYPES ====================
+/**
+ * @deprecated Use RiotPlatform from riot-api.ts instead
+ */
+export type Platform = import('./riot-api.ts').RiotPlatform;
 
-export interface PlayerStats {
-  puuid: string;
-  riotId: string;
-  tagLine: string;
-  region: string;
-
-  // Basic stats
-  totalGames: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-
-  // Champion stats
-  topChampions: ChampionStats[];
-  championPoolSize: number;
-
-  // Role stats
-  mainRole: string;
-  roleDistribution: RoleStats[];
-
-  // Performance stats
-  avgKDA: number;
-  avgKills: number;
-  avgDeaths: number;
-  avgAssists: number;
-  avgCS: number;
-  avgVisionScore: number;
-  avgGameDuration: number;
-
-  // Streaks
-  longestWinStreak: number;
-  longestLossStreak: number;
-  currentStreak: StreakInfo;
-
-  // Trends
-  performanceTrend: PerformanceTrend[];
-
-  // Advanced analytics
-  derivedMetrics: DerivedMetrics;
-  archetype: PlayerArchetype;
-  watershedMoment?: WatershedMoment;
-
-  // AI-generated content
-  insights?: AIInsights;
-
-  // Metadata
-  generatedAt: string;
-}
-
-// ==================== FRIEND GROUP TYPES ====================
-
-export interface FriendGroup {
-  id: string;
-  name: string;
-  members: PlayerStats[];
-  dynamics: GroupDynamics;
-}
-
-export interface GroupDynamics {
-  bestDuo?: {
-    player1: string;
-    player2: string;
-    winRate: number;
-    gamesPlayed: number;
-  };
-  tiltChains: TiltChain[];
-  mvp: {
-    puuid: string;
-    riotId: string;
-    avgPerformance: number;
-  };
-}
-
-export interface TiltChain {
-  trigger: string; // puuid of player who loses
-  affected: string; // puuid of player who tilts
-  correlation: number; // 0-1
-}
-
-// ==================== API REQUEST/RESPONSE TYPES ====================
-
-export interface AnalyzePlayerRequest {
-  riotId: string;
-  tagLine: string;
-  region?: string;
-}
-
-export interface AnalyzePlayerResponse {
-  success: boolean;
-  data?: PlayerStats;
-  error?: string;
-  cached?: boolean;
-}
-
-export interface CreateGroupRequest {
-  name: string;
-  players: { riotId: string; tagLine: string }[];
-}
-
-export interface CreateGroupResponse {
-  success: boolean;
-  groupId?: string;
-  error?: string;
-}
-
-// ==================== UTILITY TYPES ====================
-
-export interface ProgressUpdate {
-  stage: string;
-  progress: number; // 0-100
-  message: string;
-}
-
-export type Region = 'americas' | 'asia' | 'europe' | 'sea';
-export type Platform = 'br1' | 'eun1' | 'euw1' | 'jp1' | 'kr' | 'la1' | 'la2' | 'na1' | 'oc1' | 'ph2' | 'ru' | 'sg2' | 'th2' | 'tr1' | 'tw2' | 'vn2';
-
+/**
+ * @deprecated Use RIOT_QUEUE_IDS instead
+ */
 export const QUEUE_IDS = {
   RANKED_SOLO: 420,
   RANKED_FLEX: 440,
   NORMAL_DRAFT: 400,
   NORMAL_BLIND: 430,
   ARAM: 450,
-} as const;
-
-export const ROLE_MAP = {
-  TOP: 'Top',
-  JUNGLE: 'Jungle',
-  MIDDLE: 'Mid',
-  BOTTOM: 'ADC',
-  UTILITY: 'Support',
 } as const;

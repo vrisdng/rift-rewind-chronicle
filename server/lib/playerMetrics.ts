@@ -9,222 +9,245 @@ import type {
   DerivedMetrics,
   ArchetypeProfile,
   PlayerArchetype,
-} from '../types/index.js';
+  ProPlayerProfile,
+} from '../types/index.ts';
 
-// ==================== ARCHETYPE DEFINITIONS ====================
+import { WORLDS_2024_PRO_PLAYERS } from '../constants/pro-player.ts';
+import { ARCHETYPES } from '../constants/archetype.ts';
 
-export const ARCHETYPES: ArchetypeProfile[] = [
-  {
-    name: 'Calculated Assassin',
-    description: 'High aggression with surgical precision. Knows when to strike.',
-    profile: {
-      aggression: 85,
-      consistency: 70,
-      clutchFactor: 80,
-      farming: 60,
-      vision: 50,
-      earlyGameStrength: 75,
-      lateGameScaling: 65,
-    },
-    icon: '🗡️',
-  },
-  {
-    name: 'Scaling Specialist',
-    description: 'Patient farmer who dominates late game. Weak early, unstoppable late.',
-    profile: {
-      farming: 90,
-      lateGameScaling: 85,
-      earlyGameStrength: 40,
-      consistency: 80,
-      aggression: 35,
-      vision: 65,
-      clutchFactor: 70,
-    },
-    icon: '📈',
-  },
-  {
-    name: 'Vision Mastermind',
-    description: 'Eyes everywhere. Controls the map with superior vision and information.',
-    profile: {
-      vision: 95,
-      roaming: 70,
-      teamfighting: 75,
-      aggression: 50,
-      farming: 60,
-      consistency: 75,
-      earlyGameStrength: 60,
-    },
-    icon: '👁️',
-  },
-  {
-    name: 'Teamfight Commander',
-    description: 'Thrives in chaos. The bigger the fight, the better they perform.',
-    profile: {
-      teamfighting: 90,
-      clutchFactor: 85,
-      aggression: 70,
-      vision: 65,
-      consistency: 75,
-      lateGameScaling: 80,
-      earlyGameStrength: 60,
-    },
-    icon: '⚔️',
-  },
-  {
-    name: 'Early Game Bully',
-    description: 'Dominates the first 15 minutes. Snowballs leads to victory.',
-    profile: {
-      earlyGameStrength: 95,
-      aggression: 85,
-      snowballRate: 80,
-      lateGameScaling: 40,
-      vision: 50,
-      farming: 65,
-      consistency: 60,
-    },
-    icon: '💪',
-  },
-  {
-    name: 'Consistent Performer',
-    description: 'Reliable and steady. Never ints, always contributes.',
-    profile: {
-      consistency: 95,
-      tiltFactor: 20,
-      aggression: 55,
-      farming: 75,
-      vision: 70,
-      earlyGameStrength: 60,
-      lateGameScaling: 60,
-    },
-    icon: '🎯',
-  },
-  {
-    name: 'Clutch Player',
-    description: 'Performs best under pressure. Turns impossible games around.',
-    profile: {
-      clutchFactor: 95,
-      comebackRate: 85,
-      aggression: 75,
-      teamfighting: 80,
-      consistency: 65,
-      earlyGameStrength: 60,
-      lateGameScaling: 70,
-    },
-    icon: '🔥',
-  },
-  {
-    name: 'CS God',
-    description: 'Farming perfection. Highest CS/min in every game.',
-    profile: {
-      farming: 95,
-      consistency: 85,
-      aggression: 40,
-      vision: 55,
-      earlyGameStrength: 60,
-      lateGameScaling: 80,
-      clutchFactor: 60,
-    },
-    icon: '💰',
-  },
-  {
-    name: 'Roaming Terror',
-    description: 'Never stays in lane. Creates pressure across the entire map.',
-    profile: {
-      roaming: 95,
-      aggression: 80,
-      vision: 75,
-      farming: 50,
-      earlyGameStrength: 80,
-      teamfighting: 70,
-      consistency: 60,
-    },
-    icon: '🌪️',
-  },
-  {
-    name: 'Comeback King',
-    description: 'Best when behind. Specializes in turning lost games into wins.',
-    profile: {
-      comebackRate: 90,
-      clutchFactor: 85,
-      lateGameScaling: 80,
-      tiltFactor: 30,
-      consistency: 70,
-      teamfighting: 75,
-      aggression: 65,
-    },
-    icon: '👑',
-  },
-  {
-    name: 'Tilt-Proof Machine',
-    description: 'Unshakeable mental. Performance never drops after losses.',
-    profile: {
-      tiltFactor: 10,
-      consistency: 90,
-      clutchFactor: 75,
-      aggression: 60,
-      farming: 70,
-      vision: 70,
-      earlyGameStrength: 60,
-    },
-    icon: '🧘',
-  },
-  {
-    name: 'Snowball Expert',
-    description: 'Gets ahead early and never lets go. Chokes out opponents.',
-    profile: {
-      snowballRate: 95,
-      earlyGameStrength: 85,
-      aggression: 80,
-      farming: 70,
-      lateGameScaling: 55,
-      consistency: 70,
-      clutchFactor: 65,
-    },
-    icon: '❄️',
-  },
-  {
-    name: 'Safe Scaler',
-    description: 'Plays safe, farms well, scales hard. Avoids risks.',
-    profile: {
-      farming: 85,
-      consistency: 85,
-      lateGameScaling: 85,
-      aggression: 30,
-      earlyGameStrength: 40,
-      tiltFactor: 40,
-      vision: 60,
-    },
-    icon: '🛡️',
-  },
-  {
-    name: 'Chaos Agent',
-    description: 'High variance, high reward. Either pops off or ints.',
-    profile: {
-      aggression: 95,
-      consistency: 30,
-      clutchFactor: 80,
-      earlyGameStrength: 85,
-      tiltFactor: 70,
-      farming: 50,
-      vision: 45,
-    },
-    icon: '🎲',
-  },
-  {
-    name: 'Balanced Tactician',
-    description: 'Well-rounded in all aspects. Master of fundamentals.',
-    profile: {
-      aggression: 65,
-      farming: 70,
-      vision: 70,
-      consistency: 75,
-      earlyGameStrength: 65,
-      lateGameScaling: 65,
-      clutchFactor: 70,
-    },
-    icon: '⚖️',
-  },
-];
+// ==================== TYPE DEFINITIONS ====================
+
+/**
+ * Player identity including archetype and pro comparison
+ */
+export interface PlayerIdentity {
+  archetype: PlayerArchetype;
+  proComparison: {
+    primary: ProPlayerProfile;
+    secondary: ProPlayerProfile;
+    similarity: number;
+    description: string;
+  };
+  topStrengths: Array<{ metric: string; value: number; percentile: number }>;
+  needsWork: Array<{ metric: string; value: number; suggestion: string }>;
+  playfulComparison: string;
+}
+
+/**
+ * Metric importance weights for distance calculations
+ */
+const METRIC_WEIGHTS: Record<keyof DerivedMetrics, number> = {
+  clutchFactor: 1.5,
+  consistency: 1.5,
+  aggression: 1.3,
+  farming: 1.2,
+  teamfighting: 1.2,
+  lateGameScaling: 1.0,
+  earlyGameStrength: 1.0,
+  comebackRate: 1.0,
+  tiltFactor: 0.9,
+  snowballRate: 0.9,
+  vision: 0.8,
+  roaming: 0.8,
+  improvementVelocity: 0.7,
+  championPoolDepth: 0.5,
+};
+
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Calculate weighted Euclidean distance between player metrics and target profile
+ * Emphasizes important metrics like clutch factor and consistency
+ */
+function calculateWeightedDistance(
+  metrics: DerivedMetrics,
+  profile: Partial<DerivedMetrics>
+): number {
+  let weightedSumSquaredDiff = 0;
+  let totalWeight = 0;
+
+  for (const key in profile) {
+    const metricKey = key as keyof DerivedMetrics;
+    const metricValue = metrics[metricKey];
+    const profileValue = profile[metricKey];
+    const weight = METRIC_WEIGHTS[metricKey] || 1.0;
+
+    if (typeof metricValue === 'number' && typeof profileValue === 'number') {
+      weightedSumSquaredDiff += weight * Math.pow(metricValue - profileValue, 2);
+      totalWeight += weight;
+    }
+  }
+
+  return Math.sqrt(weightedSumSquaredDiff / totalWeight);
+}
+
+/**
+ * Match player to closest pro player using weighted distance
+ * Returns primary and secondary matches with similarity scores
+ */
+export function matchToProPlayer(metrics: DerivedMetrics): {
+  primary: ProPlayerProfile;
+  secondary: ProPlayerProfile;
+  similarity: number;
+  description: string;
+} {
+  const proScores = WORLDS_2024_PRO_PLAYERS.map((pro) => {
+    const distance = calculateWeightedDistance(metrics, pro.metrics);
+    const similarity = Math.max(0, 100 - distance);
+
+    return {
+      pro,
+      similarity,
+      distance,
+    };
+  });
+
+  proScores.sort((a, b) => b.similarity - a.similarity);
+
+  const primary = proScores[0];
+  const secondary = proScores[1];
+
+  const description = `Your playstyle mirrors ${primary.pro.name} (${Math.round(primary.similarity)}% match) from ${primary.pro.team}. ${primary.pro.playstyle}. You also share traits with ${secondary.pro.name} (${Math.round(secondary.similarity)}% match).`;
+
+  return {
+    primary: primary.pro,
+    secondary: secondary.pro,
+    similarity: Math.round(primary.similarity),
+    description,
+  };
+}
+
+/**
+ * Get player's top 3 strongest metrics with percentile rankings
+ */
+function getTopStrengths(metrics: DerivedMetrics): Array<{ metric: string; value: number; percentile: number }> {
+  const metricEntries = Object.entries(metrics) as [keyof DerivedMetrics, number][];
+  metricEntries.sort((a, b) => b[1] - a[1]);
+
+  return metricEntries.slice(0, 3).map(([metric, value]) => ({
+    metric: formatMetricName(metric),
+    value: Math.round(value),
+    percentile: Math.round(value), // Using value as percentile approximation
+  }));
+}
+
+/**
+ * Get metrics that need improvement with actionable suggestions
+ */
+function getWeaknesses(metrics: DerivedMetrics): Array<{ metric: string; value: number; suggestion: string }> {
+  const metricEntries = Object.entries(metrics) as [keyof DerivedMetrics, number][];
+  metricEntries.sort((a, b) => a[1] - b[1]); // Lowest first
+
+  const weakMetrics = metricEntries.slice(0, 3).filter(([_, value]) => value < 60);
+
+  return weakMetrics.map(([metric, value]) => ({
+    metric: formatMetricName(metric),
+    value: Math.round(value),
+    suggestion: getSuggestionForMetric(metric),
+  }));
+}
+
+/**
+ * Format metric key to readable name
+ */
+function formatMetricName(metric: keyof DerivedMetrics): string {
+  const nameMap: Record<keyof DerivedMetrics, string> = {
+    aggression: 'Aggression',
+    farming: 'Farming',
+    vision: 'Vision Control',
+    consistency: 'Consistency',
+    earlyGameStrength: 'Early Game',
+    lateGameScaling: 'Late Game',
+    comebackRate: 'Comeback Ability',
+    clutchFactor: 'Clutch Factor',
+    tiltFactor: 'Mental Fortitude',
+    championPoolDepth: 'Champion Pool',
+    improvementVelocity: 'Improvement Rate',
+    roaming: 'Roaming',
+    teamfighting: 'Teamfighting',
+    snowballRate: 'Snowball Potential',
+  };
+  return nameMap[metric] || metric;
+}
+
+/**
+ * Get improvement suggestion for specific metric
+ */
+function getSuggestionForMetric(metric: keyof DerivedMetrics): string {
+  const suggestions: Record<keyof DerivedMetrics, string> = {
+    aggression: 'Look for more opportunities to pressure opponents early. Practice recognizing power spikes.',
+    farming: 'Focus on last-hitting practice and wave management. Aim for 7+ CS/min consistently.',
+    vision: 'Buy more control wards and place them at key objectives. Watch mini-map more frequently.',
+    consistency: 'Review your deaths after each game. Work on reducing unnecessary risks.',
+    earlyGameStrength: 'Study level 1-3 trading patterns for your champions. Be more proactive early.',
+    lateGameScaling: "Practice positioning in late-game teamfights. Don't get caught out.",
+    comebackRate: 'Learn to identify win conditions when behind. Focus on vision denial and picks.',
+    clutchFactor: 'Practice high-pressure scenarios. Review close games to spot missed opportunities.',
+    tiltFactor: 'Take breaks after losses. Focus on learning, not LP. Review VODs with fresh eyes.',
+    championPoolDepth: 'Add 2-3 meta champions to your pool. Practice them in normals first.',
+    improvementVelocity: 'Set specific goals each week. Track your progress and review regularly.',
+    roaming: 'Push wave and look for plays. Communicate with team before roaming.',
+    teamfighting: 'Focus on positioning and target selection. Watch pro teamfights for positioning tips.',
+    snowballRate: 'After getting ahead, focus on denying enemy resources and maintaining vision control.',
+  };
+  return suggestions[metric] || 'Keep practicing and reviewing your games.';
+}
+
+/**
+ * Generate playful comparison based on metrics
+ * Uses humor while staying accurate to player's stats
+ */
+export function getPlayfulComparison(metrics: DerivedMetrics): string {
+  const strengths = getTopStrengths(metrics);
+  const weaknesses = getWeaknesses(metrics);
+
+  // High farming, low aggression
+  if (metrics.farming > 80 && metrics.aggression < 50) {
+    return "You farm like Chovy but fight like a caster minion 🌾";
+  }
+
+  // High aggression, low consistency
+  if (metrics.aggression > 80 && metrics.consistency < 50) {
+    return "Caps' aggression with a coinflip's consistency 🎲";
+  }
+
+  // High clutch, high consistency
+  if (metrics.clutchFactor > 85 && metrics.consistency > 85) {
+    return "Faker's clutch gene with Knight's reliability 👑";
+  }
+
+  // High vision
+  if (metrics.vision > 85) {
+    return "Keria's vision game but your team still face-checks bushes 👁️";
+  }
+
+  // High tilt factor
+  if (metrics.tiltFactor > 70) {
+    return "You're 70% skill, 30% mental boom after one death 💀";
+  }
+
+  // Balanced but unexceptional
+  if (Math.max(...Object.values(metrics)) < 75) {
+    return "Perfectly balanced... like all things should be (but also kinda meh) ⚖️";
+  }
+
+  // High early game, low late game
+  if (metrics.earlyGameStrength > 80 && metrics.lateGameScaling < 50) {
+    return "Zeus level 3 all-in energy, then you turn into a super minion 💪➡️😴";
+  }
+
+  // Default playful comparison
+  const topStrength = strengths[0];
+  const topWeakness = weaknesses[0];
+
+  if (topStrength && topWeakness) {
+    return `Elite ${topStrength.metric.toLowerCase()} but ${topWeakness.metric.toLowerCase()} needs work 🎯`;
+  }
+
+  return "You're built different... but the game hasn't figured out how yet 🤔";
+}
+
 
 // ==================== METRIC CALCULATIONS ====================
 
@@ -296,7 +319,7 @@ function calculateAggression(matches: DBMatch[]): number {
  */
 function calculateFarming(matches: DBMatch[]): number {
   const csPerMinScores = matches.map((m) => {
-    const csPerMin = m.cs / (m.duration / 60);
+    const csPerMin = m.cs / (m.game_duration / 60);
     // 8+ CS/min = 100, 5 CS/min = 50, 3 CS/min = 0
     return Math.min(Math.max(((csPerMin - 3) / 5) * 100, 0), 100);
   });
@@ -309,7 +332,7 @@ function calculateFarming(matches: DBMatch[]): number {
  */
 function calculateVision(matches: DBMatch[]): number {
   const visionScores = matches.map((m) => {
-    const visionPerMin = m.vision_score / (m.duration / 60);
+    const visionPerMin = m.vision_score / (m.game_duration / 60);
     // 2+ vision/min = 100, 1 vision/min = 50, 0.5 = 0
     return Math.min(Math.max(((visionPerMin - 0.5) / 1.5) * 100, 0), 100);
   });
@@ -336,23 +359,24 @@ function calculateConsistency(matches: DBMatch[]): number {
  * Early Game Strength: Performance in games under 25 minutes
  */
 function calculateEarlyGameStrength(matches: DBMatch[]): number {
-  const shortGames = matches.filter((m) => m.duration < 25 * 60);
+  const shortGames = matches.filter((m) => m.game_duration < 25 * 60);
 
-  if (shortGames.length < 5) {
+  if (shortGames.length < 3) {
     return 50; // Not enough data
   }
 
   const winRate = (shortGames.filter((m) => m.result).length / shortGames.length) * 100;
   const avgPerformance = shortGames.reduce((sum, m) => sum + m.performance_score, 0) / shortGames.length;
 
-  return Math.round((winRate * 0.6 + avgPerformance * 0.4));
+  // Don't over-weight win rate in short games
+  return Math.round((winRate * 0.5 + avgPerformance * 0.5));
 }
 
 /**
  * Late Game Scaling: Performance in games over 35 minutes
  */
 function calculateLateGameScaling(matches: DBMatch[]): number {
-  const longGames = matches.filter((m) => m.duration > 35 * 60);
+  const longGames = matches.filter((m) => m.game_duration > 35 * 60);
 
   if (longGames.length < 5) {
     return 50;
@@ -387,7 +411,7 @@ function calculateComebackRate(matches: DBMatch[]): number {
  */
 function calculateClutchFactor(matches: DBMatch[]): number {
   // Close games: 25-40 minute games
-  const closeGames = matches.filter((m) => m.duration >= 25 * 60 && m.duration <= 40 * 60);
+  const closeGames = matches.filter((m) => m.game_duration >= 25 * 60 && m.game_duration <= 40 * 60);
 
   if (closeGames.length < 5) {
     return 50;
@@ -475,7 +499,7 @@ function calculateImprovementVelocity(matches: DBMatch[]): number {
  */
 function calculateRoaming(matches: DBMatch[]): number {
   const roamScores = matches.map((m) => {
-    const csPerMin = m.cs / (m.duration / 60);
+    const csPerMin = m.cs / (m.game_duration / 60);
     const killParticipation = m.kills + m.assists;
 
     // Low CS (<6) but high KP (>10) suggests roaming
@@ -494,7 +518,7 @@ function calculateRoaming(matches: DBMatch[]): number {
 function calculateTeamfighting(matches: DBMatch[]): number {
   const teamfightScores = matches.map((m) => {
     const kda = m.deaths === 0 ? (m.kills + m.assists) * 1.2 : (m.kills + m.assists) / m.deaths;
-    const damagePerMin = m.damage_dealt / (m.duration / 60);
+    const damagePerMin = m.damage_dealt / (m.game_duration / 60);
 
     const kdaScore = Math.min((kda / 5) * 100, 100);
     const damageScore = Math.min((damagePerMin / 800) * 100, 100);
@@ -509,17 +533,22 @@ function calculateTeamfighting(matches: DBMatch[]): number {
  * Snowball Rate: Win rate when ahead early
  */
 function calculateSnowballRate(matches: DBMatch[]): number {
-  // Approximate: Short wins with high performance
+  // More strict definition: Quick wins (<25min) with dominant performance (>80 score)
   const snowballWins = matches.filter((m) =>
-    m.result && m.duration < 30 * 60 && m.performance_score > 70
+    m.result && m.game_duration < 25 * 60 && m.performance_score > 80
   );
 
-  if (matches.length < 10) {
-    return 50;
+  const totalWins = matches.filter((m) => m.result).length;
+
+  if (totalWins < 5) {
+    return 50; // Not enough data
   }
 
-  const snowballRate = (snowballWins.length / matches.filter((m) => m.result).length) * 100;
-  return Math.min(Math.round(snowballRate * 1.5), 100);
+  // What percentage of wins were snowballs?
+  const snowballRate = (snowballWins.length / totalWins) * 100;
+  
+  // Don't inflate - use raw percentage
+  return Math.round(snowballRate);
 }
 
 // ==================== ARCHETYPE MATCHING ====================
@@ -546,27 +575,82 @@ function calculateDistance(metrics: DerivedMetrics, profile: Partial<DerivedMetr
 }
 
 /**
- * Determine player archetype using distance metrics
+ * Determine archetype based on player's STRONGEST characteristics (relative scoring)
+ * Emphasizes what the player excels at rather than absolute values
  */
-export function determineArchetype(metrics: DerivedMetrics): PlayerArchetype {
-  const archetypesWithDistances = ARCHETYPES.map((archetype) => {
-    const distance = calculateDistance(metrics, archetype.profile);
-    const matchPercentage = Math.max(100 - distance, 0);
+export function determineArchetypeRelative(metrics: DerivedMetrics): PlayerArchetype {
+  // Find player's top 5 strongest metrics (expanded for better matching)
+  const metricEntries = Object.entries(metrics) as [keyof DerivedMetrics, number][];
+  metricEntries.sort((a, b) => b[1] - a[1]);
+
+  const topMetrics = metricEntries.slice(0, 5).map(([key]) => key);
+  const bottomMetrics = metricEntries.slice(-3).map(([key]) => key);
+
+  // Match archetypes based on what they EMPHASIZE, not absolute values
+  const archetypeScores = ARCHETYPES.map((archetype) => {
+    let strengthMatchScore = 0; // How well player's strengths match archetype
+    let profileMatchScore = 0;  // General profile similarity
+    let weaknessMatchScore = 0; // Check for conflicting weaknesses
+
+    // Count how many defining traits match
+    for (const [metric, archetypeValue] of Object.entries(archetype.profile)) {
+      const metricKey = metric as keyof DerivedMetrics;
+      const playerValue = metrics[metricKey] || 50;
+
+      // If archetype REQUIRES this (>80), check if player has it
+      if (archetypeValue > 80) {
+        if (topMetrics.includes(metricKey) && playerValue > 70) {
+          strengthMatchScore += 3; // Strong match!
+        } else if (playerValue < 50) {
+          strengthMatchScore -= 2; // Player lacks key trait
+        }
+      }
+
+      // If archetype emphasizes this (>70)
+      if (archetypeValue > 70 && playerValue > 65) {
+        strengthMatchScore += 1;
+      }
+
+      // General similarity (normalized to 0-1)
+      const similarity = 1 - Math.abs(archetypeValue - playerValue) / 100;
+      profileMatchScore += similarity;
+
+      // Check for conflicts: archetype requires low value but player has high
+      if (archetypeValue < 40 && playerValue > 70) {
+        weaknessMatchScore -= 1;
+      }
+    }
+
+    // Normalize profile match score
+    const numMetrics = Object.keys(archetype.profile).length;
+    profileMatchScore = (profileMatchScore / numMetrics) * 100;
+
+    // Combine scores with weights
+    const totalScore = 
+      strengthMatchScore * 10 + // Most important: matching key strengths
+      profileMatchScore * 0.5 +  // General similarity
+      weaknessMatchScore * 5;    // Penalty for conflicts
+
+    const matchPercentage = Math.max(0, Math.min(100, Math.round(totalScore)));
 
     return {
-      name: archetype.name,
-      description: archetype.description,
-      distance,
-      matchPercentage: Math.round(matchPercentage),
-      icon: archetype.icon,
+      ...archetype,
+      score: totalScore,
+      matchPercentage,
     };
   });
 
-  // Sort by lowest distance (best match)
-  archetypesWithDistances.sort((a, b) => a.distance - b.distance);
+  archetypeScores.sort((a, b) => b.score - a.score);
 
-  return archetypesWithDistances[0];
+  return {
+    name: archetypeScores[0].name,
+    description: archetypeScores[0].description,
+    distance: 0,
+    matchPercentage: archetypeScores[0].matchPercentage,
+    icon: archetypeScores[0].icon,
+  };
 }
+
 
 /**
  * Get top 3 archetype matches
@@ -590,9 +674,56 @@ export function getTopArchetypes(metrics: DerivedMetrics): PlayerArchetype[] {
   return archetypesWithDistances.slice(0, 3);
 }
 
+/**
+ * Main function: Determine complete player identity
+ * Combines archetype matching with pro player comparisons
+ * Returns engaging, shareable results
+ *
+ * @param metrics - Calculated derived metrics from match history
+ * @returns Complete player identity including archetype, pro comparison, strengths, and weaknesses
+ *
+ * @example
+ * ```typescript
+ * const metrics = calculateDerivedMetrics(matches);
+ * const identity = determinePlayerIdentity(metrics);
+ * console.log(`You play like ${identity.proComparison.primary.name}!`);
+ * console.log(identity.playfulComparison); // "Faker's clutch gene with Knight's reliability 👑"
+ * ```
+ */
+export function determinePlayerIdentity(metrics: DerivedMetrics): PlayerIdentity {
+  // 1. Find their archetype (playstyle category) using relative scoring
+  const archetype = determineArchetypeRelative(metrics);
+
+  // 2. Find closest pro player (aspirational comparison)
+  const proMatch = matchToProPlayer(metrics);
+
+  // 3. Identify top strengths
+  const topStrengths = getTopStrengths(metrics);
+
+  // 4. Identify areas for improvement
+  const needsWork = getWeaknesses(metrics);
+
+  // 5. Generate playful comparison
+  const playfulComparison = getPlayfulComparison(metrics);
+
+  return {
+    archetype,
+    proComparison: {
+      primary: proMatch.primary,
+      secondary: proMatch.secondary,
+      similarity: proMatch.similarity,
+      description: proMatch.description,
+    },
+    topStrengths,
+    needsWork,
+    playfulComparison,
+  };
+}
+
+// ==================== EXPORTS ====================
+
 export default {
-  ARCHETYPES,
   calculateDerivedMetrics,
-  determineArchetype,
+  determineArchetypeRelative,
   getTopArchetypes,
 };

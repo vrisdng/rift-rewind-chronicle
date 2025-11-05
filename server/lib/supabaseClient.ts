@@ -10,7 +10,7 @@ import type {
   PlayerStats,
   FriendGroup,
   AnalyzePlayerResponse,
-} from '../types/index.js';
+} from '../types/index.ts';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -23,12 +23,12 @@ if (!SUPABASE_SERVICE_KEY) {
   throw new Error('SUPABASE_SERVICE_KEY is not set in environment variables');
 }
 
-// Create singleton Supabase client
+ // Create singleton Supabase client
 let supabaseClient: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (!supabaseClient) {
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    supabaseClient = createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -311,28 +311,6 @@ export async function needsRefresh(
   return hoursSince > maxAgeHours;
 }
 
-/**
- * Update analysis cache
- */
-export async function updateAnalysisCache(
-  puuid: string,
-  matchCount: number
-): Promise<void> {
-  const supabase = getSupabaseClient();
-  const { error } = await supabase
-    .from('analysis_cache')
-    .upsert({
-      puuid,
-      last_analyzed: new Date().toISOString(),
-      match_count: matchCount,
-      needs_refresh: false,
-    });
-
-  if (error) {
-    console.error('Error updating analysis cache:', error);
-    throw error;
-  }
-}
 
 /**
  * Mark player for refresh
@@ -398,7 +376,6 @@ export default {
   createFriendGroup,
   getFriendGroup,
   needsRefresh,
-  updateAnalysisCache,
   markForRefresh,
   getTotalPlayers,
   getTotalMatches,

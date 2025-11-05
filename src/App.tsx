@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import WrappedDashboard from "./pages/WrappedDashboard";
 import DeepInsights from "./pages/DeepInsights";
 import Highlights from "./pages/Highlights";
 import Archetype from "./pages/Archetype";

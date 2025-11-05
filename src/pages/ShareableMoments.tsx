@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Share2, Download, Image } from "lucide-react";
+import Chatbot from "@/components/ui/chatbot";
 
 const ShareableMoments = () => {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ const ShareableMoments = () => {
           </Button>
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 };

@@ -4,8 +4,8 @@
  * Handles the complete flow from Riot API → Database → AI insights
  */
 
-import { getClient } from './riot.js';
-import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate } from '../types/index.js';
+import { getClient } from './riot.ts';
+import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate } from '../types/index.ts';
 import {
   convertMatchToDBFormat,
   calculateChampionStats,
@@ -17,10 +17,10 @@ import {
   calculatePerformanceTrends,
   calculateAverageKDA,
   calculateAverageStats,
-} from './matchAnalyzer.js';
-import { calculateDerivedMetrics, determineArchetype } from './playerMetrics.js';
-import { detectWatershedMoment } from './watershedDetector.js';
-import { generatePlayerInsights } from './insightGenerator.js';
+} from './matchAnalyzer.ts';
+import { calculateDerivedMetrics, determinePlayerIdentity } from './playerMetrics.ts';
+import { detectWatershedMoment } from './watershedDetector.ts';
+import { generatePlayerInsights } from './insightGenerator.ts';
 import {
   getPlayerByRiotId,
   upsertPlayer,
@@ -28,22 +28,91 @@ import {
   insertMatches,
   markWatershedMoment,
   needsRefresh,
-  updateAnalysisCache,
-} from './supabaseClient.js';
+} from './supabaseClient.ts';
 
-const MAX_MATCHES_TO_FETCH = 100; // Limit for API calls
-// const RANKED_SOLO_QUEUE = 420; // toggle for different queues
+// const RANKED_SOLO_QUEUE = 420; // Uncomment for ranked only
+
+const QUEUE_TYPES = {
+  RANKED_SOLO: 420,           // Ranked Solo/Duo
+  RANKED_FLEX: 440,           // Ranked Flex
+  NORMAL_DRAFT: 400,          // Normal Draft Pick
+  NORMAL_BLIND: 430,          // Normal Blind Pick
+};
 
 /**
- * Analyze a player completely: fetch matches, calculate metrics, generate insights
+ * Get Unix timestamp for start of 2025
+ */
+function get2025StartTimestamp(): number {
+  return Math.floor(new Date('2025-01-01T00:00:00Z').getTime() / 1000);
+}
+
+/**
+ * Fetch ALL match IDs from 2025 (handles pagination)
+ * Fetches from all queue types: RANKED_SOLO, RANKED_FLEX, NORMAL_DRAFT, NORMAL_BLIND
+ */
+async function fetchAll2025MatchIds(client: any, puuid: string): Promise<string[]> {
+  const startTime = get2025StartTimestamp();
+  const endTime = Math.floor(Date.now() / 1000);
+  
+  let allMatchIds: string[] = [];
+  const pageSize = 100; // Max per request
+  
+  console.log(`📅 Fetching ALL matches from 2025-01-01 onwards...`);
+  console.log(`⏰ Time range: ${new Date(startTime * 1000).toISOString()} to ${new Date(endTime * 1000).toISOString()}`);
+  console.log(`🎮 Queue types: ${Object.entries(QUEUE_TYPES).map(([k, v]) => `${k}(${v})`).join(', ')}`);
+  
+  // Fetch matches from each queue type
+  for (const [queueName, queueId] of Object.entries(QUEUE_TYPES)) {
+    console.log(`\n🔍 Fetching ${queueName}...`);
+    let start = 0;
+    
+    while (true) {
+      try {
+        const matchIds = await client.getMatchIdsByPuuid(puuid, {
+          start,
+          count: pageSize,
+          startTime,
+          endTime,
+          queue: queueId,
+        });
+        
+        if (matchIds.length === 0) {
+          console.log(`📋 No more ${queueName} matches at offset ${start}`);
+          break; // No more matches for this queue
+        }
+        
+        allMatchIds = allMatchIds.concat(matchIds);
+        console.log(`  � ${queueName}: ${matchIds.length} matches (total now: ${allMatchIds.length})`);
+        
+        if (matchIds.length < pageSize) {
+          break; // Last page for this queue
+        }
+        
+        start += pageSize;
+      } catch (error) {
+        console.error(`❌ Error fetching ${queueName} at offset ${start}:`, error);
+        break;
+      }
+    }
+  }
+  
+  console.log(`\n✅ Total match IDs found across all queues: ${allMatchIds.length}`);
+  
+  return allMatchIds;
+}
+
+/**
+ * Analyze a player completely: fetch ALL 2025 matches, calculate metrics, generate insights
+ * @param forceRegenerateInsights - If true, will regenerate AI insights even if cached
  */
 export async function analyzePlayer(
   riotId: string,
   tagLine: string,
   region: string = 'sg2',
-  onProgress?: (update: ProgressUpdate) => void
+  onProgress?: (update: ProgressUpdate) => void,
+  forceRegenerateInsights: boolean = true
 ): Promise<PlayerStats> {
-  const client = getClient({ platform: region as any });
+  const client = getClient({ region: region as any });
 
   // Step 1: Get player account
   onProgress?.({ stage: 'account', progress: 10, message: 'Fetching account info...' });
@@ -51,95 +120,122 @@ export async function analyzePlayer(
   const account = await client.getAccountByRiotId(riotId, tagLine);
   const { puuid } = account;
 
+  // IMPORTANT: Save player to database FIRST, before attempting to fetch cached matches
+  // This ensures the player exists before any foreign key references are attempted
+  onProgress?.({ stage: 'account', progress: 15, message: 'Creating player record...' });
+  
+  await upsertPlayer({
+    puuid,
+    riot_id: riotId,
+    tag_line: tagLine,
+    region,
+  });
+  
+  console.log(`✅ Player ${riotId}#${tagLine} created/updated in database`);
+
   // Check if we have recent cached data
   const shouldRefresh = await needsRefresh(puuid, 24);
 
   if (!shouldRefresh) {
     onProgress?.({ stage: 'cache', progress: 100, message: 'Using cached data' });
+  }
 
-    const cachedPlayer = await getPlayerByRiotId(riotId, tagLine);
-    if (cachedPlayer) {
-      return convertDBPlayerToStats(cachedPlayer);
+  // Step 2: Fetch ALL 2025 match IDs (with pagination)
+  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching 2025 match list...' });
+
+  const matchIds = await fetchAll2025MatchIds(client, puuid);
+
+  // Step 3: Check which matches we already have in cache (safe now that player exists)
+  let cachedMatches = await getMatches(puuid);
+  let newMatchIds = matchIds.filter(id => !new Set(cachedMatches.map(m => m.match_id)).has(id));
+  
+  // If no new matches found via API but we have cached matches, use those
+  if (newMatchIds.length === 0 && cachedMatches.length === 0) {
+    throw new Error('No matches found in 2025 for this player');
+  }
+
+  if (newMatchIds.length === 0 && cachedMatches.length > 0) {
+    console.log(`📊 No new matches found, but using ${cachedMatches.length} cached matches`);
+    onProgress?.({
+      stage: 'processing',
+      progress: 35,
+      message: `Using ${cachedMatches.length} cached matches from previous analysis...`,
+    });
+  } else {
+    console.log(`📊 Cache status: ${cachedMatches.length} cached, ${newMatchIds.length} new matches`);
+
+    onProgress?.({
+      stage: 'processing',
+      progress: 35,
+      message: `Fetching ${newMatchIds.length} new matches (${cachedMatches.length} cached)...`,
+    });
+  }
+
+  // Step 4: Fetch new match details concurrently
+  let newMatches: DBMatch[] = [];
+  
+  if (newMatchIds.length > 0) {
+    const rawMatches = await client.fetchMatchesConcurrent(newMatchIds, 10);
+    
+    // Convert to DB format
+    for (const matchData of rawMatches) {
+      const dbMatch = convertMatchToDBFormat(matchData, puuid);
+      if (dbMatch) {
+        newMatches.push(dbMatch);
+      }
+    }
+    
+    // Save new matches to cache
+    if (newMatches.length > 0) {
+      await insertMatches(newMatches);
+      console.log(`💾 Saved ${newMatches.length} new matches to cache`);
     }
   }
 
-  // Step 2: Fetch match history
-  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching match history...' });
+  // Combine cached and new matches
+  const allMatches = [...cachedMatches, ...newMatches];
+  
+  console.log(`✅ Total matches for analysis: ${allMatches.length}`);
 
-  const matchIds = await client.getMatchIdsByPuuid(puuid, {
-    count: MAX_MATCHES_TO_FETCH,
-    // queue: RANKED_SOLO_QUEUE,
-  });
+  if (allMatches.length === 0) {
+    throw new Error('No valid matches found for this player');
+  }
 
   onProgress?.({
     stage: 'matches',
     progress: 30,
-    message: `Found ${matchIds.length} matches. Downloading details...`,
+    message: `Found ${matchIds.length} matches in 2025. Downloading details...`,
   });
 
-  // Step 3: Fetch match details (with rate limiting)
-  const matches: DBMatch[] = [];
-
-  for (let i = 0; i < matchIds.length; i++) {
-    try {
-      const matchData: RiotMatch = await client.getMatch(matchIds[i]);
-      const dbMatch = convertMatchToDBFormat(matchData, puuid);
-
-      if (dbMatch) {
-        matches.push(dbMatch);
-      }
-
-      // Update progress
-      const progress = 30 + Math.floor((i / matchIds.length) * 30);
-      onProgress?.({
-        stage: 'processing',
-        progress,
-        message: `Processing match ${i + 1}/${matchIds.length}...`,
-      });
-
-      // Rate limiting: 20 requests per second max
-      if (i > 0 && i % 20 === 0) {
-        await sleep(1000);
-      }
-    } catch (error) {
-      console.error(`Failed to fetch match ${matchIds[i]}:`, error);
-      // Continue with other matches
-    }
-  }
-
-  if (matches.length === 0) {
-    throw new Error('No valid matches found for this player');
-  }
-
-  // Step 4: Calculate statistics
+  // Step 5: Calculate statistics
   onProgress?.({ stage: 'stats', progress: 65, message: 'Calculating statistics...' });
 
-  const championStats = calculateChampionStats(matches);
-  const roleStats = calculateRoleStats(matches);
-  const mainRole = getMainRole(matches);
-  const longestWinStreak = findLongestWinStreak(matches);
-  const longestLossStreak = findLongestLossStreak(matches);
-  const currentStreak = getCurrentStreak(matches);
-  const performanceTrend = calculatePerformanceTrends(matches);
-  const avgKDA = calculateAverageKDA(matches);
-  const avgStats = calculateAverageStats(matches);
+  const championStats = calculateChampionStats(allMatches);
+  const roleStats = calculateRoleStats(allMatches);
+  const mainRole = getMainRole(allMatches);
+  const longestWinStreak = findLongestWinStreak(allMatches);
+  const longestLossStreak = findLongestLossStreak(allMatches);
+  const currentStreak = getCurrentStreak(allMatches);
+  const performanceTrend = calculatePerformanceTrends(allMatches);
+  const avgKDA = calculateAverageKDA(allMatches);
+  const avgStats = calculateAverageStats(allMatches);
 
-  const wins = matches.filter((m) => m.result).length;
-  const losses = matches.length - wins;
-  const winRate = (wins / matches.length) * 100;
+  const wins = allMatches.filter((m) => m.result).length;
+  const losses = allMatches.length - wins;
+  const winRate = (wins / allMatches.length) * 100;
 
-  // Step 5: Calculate derived metrics
+  // Step 6: Calculate derived metrics and player identity
   onProgress?.({ stage: 'metrics', progress: 75, message: 'Analyzing playstyle...' });
 
-  const derivedMetrics = calculateDerivedMetrics(matches);
-  const archetype = determineArchetype(derivedMetrics);
+  const derivedMetrics = calculateDerivedMetrics(allMatches);
+  const playerIdentity = determinePlayerIdentity(derivedMetrics);
 
-  // Step 6: Detect watershed moment
+  // Step 7: Detect watershed moment
   onProgress?.({ stage: 'watershed', progress: 80, message: 'Finding breakthrough moments...' });
 
-  const watershedMoment = detectWatershedMoment(matches);
+  const watershedMoment = detectWatershedMoment(allMatches);
 
-  // Step 7: Generate AI insights
+  // Step 8: Generate AI insights
   onProgress?.({ stage: 'ai', progress: 85, message: 'Generating personalized insights...' });
 
   const playerStats: PlayerStats = {
@@ -147,7 +243,7 @@ export async function analyzePlayer(
     riotId,
     tagLine,
     region,
-    totalGames: matches.length,
+    totalGames: allMatches.length,
     wins,
     losses,
     winRate: parseFloat(winRate.toFixed(2)),
@@ -167,24 +263,43 @@ export async function analyzePlayer(
     currentStreak,
     performanceTrend,
     derivedMetrics,
-    archetype,
+    archetype: playerIdentity.archetype,
     watershedMoment: watershedMoment || undefined,
+    // New identity fields
+    proComparison: playerIdentity.proComparison,
+    topStrengths: playerIdentity.topStrengths,
+    needsWork: playerIdentity.needsWork,
+    playfulComparison: playerIdentity.playfulComparison,
     generatedAt: new Date().toISOString(),
   };
 
-  // Generate AI insights
+  // Generate AI insights (or use cached if available)
   try {
-    const insights = await generatePlayerInsights(playerStats);
-    playerStats.insights = insights;
+    // Check if player already has cached insights (unless forced to regenerate)
+    const existingPlayer = await getPlayerByRiotId(riotId, tagLine);
+    const hasExistingInsights = existingPlayer?.insights && Object.keys(existingPlayer.insights).length > 0;
+
+    if (hasExistingInsights && !forceRegenerateInsights) {
+      console.log('✅ Using cached AI insights (already generated)');
+      playerStats.insights = existingPlayer.insights;
+    } else {
+      if (forceRegenerateInsights && hasExistingInsights) {
+        console.log('🔄 Force regenerating AI insights...');
+      } else {
+        console.log('🤖 Generating new AI insights...');
+      }
+      const insights = await generatePlayerInsights(playerStats);
+      playerStats.insights = insights;
+    }
   } catch (error) {
     console.error('Failed to generate AI insights:', error);
     // Continue without insights
   }
 
-  // Step 8: Save to database
+  // Step 9: Save to database
   onProgress?.({ stage: 'save', progress: 95, message: 'Saving analysis...' });
 
-  await savePlayerAnalysis(playerStats, matches);
+  await savePlayerAnalysis(playerStats, allMatches);
 
   onProgress?.({ stage: 'complete', progress: 100, message: 'Analysis complete!' });
 
@@ -195,7 +310,8 @@ export async function analyzePlayer(
  * Save player analysis to database
  */
 async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promise<void> {
-  // Save player data
+  // Step 1: Update player data with full analysis results
+  // (Player already exists from analyzePlayer, so this is a safe update)
   await upsertPlayer({
     puuid: stats.puuid,
     riot_id: stats.riotId,
@@ -209,19 +325,29 @@ async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promi
     narrative_story: stats.insights?.story_arc || '',
     insights: stats.insights as any,
     archetype: stats.archetype.name,
+    // New identity fields
+    pro_comparison: stats.proComparison as any,
+    top_strengths: stats.topStrengths as any,
+    needs_work: stats.needsWork as any,
+    playful_comparison: stats.playfulComparison,
     generated_at: stats.generatedAt,
   });
 
-  // Save matches
-  await insertMatches(matches);
+  console.log(`✅ Player ${stats.riotId}#${stats.tagLine} analysis updated in database`);
 
-  // Mark watershed moment if exists
-  if (stats.watershedMoment) {
-    await markWatershedMoment(stats.watershedMoment.matchId, true);
+  // Step 2: Only after player is saved, insert any new matches (foreign key constraint)
+  // Note: Some matches may already be in DB from earlier in analyzePlayer(), so insertMatches
+  // should handle duplicates via upsert with onConflict
+  if (matches.length > 0) {
+    await insertMatches(matches);
+    console.log(`✅ ${matches.length} matches saved for ${stats.riotId}#${stats.tagLine}`);
   }
 
-  // Update cache
-  await updateAnalysisCache(stats.puuid, matches.length);
+  // Step 3: Mark watershed moment if exists
+  if (stats.watershedMoment) {
+    await markWatershedMoment(stats.watershedMoment.matchId, true);
+    console.log(`🌊 Watershed moment marked for ${stats.riotId}#${stats.tagLine}`);
+  }
 }
 
 /**
@@ -290,6 +416,11 @@ async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
       matchPercentage: derived.consistency || 0,
       icon: dbPlayer.archetype_icon || '🎮',
     },
+    // New identity fields from database
+    proComparison: dbPlayer.pro_comparison || undefined,
+    topStrengths: dbPlayer.top_strengths || undefined,
+    needsWork: dbPlayer.needs_work || undefined,
+    playfulComparison: dbPlayer.playful_comparison || undefined,
     insights: dbPlayer.insights || undefined,
     generatedAt: dbPlayer.generated_at,
   };
