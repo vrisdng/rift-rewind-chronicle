@@ -58,7 +58,7 @@ function getBaseUrl(region: string): string {
     europe: "https://europe.api.riotgames.com",
     sea: "https://sea.api.riotgames.com",
   };
-  return regionMap[region] || regionMap.asia;
+  return regionMap[region] || regionMap.sea;
 }
 
 class RiotClient {
@@ -148,6 +148,7 @@ class RiotClient {
     if (options?.endTime !== undefined) params.append("endTime", options.endTime.toString());
 
     const queryString = params.toString();
+    console.log("base Url is: ", this.baseUrl);
     const url = `${this.baseUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids${queryString ? `?${queryString}` : ""}`;
     console.log("Fetching match IDs from URL:", url);
     return this.makeRequest<string[]>(url);
