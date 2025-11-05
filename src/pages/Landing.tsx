@@ -1,17 +1,39 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
-import { Search, Sparkles, Loader2 } from "lucide-react";
+import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+
+// Riot API Platform Regions
+const REGIONS = [
+  { value: "na1", label: "North America", routing: "americas" },
+  { value: "br1", label: "Brazil", routing: "americas" },
+  { value: "la1", label: "Latin America North", routing: "americas" },
+  { value: "la2", label: "Latin America South", routing: "americas" },
+  { value: "euw1", label: "Europe West", routing: "europe" },
+  { value: "eun1", label: "Europe Nordic & East", routing: "europe" },
+  { value: "tr1", label: "Turkey", routing: "europe" },
+  { value: "ru", label: "Russia", routing: "europe" },
+  { value: "jp1", label: "Japan", routing: "asia" },
+  { value: "kr", label: "Korea", routing: "asia" },
+  { value: "oc1", label: "Oceania", routing: "sea" },
+  { value: "ph2", label: "Philippines", routing: "sea" },
+  { value: "sg2", label: "Singapore", routing: "sea" },
+  { value: "th2", label: "Thailand", routing: "sea" },
+  { value: "tw2", label: "Taiwan", routing: "sea" },
+  { value: "vn2", label: "Vietnam", routing: "sea" },
+];
 
 const Landing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [gameName, setGameName] = useState("");
-  const [tagLine, setTagLine] = useState("NA1");
+  const [tagLine, setTagLine] = useState("");
+  const [region, setRegion] = useState("na1");
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -38,7 +60,7 @@ const Landing = () => {
       await analyzePlayerWithProgress(
         gameName,
         tagLine,
-        "sg2",
+        region,
         // Progress callback
         (update) => {
           setProgress(update.progress);
@@ -145,6 +167,28 @@ const Landing = () => {
                 style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
             </div>
+
+            {/* Region Selector */}
+            <Select value={region} onValueChange={setRegion}>
+              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-[#C8AA6E]" />
+                  <SelectValue placeholder="Select Region" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-[#0A1428]/95 backdrop-blur-md border-2 border-[#C8AA6E]/40">
+                {REGIONS.map((r) => (
+                  <SelectItem
+                    key={r.value}
+                    value={r.value}
+                    className="text-white hover:bg-[#C8AA6E]/20 focus:bg-[#C8AA6E]/20 cursor-pointer"
+                  >
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
               onClick={startAnalysis}
               disabled={isLoading}
