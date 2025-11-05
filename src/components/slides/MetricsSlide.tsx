@@ -9,14 +9,17 @@ interface MetricsSlideProps {
 
 export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-dark p-8 overflow-y-auto">
-      <div className="max-w-6xl w-full space-y-12 animate-fade-in py-8">
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#0A1428] relative p-8 overflow-y-auto">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none" />
+
+      <div className="max-w-6xl w-full space-y-12 animate-fade-in py-8 relative z-10">
         {/* Title */}
         <div className="text-center space-y-2">
-          <h2 className="text-5xl md:text-6xl font-bold text-glow">
+          <h2 className="text-5xl md:text-6xl font-bold text-[#C8AA6E] gold-glow">
             Your Playstyle
           </h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-gray-300">
             {playerData.archetype.name}
           </p>
         </div>
@@ -30,8 +33,8 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
             />
 
           {/* Key Metrics */}
-          <Card className="p-8 card-glow">
-            <h3 className="text-2xl font-semibold mb-6">Key Metrics</h3>
+          <Card className="p-8 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30 shadow-[0_0_40px_rgba(200,170,110,0.3)]">
+            <h3 className="text-2xl font-semibold mb-6 text-[#C8AA6E]">Key Metrics</h3>
             <div className="space-y-6">
               <MetricProgress
                 label="Early Game Strength"
@@ -58,19 +61,19 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
         </div>
 
         {/* Archetype Explanation */}
-        <Card className="p-8 card-glow bg-primary/5 border-primary/20">
+        <Card className="p-8 bg-[#C8AA6E]/10 backdrop-blur-md border-2 border-[#C8AA6E]/40 shadow-[0_0_40px_rgba(200,170,110,0.3)]">
           <div className="flex items-start gap-4">
             <div className="text-5xl">{playerData.archetype.icon}</div>
             <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-3">
+              <h3 className="text-2xl font-bold mb-3 text-[#C8AA6E]">
                 {playerData.archetype.name}
               </h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-gray-300 leading-relaxed">
                 {playerData.archetype.description}
               </p>
               <div className="mt-4">
-                <span className="text-sm text-muted-foreground">Match Strength: </span>
-                <span className="text-xl font-bold text-primary">
+                <span className="text-sm text-gray-400 font-bold">Match Strength: </span>
+                <span className="text-xl font-bold text-[#C8AA6E]">
                   {playerData.archetype.matchPercentage}%
                 </span>
               </div>
