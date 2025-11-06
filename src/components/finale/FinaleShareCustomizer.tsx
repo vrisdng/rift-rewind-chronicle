@@ -47,6 +47,8 @@ interface FinaleShareCustomizerProps {
 	isDownloadingAll?: boolean;
 	downloadAllLabel?: string;
 	downloadAllIcon?: ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 const radarMetricKeys: Array<keyof PlayerStats["derivedMetrics"]> = [
 	"vision",
@@ -64,28 +66,34 @@ export const FinaleShareCustomizer = ({
 	isDownloadingAll = false,
 	downloadAllLabel,
 	downloadAllIcon,
+	open: controlledOpen,
+	onOpenChange,
 }: FinaleShareCustomizerProps) => {
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
 	const [showWinRate, setShowWinRate] = useState(true);
 	const [showGamesPlayed, setShowGamesPlayed] = useState(true);
 	const [showAverageKda, setShowAverageKda] = useState(true);
-	const [selectedBackground, setSelectedBackground] = useState<string>("navy");
+	const [selectedBackground, setSelectedBackground] =
+		useState<string>("prestige-gold");
 	const cardRef = useRef<HTMLDivElement | null>(null);
+
+	// Use controlled state if provided, otherwise use internal state
+	const open = controlledOpen ?? internalOpen;
+	const setOpen = onOpenChange ?? setInternalOpen;
 	const {
 		variant: triggerVariant = "hero",
 		size: triggerSize = "lg",
 		className: triggerClassName,
 	} = triggerProps ?? {};
-	const triggerContentIcon = triggerIcon ?? (
-		<Sparkles className="mr-2 h-5 w-5" />
-	);
+	const triggerContentIcon =
+		triggerIcon ?? <Sparkles className="mr-2 h-5 w-5 text-[#0A1428]" />;
 	const triggerButtonClassName = cn(
-		"text-lg px-12 py-6 h-auto",
+		"lol-heading text-lg px-12 py-6 h-auto font-bold tracking-[0.3em] uppercase bg-[#C8AA6E] text-[#0A1428] hover:bg-[#d7b977] border-[#C8AA6E]/60 shadow-[0_18px_40px_rgba(8,12,22,0.55)] transition-transform hover:-translate-y-0.5 focus-visible:ring-[#C8AA6E]",
 		triggerClassName,
 	);
 	const downloadAllButtonLabel = downloadAllLabel ?? "Download Recap Cards";
 	const downloadAllButtonIcon = downloadAllIcon ?? (
-		<Sparkles className="mr-2 h-4 w-4" />
+		<Sparkles className="mr-2 h-4 w-4 text-[#C8AA6E]" />
 	);
 	const backgroundOptions = useMemo<BackgroundOption[]>(() => {
 		const championOptions: BackgroundOption[] = (playerData.topChampions || [])
@@ -98,53 +106,45 @@ export const FinaleShareCustomizer = ({
 				type: "image" as const,
 				value: champion.splashArtUrl as string,
 			}));
-		const colorOptions: BackgroundOption[] = [
+		const thematicOptions: BackgroundOption[] = [
 			{
-				id: "navy",
-				label: "Navy Nebula",
-				description: "Deep navy gradient",
+				id: "prestige-gold",
+				label: "Prestige Gold",
+				description: "Signature LoL gold glow",
 				type: "gradient",
-				value: "linear-gradient(135deg, #081129 0%, #0f213f 60%, #050715 100%)",
+				value:
+					"linear-gradient(135deg, rgba(10,20,40,0.98) 0%, rgba(20,35,60,0.9) 50%, rgba(200,170,110,0.32) 100%)",
 			},
 			{
-				id: "black",
-				label: "Midnight Black",
-				description: "Pure black finish",
-				type: "color",
-				value: "#050505",
+				id: "hextech-night",
+				label: "Hextech Nightfall",
+				description: "Hextech blues with golden rim",
+				type: "gradient",
+				value:
+					"linear-gradient(145deg, rgba(10,20,40,0.96) 0%, rgba(32,58,112,0.75) 55%, rgba(200,170,110,0.28) 100%)",
+			},
+			{
+				id: "victory-dawn",
+				label: "Victory Dawn",
+				description: "Warm prestige horizon",
+				type: "gradient",
+				value:
+					"linear-gradient(150deg, rgba(10,20,40,0.95) 0%, rgba(104,68,34,0.65) 60%, rgba(200,170,110,0.28) 100%)",
 			},
 			{
 				id: "radar",
 				label: "Playstyle Radar",
 				description: "Show radar as background",
 				type: "gradient",
-				value: "linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 100%)",
+				value:
+					"linear-gradient(135deg, rgba(10,15,25,0.95) 0%, rgba(26,31,46,0.9) 100%)",
 			},
 		];
-		const placeholderOptions: BackgroundOption[] = [
-			{
-				id: "placeholder-aurora",
-				label: "Arcane Aurora",
-				description: "Violet & teal glow",
-
-				type: "gradient",
-				value:
-					"linear-gradient(140deg, rgba(33,16,70,0.92) 0%, rgba(17,62,95,0.88) 100%)",
-			},
-			{
-				id: "placeholder-sunrise",
-				label: "Piltover Sunrise",
-				description: "Warm horizon",
-				type: "gradient",
-				value:
-					"linear-gradient(145deg, rgba(25,13,33,0.96) 0%, rgba(104,68,34,0.85) 100%)",
-			},
-		];
-		return [...championOptions, ...colorOptions, ...placeholderOptions];
+		return [...championOptions, ...thematicOptions];
 	}, [playerData.topChampions]);
 	useEffect(() => {
 		if (!backgroundOptions.length) {
-			setSelectedBackground("navy");
+			setSelectedBackground("prestige-gold");
 			return;
 		}
 		if (!backgroundOptions.some((option) => option.id === selectedBackground)) {
@@ -265,12 +265,18 @@ export const FinaleShareCustomizer = ({
 					{triggerLabel ?? "Share My Rewind"}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto bg-background/95 backdrop-blur-xl">
+			<DialogContent
+				className="max-w-[95vw] max-h-[95vh] overflow-y-auto border border-[rgba(200,170,110,0.25)] bg-[#0A1428] text-white shadow-[0_25px_60px_rgba(8,12,22,0.65)] backdrop-blur-xl"
+				style={{
+					background:
+						"linear-gradient(180deg, rgba(10,20,40,0.98) 0%, rgba(22,31,50,0.92) 65%, rgba(10,20,40,0.98) 100%)",
+				}}
+			>
 				<DialogHeader>
-					<DialogTitle className="text-2xl font-bold">
+					<DialogTitle className="lol-heading text-2xl text-[#C8AA6E]">
 						Customize Your Share Card
 					</DialogTitle>
-					<DialogDescription>
+					<DialogDescription className="lol-body text-sm text-white/70">
 						Tailor the details you want to highlight before downloading a
 						share-ready PNG.
 					</DialogDescription>
@@ -280,10 +286,17 @@ export const FinaleShareCustomizer = ({
 						<div className="relative w-[640px]">
 							<div
 								ref={cardRef}
-								className="relative h-[388px] w-[640px] overflow-hidden rounded-[24px] border border-white/10 shadow-2xl transition-all"
+								className="relative h-[388px] w-[640px] overflow-hidden rounded-[28px] border border-[rgba(200,170,110,0.28)] bg-[#0A1428] shadow-[0_25px_60px_rgba(8,12,22,0.65)] transition-all"
 								style={backgroundStyle}
 							>
-								<div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/30 to-black/70" />
+								<div className="absolute inset-0 bg-gradient-to-br from-[#050912]/85 via-[#0A1428]/75 to-[#050912]/95" />
+								<div
+									className="absolute inset-0 opacity-60"
+									style={{
+										background:
+											"radial-gradient(circle at 18% 20%, rgba(200,170,110,0.32) 0%, transparent 55%), radial-gradient(circle at 82% 18%, rgba(64,119,227,0.22) 0%, transparent 50%)",
+									}}
+								/>
 								{selectedBackground === "radar" && (
 									<div className="absolute inset-0 flex items-center justify-center opacity-20">
 										<div className="h-full w-full scale-150">
@@ -315,32 +328,32 @@ export const FinaleShareCustomizer = ({
 										</div>
 									</div>
 								)}
-								<div className="relative flex h-full flex-col justify-between p-8 text-white">
-									<header className="space-y-3">
-										<p className="text-xs uppercase tracking-[0.45em] text-white/70">
+								<div className="relative flex h-full flex-col justify-between p-9 text-white lol-body">
+									<header className="space-y-4">
+										<p className="lol-subheading text-[0.65rem] tracking-[0.45em] text-[#C8AA6E]/70">
 											Rift Rewind Chronicle
 										</p>
-										<div>
-											<p className="text-sm uppercase tracking-[0.35em] text-primary/80">
+										<div className="lol-accent-bar pl-4">
+											<p className="lol-subheading text-[0.65rem] tracking-[0.5em] text-[#C8AA6E]/65">
 												Summoner
 											</p>
-											<h2 className="text-2xl font-semibold">
+											<h2 className="lol-heading text-3xl text-white drop-shadow-[0_0_25px_rgba(10,20,40,0.65)]">
 												{playerData.riotId}
-												<span className="text-white/70">
+												<span className="ml-2 text-[#C8AA6E]/70">
 													#{playerData.tagLine}
 												</span>
 											</h2>
 										</div>
 									</header>
-									<div className="space-y-4">
+									<div className="space-y-5">
 										<div className="space-y-2 text-left">
-											<p className="text-sm uppercase tracking-[0.45em] text-white/60">
+											<p className="lol-subheading text-[0.7rem] tracking-[0.45em] text-[#C8AA6E]/65">
 												Archetype
 											</p>
-											<h3 className="text-4xl font-black uppercase tracking-[0.3em] text-white drop-shadow-[0_0_25px_rgba(0,0,0,0.55)]">
+											<h3 className="lol-heading text-[2.4rem] text-white tracking-[0.22em] drop-shadow-[0_0_35px_rgba(10,20,40,0.7)]">
 												{playerData.archetype.name}
 											</h3>
-											<p className="text-base text-white/75">
+											<p className="text-sm leading-relaxed text-white/75">
 												{playerData.archetype.description}
 											</p>
 										</div>
@@ -349,12 +362,12 @@ export const FinaleShareCustomizer = ({
 												{statBlocks.map((stat) => (
 													<div
 														key={stat.label}
-														className="rounded-lg border border-white/20 bg-transparent p-3 text-left backdrop-blur-sm"
+														className="lol-card border-[rgba(200,170,110,0.3)] bg-[#0A1428]/70 p-4 text-left shadow-[0_12px_20px_rgba(8,12,22,0.4)]"
 													>
-														<p className="text-xs uppercase tracking-[0.35em] text-white/70">
+														<p className="lol-subheading text-[0.6rem] tracking-[0.45em] text-[#C8AA6E]/70">
 															{stat.label}
 														</p>
-														<p className="text-2xl font-semibold text-white">
+														<p className="lol-heading text-2xl text-white tracking-[0.08em]">
 															{stat.value}
 														</p>
 													</div>
@@ -362,12 +375,14 @@ export const FinaleShareCustomizer = ({
 											</div>
 										)}
 									</div>
-									<footer className="flex items-center justify-between text-xs uppercase tracking-[0.4em] text-white/60">
-										<span>
+									<footer className="flex items-center justify-between lol-subheading text-[0.6rem] tracking-[0.45em] text-[#C8AA6E]/70">
+										<span className="uppercase">
 											Season{" "}
 											{new Date(playerData.generatedAt).getFullYear() || 2025}
 										</span>
-										<span>{playerData.riotId.replace(/\s+/g, "")}</span>
+										<span className="uppercase">
+											{playerData.riotId.replace(/\s+/g, "")}
+										</span>
 									</footer>
 								</div>
 							</div>
@@ -375,22 +390,22 @@ export const FinaleShareCustomizer = ({
 						<Button
 							onClick={handleDownload}
 							type="button"
-							className="mt-6 w-full"
+							className="mt-6 w-full lol-heading bg-[#C8AA6E] text-[#0A1428] font-bold uppercase tracking-[0.2em] hover:bg-[#d7b977] border-[#C8AA6E]/60 shadow-[0_18px_40px_rgba(8,12,22,0.5)] transition-transform hover:-translate-y-0.5 focus-visible:ring-[#C8AA6E]"
 							variant="hero"
 						>
-							<Download className="mr-2 h-4 w-4" />
+							<Download className="mr-2 h-4 w-4 text-[#0A1428]" />
 							Download PNG
 						</Button>
 						{onDownloadAll && (
 							<Button
 								type="button"
 								onClick={onDownloadAll}
-								className="mt-2 w-full"
+								className="mt-2 w-full lol-heading border-[#C8AA6E]/50 bg-transparent text-[#C8AA6E] font-bold uppercase tracking-[0.2em] hover:bg-[#C8AA6E]/10"
 								variant="outline"
 								disabled={isDownloadingAll}
 							>
 								{isDownloadingAll ? (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<Loader2 className="mr-2 h-4 w-4 animate-spin text-[#C8AA6E]" />
 								) : (
 									downloadAllButtonIcon
 								)}
@@ -399,18 +414,20 @@ export const FinaleShareCustomizer = ({
 						)}
 					</div>
 					<div className="space-y-8">
-						<section className="space-y-4 rounded-2xl border border-border bg-background/60 p-6 backdrop-blur">
-							<h4 className="text-lg font-semibold">Display Options</h4>
+						<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+							<h4 className="lol-heading text-lg text-[#C8AA6E]">
+								Display Options
+							</h4>
 							<div className="space-y-4">
-								<div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 px-4 py-3">
+								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
 									<div>
 										<Label
 											htmlFor="show-winrate"
-											className="text-sm font-medium"
+											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
 										>
 											Win Rate
 										</Label>
-										<p className="text-xs text-muted-foreground">
+										<p className="text-[0.7rem] text-white/60">
 											Show your season win percentage.
 										</p>
 									</div>
@@ -420,12 +437,15 @@ export const FinaleShareCustomizer = ({
 										onCheckedChange={setShowWinRate}
 									/>
 								</div>
-								<div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 px-4 py-3">
+								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
 									<div>
-										<Label htmlFor="show-games" className="text-sm font-medium">
+										<Label
+											htmlFor="show-games"
+											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
+										>
 											Games Played
 										</Label>
-										<p className="text-xs text-muted-foreground">
+										<p className="text-[0.7rem] text-white/60">
 											Highlight your total matches played.
 										</p>
 									</div>
@@ -435,12 +455,15 @@ export const FinaleShareCustomizer = ({
 										onCheckedChange={setShowGamesPlayed}
 									/>
 								</div>
-								<div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 px-4 py-3">
+								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
 									<div>
-										<Label htmlFor="show-kda" className="text-sm font-medium">
+										<Label
+											htmlFor="show-kda"
+											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
+										>
 											Average KDA
 										</Label>
-										<p className="text-xs text-muted-foreground">
+										<p className="text-[0.7rem] text-white/60">
 											Include your average kill/death/assist ratio.
 										</p>
 									</div>
@@ -452,9 +475,11 @@ export const FinaleShareCustomizer = ({
 								</div>
 							</div>
 						</section>
-						<section className="space-y-4 rounded-2xl border border-border bg-background/60 p-6 backdrop-blur">
-							<h4 className="text-lg font-semibold">Background</h4>
-							<p className="text-sm text-muted-foreground">
+						<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+							<h4 className="lol-heading text-lg text-[#C8AA6E]">
+								Background
+							</h4>
+							<p className="text-sm text-white/65">
 								Choose between your top champion splash art or stock backdrops.
 							</p>
 							<div className="grid grid-cols-2 gap-4">
@@ -464,14 +489,14 @@ export const FinaleShareCustomizer = ({
 										type="button"
 										onClick={() => setSelectedBackground(option.id)}
 										className={cn(
-											"group relative overflow-hidden rounded-xl border border-transparent p-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-primary",
+											"group relative overflow-hidden rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-[#C8AA6E]/60",
 											selectedBackground === option.id
-												? "border-primary shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
-												: "hover:border-primary/30",
+												? "border-[#C8AA6E]/60 shadow-[0_12px_30px_rgba(200,170,110,0.18)]"
+												: "hover:border-[#C8AA6E]/40",
 										)}
 									>
 										<div
-											className="relative h-24 w-full overflow-hidden rounded-[10px] bg-black"
+											className="relative h-24 w-full overflow-hidden rounded-[10px] bg-[#050912]"
 											style={
 												option.type === "image"
 													? {
@@ -481,17 +506,17 @@ export const FinaleShareCustomizer = ({
 														}
 													: option.type === "gradient"
 														? { backgroundImage: option.value }
-														: { backgroundColor: option.value }
+													: { backgroundColor: option.value }
 											}
 										>
-											<div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/20 to-black/60" />
+											<div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/10 via-[#050912]/35 to-[#050912]/70" />
 										</div>
 										<div className="p-3 text-left">
-											<p className="text-sm font-medium text-foreground">
+											<p className="lol-heading text-sm text-[#C8AA6E]">
 												{option.label}
 											</p>
 											{option.description && (
-												<p className="text-xs text-muted-foreground">
+												<p className="text-[0.7rem] text-white/65">
 													{option.description}
 												</p>
 											)}
