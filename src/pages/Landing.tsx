@@ -8,24 +8,12 @@ import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Riot API Platform Regions
+// Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
-  { value: "na1", label: "North America", routing: "americas" },
-  { value: "br1", label: "Brazil", routing: "americas" },
-  { value: "la1", label: "Latin America North", routing: "americas" },
-  { value: "la2", label: "Latin America South", routing: "americas" },
-  { value: "euw1", label: "Europe West", routing: "europe" },
-  { value: "eun1", label: "Europe Nordic & East", routing: "europe" },
-  { value: "tr1", label: "Turkey", routing: "europe" },
-  { value: "ru", label: "Russia", routing: "europe" },
-  { value: "jp1", label: "Japan", routing: "asia" },
-  { value: "kr", label: "Korea", routing: "asia" },
-  { value: "oc1", label: "Oceania", routing: "sea" },
-  { value: "ph2", label: "Philippines", routing: "sea" },
-  { value: "sg2", label: "Singapore", routing: "sea" },
-  { value: "th2", label: "Thailand", routing: "sea" },
-  { value: "tw2", label: "Taiwan", routing: "sea" },
-  { value: "vn2", label: "Vietnam", routing: "sea" },
+  { value: "americas", label: "Americas" },
+  { value: "asia", label: "Asia" },
+  { value: "europe", label: "Europe" },
+  { value: "sea", label: "Southeast Asia" },
 ];
 
 const Landing = () => {
@@ -33,7 +21,7 @@ const Landing = () => {
   const { toast } = useToast();
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
-  const [region, setRegion] = useState("na1");
+  const [region, setRegion] = useState("sea");
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -286,7 +274,7 @@ const Landing = () => {
               size="lg"
               className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
-              onClick={() => navigate("/dashboard", { state: { playerData } })}
+              onClick={() => navigate("dashboard-new", { state: { playerData } })}
             >
               Enter
             </Button>

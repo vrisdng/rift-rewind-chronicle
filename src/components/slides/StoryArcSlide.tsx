@@ -1,6 +1,4 @@
 import type { PlayerStats } from "@/lib/api";
-import { Card } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
 
 interface StoryArcSlideProps {
   playerData: PlayerStats;
@@ -10,41 +8,37 @@ export const StoryArcSlide = ({ playerData }: StoryArcSlideProps) => {
   if (!playerData.insights?.story_arc) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-y-auto items-center justify-start bg-[#0A1428] relative p-8">
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none" />
-
-      <div className="max-w-4xl w-full space-y-12 animate-fade-in my-auto relative z-10">
+    <div className="w-full h-screen flex flex-col overflow-hidden items-center justify-center lol-bg-subtle relative p-8">
+      <div className="max-w-4xl w-full space-y-6 animate-fade-in relative z-10">
         {/* Title */}
-        <div className="text-center space-y-4">
-          <BookOpen className="w-16 h-16 mx-auto text-[#C8AA6E]" />
-          <h2 className="text-5xl md:text-6xl font-bold text-[#C8AA6E] gold-glow">
+        <div className="text-center space-y-2">
+          <h2 className="lol-heading text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E]">
             {playerData.insights.title}
           </h2>
-          <p className="text-xl text-gray-300">
-            Your story
+          <p className="lol-subheading text-gray-500 text-xs">
+            Your Season Story
           </p>
         </div>
 
         {/* Story Content */}
-        <Card className="p-12 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30 shadow-[0_0_40px_rgba(200,170,110,0.3)]">
-          <p className="text-2xl leading-relaxed text-gray-300 text-center">
+        <div className="lol-card p-6 border-[#C8AA6E]">
+          <p className="text-base sm:text-lg leading-relaxed text-gray-300 text-center lol-body">
             {playerData.insights.story_arc}
           </p>
-        </Card>
+        </div>
 
         {/* Season Prediction */}
         {playerData.insights.season_prediction && (
-          <Card className="p-8 bg-[#C8AA6E]/10 backdrop-blur-md border-2 border-[#C8AA6E]/40 shadow-[0_0_40px_rgba(200,170,110,0.3)]">
-            <div className="text-center space-y-3">
-              <h3 className="text-xl font-bold text-[#C8AA6E]">
+          <div className="lol-card p-5 border-[#C8AA6E]/60">
+            <div className="text-center space-y-2 lol-accent-bar pl-4">
+              <h3 className="lol-subheading text-[#C8AA6E] text-xs">
                 2025 Prediction
               </h3>
-              <p className="text-lg text-gray-300">
+              <p className="text-sm text-gray-300 lol-body">
                 {playerData.insights.season_prediction}
               </p>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </div>
