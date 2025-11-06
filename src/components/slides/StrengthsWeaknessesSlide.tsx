@@ -9,15 +9,15 @@ export const StrengthsWeaknessesSlide = ({ playerData }: StrengthsWeaknessesSlid
   if (!playerData.topStrengths || !playerData.needsWork) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-dark p-8">
-      <div className="max-w-6xl w-full space-y-12 animate-fade-in">
+    <div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+      <div className="max-w-6xl w-full space-y-5 animate-fade-in relative z-10">
         {/* Title */}
-        <div className="text-center space-y-2">
-          <h2 className="text-5xl md:text-6xl font-bold text-glow">
+        <div className="text-center space-y-1">
+          <h2 className="lol-heading text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E]">
             The Full Picture
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Your strengths and areas to improve
+          <p className="lol-subheading text-gray-500 text-xs">
+            Your Strengths And Areas To Improve
           </p>
         </div>
 

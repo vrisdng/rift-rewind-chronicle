@@ -24,7 +24,7 @@ const App = () => (
 			<BrowserRouter>
 				<Routes>
 					<Route path="/" element={<Landing />} />
-					<Route path="/dashboard" element={<WrappedDashboard />} />
+					<Route path="/dashboard-new" element={<WrappedDashboard />} />
 					<Route path="/deep-insights" element={<DeepInsights />} />
 					<Route path="/highlights" element={<Highlights />} />
 					<Route path="/archetype" element={<Archetype />} />

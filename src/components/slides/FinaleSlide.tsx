@@ -118,6 +118,7 @@ interface FinaleSlideProps {
 
 export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 	const [isGenerating, setIsGenerating] = useState(false);
+	const [showShareCustomizer, setShowShareCustomizer] = useState(false);
 	const cardRefs = useRef<Record<ShareAspectId, HTMLDivElement | null>>({
 		story: null,
 		grid: null,
@@ -258,119 +259,111 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 
 	return (
 		<>
-			<div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-hextech p-4 sm:p-8">
-				{/* Animated hextech background */}
-				<div className="pointer-events-none absolute inset-0 opacity-10">
-					<div className="absolute top-10 left-10 h-40 w-40 hexagon bg-primary animate-hextech-pulse" />
-					<div
-						className="absolute bottom-20 right-10 h-48 w-48 hexagon bg-accent animate-hextech-pulse"
-						style={{ animationDelay: "0.5s" }}
-					/>
-					<div
-						className="absolute top-1/3 right-1/4 h-32 w-32 hexagon bg-primary animate-hextech-pulse"
-						style={{ animationDelay: "1s" }}
-					/>
-					<div
-						className="absolute bottom-1/3 left-1/4 h-36 w-36 hexagon bg-accent animate-hextech-pulse"
-						style={{ animationDelay: "1.5s" }}
-					/>
-				</div>
-
-				<div className="animate-fade-in relative z-10 flex max-h-screen w-full max-w-3xl flex-col items-center space-y-8 overflow-y-auto px-4 py-8 text-center sm:space-y-12">
-					{/* Trophy Icon with hextech styling */}
-					<div className="relative">
-						<div className="absolute inset-0 mx-auto h-32 w-32 hexagon bg-gradient-gold opacity-30 blur-xl animate-hextech-pulse sm:h-40 sm:w-40" />
-						<div className="relative mx-auto flex h-32 w-32 items-center justify-center border-4 border-accent hexagon bg-gradient-gold shine-effect sm:h-40 sm:w-40">
-							<Trophy className="h-20 w-20 text-background drop-shadow-[0_0_20px_rgba(200,150,0,0.8)] sm:h-24 sm:w-24" />
+			<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+				<div className="max-w-4xl w-full space-y-6 animate-fade-in relative z-10">
+					{/* Trophy Icon */}
+					<div className="text-center">
+						<div className="relative inline-block">
+							<div className="absolute inset-0 bg-[#C8AA6E] opacity-20 blur-2xl" />
+							<Trophy className="w-20 h-20 text-[#C8AA6E] relative mx-auto" />
 						</div>
 					</div>
 
-					{/* Title with LoL styling */}
-					<div className="space-y-3 sm:space-y-4">
-						<h2 className="text-5xl font-bold uppercase tracking-wider text-hextech sm:text-6xl md:text-7xl">
+					{/* Title */}
+					<div className="text-center space-y-2">
+						<h2 className="lol-heading text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E]">
 							Victory
 						</h2>
-						<p className="px-4 text-lg uppercase tracking-widest text-foreground/80 sm:text-xl md:text-2xl">
+						<p className="lol-subheading text-gray-500 text-xs">
 							{playerData.riotId}&apos;s Season Complete
 						</p>
 					</div>
 
-					{/* Stats Summary with hextech styling */}
-					<div className="grid grid-cols-3 gap-3 py-4 sm:gap-6 sm:py-8 md:gap-8">
-						<div className="space-y-1 rounded-lg border border-primary/30 bg-card/40 p-3 text-hextech lol-corners backdrop-blur-sm sm:space-y-2 sm:p-4 md:p-6">
-							<div className="text-3xl font-bold sm:text-4xl md:text-5xl">
+					{/* Stats Summary */}
+					<div className="grid grid-cols-3 gap-4">
+						<div className="lol-card p-4 text-center">
+							<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
 								{playerData.totalGames}
 							</div>
-							<div className="text-xs uppercase tracking-wider text-muted-foreground sm:text-sm">
+							<div className="lol-subheading text-gray-600 text-xs mt-1">
 								Battles
 							</div>
 						</div>
-						<div className="space-y-1 rounded-lg border border-accent/30 bg-card/40 p-3 text-glow-gold lol-corners backdrop-blur-sm sm:space-y-2 sm:p-4 md:p-6">
-							<div className="text-3xl font-bold text-accent sm:text-4xl md:text-5xl">
+						<div className="lol-card p-4 text-center border-[#C8AA6E]/40">
+							<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
 								{playerData.winRate.toFixed(0)}%
 							</div>
-							<div className="text-xs uppercase tracking-wider text-muted-foreground sm:text-sm">
+							<div className="lol-subheading text-gray-600 text-xs mt-1">
 								Victory
 							</div>
 						</div>
-						<div className="space-y-1 rounded-lg border border-primary/30 bg-card/40 p-3 text-hextech lol-corners backdrop-blur-sm sm:space-y-2 sm:p-4 md:p-6">
-							<div className="text-xl font-bold truncate sm:text-2xl md:text-3xl">
+						<div className="lol-card p-4 text-center">
+							<div className="text-xl md:text-2xl font-bold text-[#C8AA6E] lol-body truncate">
 								{playerData.topChampions[0]?.championName || "N/A"}
 							</div>
-							<div className="text-xs uppercase tracking-wider text-muted-foreground sm:text-sm">
+							<div className="lol-subheading text-gray-600 text-xs mt-1">
 								Main
 							</div>
 						</div>
 					</div>
 
-					{/* Archetype Badge with hextech styling */}
-					<div className="lol-corners inline-flex max-w-full items-center gap-3 border border-primary/40 bg-card/60 px-6 py-4 backdrop-blur-sm shine-effect sm:gap-4 sm:px-8 sm:py-5 md:px-10">
-						<div className="hexagon flex h-12 w-12 flex-shrink-0 items-center justify-center bg-gradient-hextech sm:h-14 sm:w-14 md:h-16 md:w-16">
-							<span className="text-2xl sm:text-3xl">
-								{playerData.archetype.icon}
-							</span>
-						</div>
-						<div className="min-w-0 text-left">
-							<p className="text-xs uppercase tracking-widest text-muted-foreground">
-								Class
-							</p>
-							<p className="truncate text-lg font-bold text-primary sm:text-xl md:text-2xl">
-								{playerData.archetype.name}
-							</p>
+					{/* Archetype Badge */}
+					<div className="flex justify-center">
+						<div className="lol-card inline-flex items-center gap-3 px-6 py-3 border-[#C8AA6E]/40">
+							<div className="flex h-12 w-12 items-center justify-center bg-[#C8AA6E]/10 rounded">
+								<span className="text-2xl">{playerData.archetype.icon}</span>
+							</div>
+							<div className="text-left">
+								<p className="lol-subheading text-gray-600 text-[10px]">
+									Class
+								</p>
+								<p className="text-lg font-bold text-[#C8AA6E] lol-heading">
+									{playerData.archetype.name}
+								</p>
+							</div>
 						</div>
 					</div>
 
-					{/* CTA Buttons with LoL styling */}
-					<div className="mx-auto flex w-full max-w-md flex-col justify-center gap-3 pt-4 sm:flex-row sm:gap-4 sm:pt-8">
-						<FinaleShareCustomizer
-							playerData={playerData}
-							triggerLabel="Share Results"
-							triggerIcon={<Share2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
-							triggerProps={{
-								variant: "outline",
-								size: "lg",
-								className:
-									"lol-corners w-full border-primary/40 bg-card/80 text-primary backdrop-blur-sm hover:border-primary/60 hover:bg-card sm:w-auto",
-							}}
-							onDownloadAll={handleShare}
-							isDownloadingAll={isGenerating}
-						/>
+					{/* CTA Buttons */}
+					<div className="flex justify-center gap-3 pt-2">
+						<Button
+							size="lg"
+							variant="outline"
+							onClick={() => setShowShareCustomizer(true)}
+							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading"
+						>
+							<Share2 className="mr-2 h-4 w-4" />
+							Share Results
+						</Button>
 						<Button
 							size="lg"
 							onClick={onContinue}
-							className="lol-corners w-full border-2 border-accent/50 bg-gradient-gold text-background font-bold uppercase tracking-wider hover:opacity-90 sm:w-auto"
+							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading"
 						>
 							Continue
-							<ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+							<ArrowRight className="ml-2 h-4 w-4" />
 						</Button>
 					</div>
 
 					{/* Footer */}
-					<p className="text-xs uppercase tracking-widest text-muted-foreground sm:text-sm">
+					<p className="text-center lol-subheading text-gray-600 text-xs">
 						Rift Rewind Chronicle
 					</p>
 				</div>
 			</div>
+
+			<div
+				aria-hidden="true"
+				className="fixed left-[-9999px] top-0 flex select-none flex-col gap-10 opacity-0 pointer-events-none"
+			></div>
+
+			{showShareCustomizer && (
+				<FinaleShareCustomizer
+					playerData={playerData}
+					open={showShareCustomizer}
+					onOpenChange={setShowShareCustomizer}
+				/>
+			)}
 		</>
 	);
 };

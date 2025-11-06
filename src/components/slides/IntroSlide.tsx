@@ -1,5 +1,4 @@
 import type { PlayerStats } from "@/lib/api";
-import { Trophy } from "lucide-react";
 
 interface IntroSlideProps {
   playerData: PlayerStats;
@@ -7,54 +6,53 @@ interface IntroSlideProps {
 
 export const IntroSlide = ({ playerData }: IntroSlideProps) => {
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-hextech relative overflow-hidden p-4 sm:p-8">
-      {/* Hextech pattern overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 hexagon bg-primary animate-hextech-pulse" />
-        <div className="absolute bottom-20 right-20 w-40 h-40 hexagon bg-primary animate-hextech-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 right-10 w-24 h-24 hexagon bg-accent animate-hextech-pulse" style={{ animationDelay: '0.5s' }} />
-      </div>
+    <div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden">
+      {/* Minimal accent decoration - not distracting */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent" />
 
-      <div className="text-center space-y-6 sm:space-y-8 animate-fade-in relative z-10 max-w-4xl mx-auto w-full px-4">
-        {/* Icon with hextech styling */}
-        <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto">
-          <div className="absolute inset-0 hexagon bg-gradient-hextech opacity-30 animate-hextech-pulse" />
-          <div className="relative w-24 h-24 sm:w-32 sm:h-32 hexagon bg-background/40 backdrop-blur-sm flex items-center justify-center border-2 border-primary">
-            <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-primary drop-shadow-[0_0_10px_rgba(0,180,230,0.8)]" />
-          </div>
-        </div>
-
-        {/* Year with hextech glow */}
-        <div className="space-y-2">
-          <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-hextech tracking-wider">
-            2024
+      <div className="text-center space-y-12 animate-fade-in relative z-10 max-w-4xl mx-auto w-full px-8">
+        {/* Year - Beaufort font, italic, bold */}
+        <div className="space-y-4">
+          <h1 className="lol-heading text-7xl sm:text-8xl md:text-9xl text-[#C8AA6E]" style={{ textShadow: '0 0 60px rgba(200, 170, 110, 0.4)' }}>
+            2025
           </h1>
-          <p className="text-xl sm:text-2xl md:text-3xl text-foreground/80 font-semibold tracking-wide uppercase">
+          <p className="lol-subheading text-gray-400">
             Season Rewind
           </p>
         </div>
 
         {/* Player info */}
-        <div className="space-y-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-glow break-words px-4">
-            {playerData.riotId}<span className="text-foreground/50">#{playerData.tagLine}</span>
+        <div className="space-y-6">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-white lol-body">
+            {playerData.riotId}
+            <span className="text-[#C8AA6E]">#{playerData.tagLine}</span>
           </h2>
 
-          {/* Archetype - LoL styled badge */}
-          <div className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 lol-corners bg-card/80 backdrop-blur-sm border border-primary/40 shine-effect max-w-full">
-            <span className="text-3xl sm:text-4xl">{playerData.archetype.icon}</span>
-            <div className="text-left">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Class</p>
-              <p className="text-lg sm:text-xl font-bold text-primary truncate max-w-[200px] sm:max-w-none">{playerData.archetype.name}</p>
+          {/* Archetype - Clean card matching LoL website */}
+          <div className="inline-flex items-center gap-4 px-8 py-4 lol-card">
+            <span className="text-4xl">{playerData.archetype.icon}</span>
+            <div className="text-left lol-accent-bar pl-4">
+              <p className="lol-subheading text-gray-500 text-xs mb-1">Class</p>
+              <p className="text-xl font-bold text-[#C8AA6E] lol-body">{playerData.archetype.name}</p>
             </div>
           </div>
         </div>
 
-        {/* Swipe hint with hextech styling */}
-        <div className="absolute bottom-12 sm:bottom-16 left-1/2 -translate-x-1/2">
-          <p className="text-muted-foreground text-xs sm:text-sm animate-pulse uppercase tracking-wider">
-            → Continue
-          </p>
+        {/* Stats Preview */}
+        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto pt-4">
+          <div className="text-center">
+            <div className="text-4xl font-bold text-white lol-body mb-2">{playerData.totalGames}</div>
+            <div className="lol-subheading text-gray-500 text-xs">Battles</div>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-bold text-[#C8AA6E] lol-body mb-2">{playerData.winRate.toFixed(0)}%</div>
+            <div className="lol-subheading text-gray-500 text-xs">Victory</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-white lol-body mb-2 truncate">{playerData.topChampions[0]?.championName || "—"}</div>
+            <div className="lol-subheading text-gray-500 text-xs">Champion</div>
+          </div>
         </div>
       </div>
     </div>

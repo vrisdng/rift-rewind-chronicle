@@ -1,6 +1,5 @@
 import type { PlayerStats } from "@/lib/api";
-import { Card } from "@/components/ui/card";
-import { Zap, Sparkles, ArrowUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 interface WatershedSlideProps {
   playerData: PlayerStats;
@@ -10,82 +9,68 @@ export const WatershedSlide = ({ playerData }: WatershedSlideProps) => {
   if (!playerData.watershedMoment) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-gold relative overflow-hidden p-4 sm:p-8">
-      {/* Hexagonal pattern overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-20 left-20 w-48 h-48 hexagon bg-accent animate-hextech-pulse" />
-        <div className="absolute bottom-10 right-10 w-56 h-56 hexagon bg-accent animate-hextech-pulse" style={{ animationDelay: '0.7s' }} />
-      </div>
-
-      <div className="max-w-5xl w-full space-y-8 sm:space-y-12 animate-fade-in relative z-10 px-4 overflow-y-auto max-h-screen py-8">
+    <div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+      <div className="max-w-5xl w-full space-y-8 animate-fade-in relative z-10">
         {/* Title */}
-        <div className="text-center space-y-3 sm:space-y-4">
-          <div className="flex items-center justify-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 hexagon bg-accent/30 flex items-center justify-center animate-hextech-pulse">
-              <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-accent drop-shadow-[0_0_20px_rgba(200,150,0,0.8)]" />
-            </div>
-          </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-glow-gold text-accent tracking-wide uppercase">
+        <div className="text-center space-y-2">
+          <h2 className="lol-heading text-4xl sm:text-5xl md:text-6xl text-[#C8AA6E]">
             Power Spike
           </h2>
-          <p className="text-lg sm:text-xl text-foreground/80 uppercase tracking-widest">
+          <p className="lol-subheading text-gray-500 text-xs">
             Your Turning Point
           </p>
         </div>
 
         {/* Watershed Content */}
-        <Card className="p-6 sm:p-8 md:p-12 card-glow-gold lol-corners border-2 border-accent/40 bg-background/90 backdrop-blur-sm shine-effect">
-          <div className="space-y-6 sm:space-y-8">
+        <div className="lol-card p-8 border-[#C8AA6E]">
+          <div className="space-y-6">
             {/* Description */}
-            <p className="text-lg sm:text-xl md:text-2xl text-center leading-relaxed text-foreground/90">
+            <p className="text-lg sm:text-xl text-center leading-relaxed text-gray-200 lol-body">
               {playerData.watershedMoment.description}
             </p>
 
-            {/* Stats with hextech styling */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 md:gap-8 text-center">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 text-center">
               {/* Before */}
-              <div className="space-y-2 sm:space-y-3 lol-corners p-3 sm:p-4 md:p-6 bg-destructive/10 border border-destructive/30">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-destructive">
+              <div className="space-y-2">
+                <div className="text-4xl font-bold text-gray-500 lol-body">
                   {playerData.watershedMoment.beforeAverage.toFixed(1)}
                 </div>
-                <div className="text-xs sm:text-sm md:text-lg text-muted-foreground uppercase tracking-wider">Before</div>
+                <div className="lol-subheading text-gray-600 text-xs">Before</div>
               </div>
 
-              {/* Improvement Arrow with hexagon */}
-              <div className="flex flex-col items-center justify-center gap-1 sm:gap-2">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 hexagon bg-gradient-gold flex items-center justify-center animate-hextech-pulse">
-                  <ArrowUp className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-background" />
+              {/* Improvement Arrow */}
+              <div className="flex flex-col items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-[#C8AA6E] flex items-center justify-center">
+                  <ArrowUp className="w-8 h-8 text-[#0A1428]" />
                 </div>
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-glow-gold text-accent">
+                <div className="mt-2 text-xl font-bold text-[#C8AA6E] lol-body">
                   +{playerData.watershedMoment.improvement.toFixed(1)}
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider">Growth</div>
               </div>
 
               {/* After */}
-              <div className="space-y-2 sm:space-y-3 lol-corners p-3 sm:p-4 md:p-6 bg-primary/10 border border-primary/30">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
+              <div className="space-y-2">
+                <div className="text-4xl font-bold text-[#C8AA6E] lol-body">
                   {playerData.watershedMoment.afterAverage.toFixed(1)}
                 </div>
-                <div className="text-xs sm:text-sm md:text-lg text-muted-foreground uppercase tracking-wider">After</div>
+                <div className="lol-subheading text-gray-600 text-xs">After</div>
               </div>
             </div>
 
-            {/* Date with hextech styling */}
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 md:px-8 py-3 sm:py-4 lol-corners bg-accent/20 border border-accent/40 max-w-full">
-                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-accent flex-shrink-0" />
-                <span className="text-sm sm:text-base text-foreground/80 font-semibold uppercase tracking-wider truncate">
-                  {new Date(playerData.watershedMoment.gameDate).toLocaleDateString('en', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </span>
+            {/* Match Details */}
+            <div className="text-center pt-4 border-t border-gray-800">
+              <div className="lol-body text-gray-400 text-sm mb-1">
+                <span className="text-[#C8AA6E] font-bold">{playerData.watershedMoment.championName}</span>
+                <span className="mx-2">•</span>
+                <span>{new Date(playerData.watershedMoment.gameDate).toLocaleDateString()}</span>
+              </div>
+              <div className={`text-xs lol-subheading ${playerData.watershedMoment.result ? 'text-[#C8AA6E]' : 'text-gray-500'}`}>
+                {playerData.watershedMoment.result ? 'VICTORY' : 'DEFEAT'}
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

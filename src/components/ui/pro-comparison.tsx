@@ -121,25 +121,25 @@ interface StrengthsWeaknessesProps {
 
 export function StrengthsWeaknesses({ topStrengths, needsWork }: StrengthsWeaknessesProps) {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid md:grid-cols-2 gap-4">
       {/* Strengths */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-green-500" />
-          <h3 className="text-xl font-bold">Your Superpowers</h3>
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-[#C8AA6E]" />
+          <h3 className="text-lg font-bold lol-heading text-[#C8AA6E]">Your Superpowers</h3>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {topStrengths.map((strength, index) => (
             <div key={index} className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{strength.metric}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-300">{strength.metric}</p>
+                <p className="text-xs text-gray-500">
                   Top {100 - strength.percentile}% of players
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-green-500">{strength.value}</div>
-                <div className="text-xs text-muted-foreground">/100</div>
+                <div className="text-xl font-bold text-[#C8AA6E]">{strength.value}</div>
+                <div className="text-xs text-gray-500">/100</div>
               </div>
             </div>
           ))}
@@ -147,23 +147,23 @@ export function StrengthsWeaknesses({ topStrengths, needsWork }: StrengthsWeakne
       </Card>
 
       {/* Weaknesses */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <AlertCircle className="w-5 h-5 text-orange-500" />
-          <h3 className="text-xl font-bold">Room to Grow</h3>
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertCircle className="w-4 h-4 text-orange-400" />
+          <h3 className="text-lg font-bold lol-heading text-[#C8AA6E]">Room to Grow</h3>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {needsWork.length === 0 ? (
-            <p className="text-muted-foreground">No major weaknesses detected! Keep it up! 🎉</p>
+            <p className="text-gray-400 text-sm">No major weaknesses detected! Keep it up!</p>
           ) : (
             needsWork.map((weakness, index) => (
-              <div key={index} className="space-y-2">
+              <div key={index} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold">{weakness.metric}</p>
-                  <span className="text-orange-500 font-bold">{weakness.value}/100</span>
+                  <p className="font-semibold text-sm text-gray-300">{weakness.metric}</p>
+                  <span className="text-orange-400 font-bold text-sm">{weakness.value}/100</span>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  💡 {weakness.suggestion}
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  {weakness.suggestion}
                 </p>
               </div>
             ))
