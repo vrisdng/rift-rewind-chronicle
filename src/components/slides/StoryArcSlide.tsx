@@ -1,6 +1,4 @@
 import type { PlayerStats } from "@/lib/api";
-import { Card } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
 
 interface StoryArcSlideProps {
   playerData: PlayerStats;
@@ -10,38 +8,37 @@ export const StoryArcSlide = ({ playerData }: StoryArcSlideProps) => {
   if (!playerData.insights?.story_arc) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-y-auto items-center justify-start bg-gradient-dark p-8">
-      <div className="max-w-4xl w-full space-y-12 animate-fade-in my-auto">
+    <div className="w-full h-screen flex flex-col overflow-hidden items-center justify-center lol-bg-subtle relative p-8">
+      <div className="max-w-4xl w-full space-y-6 animate-fade-in relative z-10">
         {/* Title */}
-        <div className="text-center space-y-4">
-          <BookOpen className=" mx-auto text-primary" />
-          <h2 className="text-5xl md:text-6xl font-bold text-glow">
+        <div className="text-center space-y-2">
+          <h2 className="lol-heading text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E]">
             {playerData.insights.title}
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Your story
+          <p className="lol-subheading text-gray-500 text-xs">
+            Your Season Story
           </p>
         </div>
 
         {/* Story Content */}
-        <Card className="p-12 card-glow bg-background/50 backdrop-blur-sm">
-          <p className="text-2xl leading-relaxed text-muted-foreground text-center">
+        <div className="lol-card p-6 border-[#C8AA6E]">
+          <p className="text-base sm:text-lg leading-relaxed text-gray-300 text-center lol-body">
             {playerData.insights.story_arc}
           </p>
-        </Card>
+        </div>
 
         {/* Season Prediction */}
         {playerData.insights.season_prediction && (
-          <Card className="p-8 card-glow border-accent/30 bg-accent/5">
-            <div className="text-center space-y-3">
-              <h3 className="text-xl font-bold text-accent">
+          <div className="lol-card p-5 border-[#C8AA6E]/60">
+            <div className="text-center space-y-2 lol-accent-bar pl-4">
+              <h3 className="lol-subheading text-[#C8AA6E] text-xs">
                 2025 Prediction
               </h3>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-sm text-gray-300 lol-body">
                 {playerData.insights.season_prediction}
               </p>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </div>

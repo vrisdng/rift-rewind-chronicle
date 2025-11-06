@@ -1,17 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
-import { Search, Sparkles, Loader2 } from "lucide-react";
+import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+
+// Riot API Routing Regions (matches backend regionMap)
+const REGIONS = [
+  { value: "americas", label: "Americas" },
+  { value: "asia", label: "Asia" },
+  { value: "europe", label: "Europe" },
+  { value: "sea", label: "Southeast Asia" },
+];
 
 const Landing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [gameName, setGameName] = useState("");
-  const [tagLine, setTagLine] = useState("NA1");
+  const [tagLine, setTagLine] = useState("");
+  const [region, setRegion] = useState("sea");
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -38,7 +48,7 @@ const Landing = () => {
       await analyzePlayerWithProgress(
         gameName,
         tagLine,
-        "sg2",
+        region,
         // Progress callback
         (update) => {
           setProgress(update.progress);
@@ -145,6 +155,28 @@ const Landing = () => {
                 style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
             </div>
+
+            {/* Region Selector */}
+            <Select value={region} onValueChange={setRegion}>
+              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-[#C8AA6E]" />
+                  <SelectValue placeholder="Select Region" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-[#0A1428]/95 backdrop-blur-md border-2 border-[#C8AA6E]/40">
+                {REGIONS.map((r) => (
+                  <SelectItem
+                    key={r.value}
+                    value={r.value}
+                    className="text-white hover:bg-[#C8AA6E]/20 focus:bg-[#C8AA6E]/20 cursor-pointer"
+                  >
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
               onClick={startAnalysis}
               disabled={isLoading}
@@ -242,7 +274,7 @@ const Landing = () => {
               size="lg"
               className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
-              onClick={() => navigate("/dashboard", { state: { playerData } })}
+              onClick={() => navigate("dashboard-new", { state: { playerData } })}
             >
               Enter
             </Button>

@@ -206,11 +206,6 @@ const WrappedDashboard = () => {
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Progress indicator */}
-      <div className="absolute top-4 right-4 z-50 text-sm text-muted-foreground">
-        {current + 1} / {count}
-      </div>
       <Chatbot />
     </div>
   );

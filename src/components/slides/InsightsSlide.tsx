@@ -1,6 +1,5 @@
 import type { PlayerStats } from "@/lib/api";
-import { Card } from "@/components/ui/card";
-import { Brain, Lightbulb, Target } from "lucide-react";
+import { Lightbulb, Target } from "lucide-react";
 
 interface InsightsSlideProps {
   playerData: PlayerStats;
@@ -10,71 +9,70 @@ export const InsightsSlide = ({ playerData }: InsightsSlideProps) => {
   if (!playerData.insights?.surprising_insights) return null;
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-start bg-gradient-dark p-8 overflow-y-auto">
-      <div className="max-w-5xl w-full space-y-12 animate-fade-in py-8">
+    <div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative p-8 overflow-hidden">
+      <div className="max-w-5xl w-full space-y-4 animate-fade-in relative z-10">
         {/* Title */}
-        <div className="text-center space-y-4">
-          <Brain className="w-16 h-16 mx-auto text-primary" />
-          <h2 className="text-5xl md:text-6xl font-bold text-glow">
+        <div className="text-center space-y-1">
+          <h2 className="lol-heading text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E]">
             Hidden Insights
           </h2>
-          <p className="text-xl text-muted-foreground">
-            What the data reveals
+          <p className="lol-subheading text-gray-500 text-xs">
+            What The Data Reveals
           </p>
         </div>
 
         {/* Surprising Insights */}
-        <div className="space-y-6">
+        <div className="space-y-2">
           {playerData.insights.surprising_insights.map((insight, index) => (
-            <Card
+            <div
               key={index}
-              className="p-8 card-glow hover:scale-102 transition-all"
+              className="lol-card p-3 animate-slide-in-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <Lightbulb className="w-6 h-6 text-primary" />
+              <div className="flex items-start gap-3 lol-accent-bar pl-3">
+                <div className="flex-shrink-0">
+                  <Lightbulb className="w-4 h-4 text-[#C8AA6E]" />
                 </div>
-                <p className="text-xl text-muted-foreground flex-1 leading-relaxed">
+                <p className="text-sm text-gray-300 flex-1 leading-relaxed lol-body">
                   {insight}
                 </p>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 
         {/* Improvement Tips */}
         {playerData.insights.improvement_tips && playerData.insights.improvement_tips.length > 0 && (
-          <>
-            <div className="text-center space-y-2 pt-8">
-              <Target className="w-12 h-12 mx-auto text-accent" />
-              <h3 className="text-3xl font-bold text-glow">
+          <div className="space-y-3 pt-2">
+            <div className="text-center space-y-1">
+              <Target className="w-8 h-8 mx-auto text-[#C8AA6E]" />
+              <h3 className="lol-heading text-2xl md:text-3xl text-[#C8AA6E]">
                 Level Up
               </h3>
-              <p className="text-lg text-muted-foreground">
-                Tips to improve your game
+              <p className="lol-subheading text-gray-500 text-xs">
+                Tips To Improve
               </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-2">
               {playerData.insights.improvement_tips.map((tip, index) => (
-                <Card
+                <div
                   key={index}
-                  className="p-8 card-glow border-accent/30 bg-accent/5 hover:scale-102 transition-all"
+                  className="lol-card p-3 border-[#C8AA6E]/40 animate-slide-in-up"
                   style={{ animationDelay: `${(index + 3) * 100}ms` }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl font-bold text-accent">{index + 1}</span>
-                    </div>
-                    <p className="text-lg text-muted-foreground flex-1 leading-relaxed">
+                  <div className="flex items-start gap-3 lol-accent-bar pl-3">
+                    <span className="text-lg font-bold text-[#C8AA6E] lol-heading flex-shrink-0">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm text-gray-300 flex-1 lol-body">
                       {tip}
                     </p>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
