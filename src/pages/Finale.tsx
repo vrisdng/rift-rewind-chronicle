@@ -20,7 +20,7 @@ const Finale = () => {
         <h1 className="text-6xl md:text-8xl font-bold mb-6 text-glow">
           Your Legacy
           <br />
-          <span className="bg-gradient-magical bg-clip-text text-transparent">
+          <span className="text-gradient-magical">
             Awaits
           </span>
         </h1>
