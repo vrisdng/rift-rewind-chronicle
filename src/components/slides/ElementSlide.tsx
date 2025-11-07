@@ -1,11 +1,26 @@
 import type { PlayerStats } from "@/lib/api";
+import cloudIcon from "@/assets/element-icons/cloud.svg";
+import infernoIcon from "@/assets/element-icons/inferno.svg";
+import oceanIcon from "@/assets/element-icons/ocean.svg";
+import terraIcon from "@/assets/element-icons/terra.svg";
+import voidIcon from "@/assets/element-icons/void.png";
 
 interface ElementSlideProps {
 	playerData: PlayerStats;
 }
 
+const elementIcons: Record<string, string> = {
+	Gale: cloudIcon,
+	Inferno: infernoIcon,
+	Tide: oceanIcon,
+	Terra: terraIcon,
+	Void: voidIcon,
+};
+
 export const ElementSlide = ({ playerData }: ElementSlideProps) => {
 	if (!playerData.element) return null;
+
+	const elementIcon = elementIcons[playerData.element.name];
 
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
@@ -23,8 +38,12 @@ export const ElementSlide = ({ playerData }: ElementSlideProps) => {
 				{/* Element Card */}
 				<div className="lol-card p-12 border-[#C8AA6E] text-center space-y-6">
 					<div className="flex justify-center">
-						<div className="w-32 h-32 rounded-full bg-[#C8AA6E]/10 flex items-center justify-center">
-							<span className="text-7xl">{playerData.element.icon}</span>
+						<div className="w-32 h-32 rounded-full bg-[#C8AA6E]/10 flex items-center justify-center p-6">
+							<img
+								src={elementIcon}
+								alt={playerData.element.name}
+								className="w-full h-full object-contain"
+							/>
 						</div>
 					</div>
 
