@@ -1,40 +1,43 @@
-import express from 'express';
-import cors from 'cors';
-import { getClient } from './lib/riot.ts';
-import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
+import express from "express";
+import cors from "cors";
+import { getClient } from "./lib/riot.ts";
+import { analyzePlayer, getCachedPlayerStats } from "./lib/playerAnalyzer.ts";
 import {
-  createFriendGroup,
-  getFriendGroup,
-  createShareCard,
-  getShareCardBySlug,
-  getShareCardPublicUrl,
-  getShareCardsBucket,
-  getSupabaseClient,
-} from './lib/supabaseClient.ts';
-import { invokeBedrockClaude, invokeBedrockClaudeStream } from './lib/bedrockClient.ts';
-import { buildChatbotSystemPrompt } from './prompts/chatbot-system-prompt.ts';
+	createFriendGroup,
+	getFriendGroup,
+	createShareCard,
+	getShareCardBySlug,
+	getShareCardPublicUrl,
+	getShareCardsBucket,
+	getSupabaseClient,
+} from "./lib/supabaseClient.ts";
 import {
-  AnalyzePlayerRequest,
-  CreateGroupRequest,
-  ProgressUpdate,
-  CreateShareCardRequest,
-  CreateShareCardResponse,
-  GetShareCardResponse,
-  ShareCardPayload,
-  DBShareCard,
-  XRequestTokenResponse,
-  XAccessTokenRequest,
-  XAccessTokenResponse,
-  XPostTweetRequest,
-  XPostTweetResponse,
-} from './types/index.ts';
-import { generateShareableTextFromSummary } from './lib/insightGenerator.ts';
-import { nanoid } from 'nanoid';
+	invokeBedrockClaude,
+	invokeBedrockClaudeStream,
+} from "./lib/bedrockClient.ts";
+import { buildChatbotSystemPrompt } from "./prompts/chatbot-system-prompt.ts";
 import {
-  requestXAuthToken,
-  exchangeXAccessToken,
-  postTweetWithImage,
-} from './lib/xClient.ts';
+	AnalyzePlayerRequest,
+	CreateGroupRequest,
+	ProgressUpdate,
+	CreateShareCardRequest,
+	CreateShareCardResponse,
+	GetShareCardResponse,
+	ShareCardPayload,
+	DBShareCard,
+	XRequestTokenResponse,
+	XAccessTokenRequest,
+	XAccessTokenResponse,
+	XPostTweetRequest,
+	XPostTweetResponse,
+} from "./types/index.ts";
+import { generateShareableTextFromSummary } from "./lib/insightGenerator.ts";
+import { nanoid } from "nanoid";
+import {
+	requestXAuthToken,
+	exchangeXAccessToken,
+	postTweetWithImage,
+} from "./lib/xClient.ts";
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -80,68 +83,78 @@ function parseNavigationActions(text: string): {
 }
 
 const MAX_SHARE_CARD_BYTES = 12 * 1024 * 1024; // 12MB safety limit
-const SHARE_CARD_LANDING_BASE_URL = (process.env.SHARE_CARD_LANDING_BASE_URL || 'https://rift-rewind-chronicle.vercel.app/share').replace(/\/$/, '');
-const SHARE_CARD_PREVIEW_FALLBACK_IMAGE = process.env.SHARE_CARD_PREVIEW_FALLBACK_IMAGE;
-const SHARE_CARD_PREVIEW_CACHE_SECONDS = Math.max(60, Number(process.env.SHARE_CARD_PREVIEW_CACHE_SECONDS || 300));
-const SHARE_CARD_PREVIEW_DEFAULT_DESCRIPTION = 'Relive this summoner\'s Rift Rewind Chronicle and craft your own wrap-up.';
+const SHARE_CARD_LANDING_BASE_URL = (
+	process.env.SHARE_CARD_LANDING_BASE_URL ||
+	"https://rift-rewind-chronicle.vercel.app/share"
+).replace(/\/$/, "");
+const SHARE_CARD_PREVIEW_FALLBACK_IMAGE =
+	process.env.SHARE_CARD_PREVIEW_FALLBACK_IMAGE;
+const SHARE_CARD_PREVIEW_CACHE_SECONDS = Math.max(
+	60,
+	Number(process.env.SHARE_CARD_PREVIEW_CACHE_SECONDS || 300),
+);
+const SHARE_CARD_PREVIEW_DEFAULT_DESCRIPTION =
+	"Relive this summoner's Rift Rewind Chronicle and craft your own wrap-up.";
 
 function buildSlug(riotId: string): string {
-  const normalized = riotId
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 30);
-  return `${normalized || 'summoner'}-${nanoid(6)}`;
+	const normalized = riotId
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/(^-|-$)/g, "")
+		.slice(0, 30);
+	return `${normalized || "summoner"}-${nanoid(6)}`;
 }
 
 function buildShareCardPayload(card: DBShareCard): ShareCardPayload {
-  return {
-    slug: card.slug,
-    imageUrl: getShareCardPublicUrl(card.image_path),
-    caption: card.caption ?? '',
-    player: {
-      riotId: card.player_riot_id,
-      tagLine: card.player_tag_line,
-    },
-    createdAt: card.created_at ?? new Date().toISOString(),
-  };
+	return {
+		slug: card.slug,
+		imageUrl: getShareCardPublicUrl(card.image_path),
+		caption: card.caption ?? "",
+		player: {
+			riotId: card.player_riot_id,
+			tagLine: card.player_tag_line,
+		},
+		createdAt: card.created_at ?? new Date().toISOString(),
+	};
 }
 
 function buildShareCardLandingUrl(slug: string): string {
-  const base = SHARE_CARD_LANDING_BASE_URL || 'https://rift-rewind-chronicle.vercel.app/share';
-  return `${base}/${slug}`;
+	const base =
+		SHARE_CARD_LANDING_BASE_URL ||
+		"https://rift-rewind-chronicle.vercel.app/share";
+	return `${base}/${slug}`;
 }
 
 function escapeHtml(value?: string | null): string {
-  if (!value) return '';
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+	if (!value) return "";
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
 }
 
 function truncate(text: string, limit: number): string {
-  if (text.length <= limit) return text;
-  return `${text.slice(0, Math.max(0, limit - 1)).trim()}…`;
+	if (text.length <= limit) return text;
+	return `${text.slice(0, Math.max(0, limit - 1)).trim()}…`;
 }
 
 function renderShareCardPreview(meta: {
-  title: string;
-  description: string;
-  canonicalUrl: string;
-  imageUrl?: string;
+	title: string;
+	description: string;
+	canonicalUrl: string;
+	imageUrl?: string;
 }): string {
-  const safeTitle = escapeHtml(meta.title);
-  const safeDescription = escapeHtml(meta.description);
-  const safeCanonical = escapeHtml(meta.canonicalUrl);
-  const safeImage = meta.imageUrl ? escapeHtml(meta.imageUrl) : '';
-  const imageTags = safeImage
-    ? `\n<meta property="og:image" content="${safeImage}" />\n<meta property="og:image:secure_url" content="${safeImage}" />\n<meta name="twitter:image" content="${safeImage}" />`
-    : '';
+	const safeTitle = escapeHtml(meta.title);
+	const safeDescription = escapeHtml(meta.description);
+	const safeCanonical = escapeHtml(meta.canonicalUrl);
+	const safeImage = meta.imageUrl ? escapeHtml(meta.imageUrl) : "";
+	const imageTags = safeImage
+		? `\n<meta property="og:image" content="${safeImage}" />\n<meta property="og:image:secure_url" content="${safeImage}" />\n<meta name="twitter:image" content="${safeImage}" />`
+		: "";
 
-  return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -372,322 +385,334 @@ app.get("/api/player/:riotId/:tagLine", async (req, res) => {
 	}
 });
 
-
 // ==================== SHARE CARDS ====================
 
 /**
  * POST /api/share-cards
  * Upload shareable PNGs to Supabase Storage and persist metadata
  */
-app.post('/api/share-cards', async (req, res) => {
-  const body = req.body as CreateShareCardRequest;
-  try {
-    const { cardDataUrl, caption, player } = body;
+app.post("/api/share-cards", async (req, res) => {
+	const body = req.body as CreateShareCardRequest;
+	try {
+		const { cardDataUrl, caption, player } = body;
 
-    if (!cardDataUrl || typeof cardDataUrl !== 'string') {
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'Missing cardDataUrl',
-      };
-      return res.status(400).json(response);
-    }
+		if (!cardDataUrl || typeof cardDataUrl !== "string") {
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "Missing cardDataUrl",
+			};
+			return res.status(400).json(response);
+		}
 
-    if (!player || !player.riotId || !player.tagLine) {
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'Player information is required',
-      };
-      return res.status(400).json(response);
-    }
+		if (!player || !player.riotId || !player.tagLine) {
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "Player information is required",
+			};
+			return res.status(400).json(response);
+		}
 
-    const [prefix, base64Data] = cardDataUrl.split(',');
-    if (!prefix?.startsWith('data:image/png') || !base64Data) {
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'cardDataUrl must be a PNG data URL',
-      };
-      return res.status(400).json(response);
-    }
+		const [prefix, base64Data] = cardDataUrl.split(",");
+		if (!prefix?.startsWith("data:image/png") || !base64Data) {
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "cardDataUrl must be a PNG data URL",
+			};
+			return res.status(400).json(response);
+		}
 
-    const buffer = Buffer.from(base64Data, 'base64');
+		const buffer = Buffer.from(base64Data, "base64");
 
-    if (!buffer.length) {
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'cardDataUrl is empty',
-      };
-      return res.status(400).json(response);
-    }
+		if (!buffer.length) {
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "cardDataUrl is empty",
+			};
+			return res.status(400).json(response);
+		}
 
-    if (buffer.length > MAX_SHARE_CARD_BYTES) {
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'PNG exceeds 5MB limit',
-      };
-      return res.status(413).json(response);
-    }
+		if (buffer.length > MAX_SHARE_CARD_BYTES) {
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "PNG exceeds 5MB limit",
+			};
+			return res.status(413).json(response);
+		}
 
-    const supabase = getSupabaseClient();
-    const bucketId = getShareCardsBucket();
-    const slug = buildSlug(player.riotId);
-    const filePath = `${slug}.png`;
+		const supabase = getSupabaseClient();
+		const bucketId = getShareCardsBucket();
+		const slug = buildSlug(player.riotId);
+		const filePath = `${slug}.png`;
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucketId)
-      .upload(filePath, buffer, {
-        contentType: 'image/png',
-        upsert: false,
-      });
+		const { error: uploadError } = await supabase.storage
+			.from(bucketId)
+			.upload(filePath, buffer, {
+				contentType: "image/png",
+				upsert: false,
+			});
 
-    if (uploadError) {
-      console.error('Error uploading share card:', uploadError);
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'Failed to store share card',
-      };
-      return res.status(500).json(response);
-    }
+		if (uploadError) {
+			console.error("Error uploading share card:", uploadError);
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "Failed to store share card",
+			};
+			return res.status(500).json(response);
+		}
 
-    const finalCaption =
-      caption?.trim() && caption.trim().length > 0
-        ? caption.trim()
-        : generateShareableTextFromSummary(player);
+		const finalCaption =
+			caption?.trim() && caption.trim().length > 0
+				? caption.trim()
+				: generateShareableTextFromSummary(player);
 
-    try {
-      const cardRecord = await createShareCard({
-        slug,
-        player_puuid: player.puuid ?? null,
-        player_riot_id: player.riotId,
-        player_tag_line: player.tagLine,
-        caption: finalCaption,
-        image_path: filePath,
-        player_snapshot: player,
-      });
+		try {
+			const cardRecord = await createShareCard({
+				slug,
+				player_puuid: player.puuid ?? null,
+				player_riot_id: player.riotId,
+				player_tag_line: player.tagLine,
+				caption: finalCaption,
+				image_path: filePath,
+				player_snapshot: player,
+			});
 
-      const payload = buildShareCardPayload(cardRecord);
-      const response: CreateShareCardResponse = {
-        success: true,
-        data: payload,
-      };
-      return res.json(response);
-    } catch (error: any) {
-      console.error('Error creating share card record:', error);
-      // Best-effort cleanup to avoid orphaned files
-      await supabase.storage.from(bucketId).remove([filePath]);
-      const response: CreateShareCardResponse = {
-        success: false,
-        error: 'Failed to save share card',
-      };
-      return res.status(500).json(response);
-    }
-  } catch (error: any) {
-    console.error('Unexpected error creating share card:', error);
-    const response: CreateShareCardResponse = {
-      success: false,
-      error: error.message || 'Unexpected error',
-    };
-    return res.status(500).json(response);
-  }
+			const payload = buildShareCardPayload(cardRecord);
+			const response: CreateShareCardResponse = {
+				success: true,
+				data: payload,
+			};
+			return res.json(response);
+		} catch (error: any) {
+			console.error("Error creating share card record:", error);
+			// Best-effort cleanup to avoid orphaned files
+			await supabase.storage.from(bucketId).remove([filePath]);
+			const response: CreateShareCardResponse = {
+				success: false,
+				error: "Failed to save share card",
+			};
+			return res.status(500).json(response);
+		}
+	} catch (error: any) {
+		console.error("Unexpected error creating share card:", error);
+		const response: CreateShareCardResponse = {
+			success: false,
+			error: error.message || "Unexpected error",
+		};
+		return res.status(500).json(response);
+	}
 });
 
 /**
  * GET /api/share-cards/:slug
  * Fetch share card metadata for landing page rendering
  */
-app.get('/api/share-cards/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-    if (!slug) {
-      const response: GetShareCardResponse = {
-        success: false,
-        error: 'Slug is required',
-      };
-      return res.status(400).json(response);
-    }
+app.get("/api/share-cards/:slug", async (req, res) => {
+	try {
+		const { slug } = req.params;
+		if (!slug) {
+			const response: GetShareCardResponse = {
+				success: false,
+				error: "Slug is required",
+			};
+			return res.status(400).json(response);
+		}
 
-    const cardRecord = await getShareCardBySlug(slug);
+		const cardRecord = await getShareCardBySlug(slug);
 
-    if (!cardRecord) {
-      const response: GetShareCardResponse = {
-        success: false,
-        error: 'Share card not found',
-      };
-      return res.status(404).json(response);
-    }
+		if (!cardRecord) {
+			const response: GetShareCardResponse = {
+				success: false,
+				error: "Share card not found",
+			};
+			return res.status(404).json(response);
+		}
 
-    const payload = buildShareCardPayload(cardRecord);
-    const response: GetShareCardResponse = {
-      success: true,
-      data: payload,
-    };
+		const payload = buildShareCardPayload(cardRecord);
+		const response: GetShareCardResponse = {
+			success: true,
+			data: payload,
+		};
 
-    return res.json(response);
-  } catch (error: any) {
-    console.error('Error fetching share card:', error);
-    const response: GetShareCardResponse = {
-      success: false,
-      error: error.message || 'Failed to fetch share card',
-    };
-    return res.status(500).json(response);
-  }
+		return res.json(response);
+	} catch (error: any) {
+		console.error("Error fetching share card:", error);
+		const response: GetShareCardResponse = {
+			success: false,
+			error: error.message || "Failed to fetch share card",
+		};
+		return res.status(500).json(response);
+	}
 });
 
 /**
  * GET /share/:slug/preview
  * Server-rendered social preview with OpenGraph and Twitter cards
  */
-app.get('/share/:slug/preview', async (req, res) => {
-  const { slug } = req.params;
+app.get("/share/:slug/preview", async (req, res) => {
+	const { slug } = req.params;
 
-  if (!slug) {
-    const html = renderShareCardPreview({
-      title: 'Rift Rewind Chronicle',
-      description: 'Share card slug is required.',
-      canonicalUrl: SHARE_CARD_LANDING_BASE_URL || 'https://rift-rewind-chronicle.vercel.app/share',
-      imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
-    });
-    res
-      .status(400)
-      .set('Content-Type', 'text/html; charset=utf-8')
-      .set('Cache-Control', 'public, max-age=60')
-      .send(html);
-    return;
-  }
+	if (!slug) {
+		const html = renderShareCardPreview({
+			title: "Rift Rewind Chronicle",
+			description: "Share card slug is required.",
+			canonicalUrl:
+				SHARE_CARD_LANDING_BASE_URL ||
+				"https://rift-rewind-chronicle.vercel.app/share",
+			imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
+		});
+		res
+			.status(400)
+			.set("Content-Type", "text/html; charset=utf-8")
+			.set("Cache-Control", "public, max-age=60")
+			.send(html);
+		return;
+	}
 
-  try {
-    const cardRecord = await getShareCardBySlug(slug);
+	try {
+		const cardRecord = await getShareCardBySlug(slug);
 
-    if (!cardRecord) {
-      const html = renderShareCardPreview({
-        title: 'Share card unavailable | Rift Rewind Chronicle',
-        description: 'This share card may have expired or been removed. Generate your own Rift Rewind recap to share with friends.',
-        canonicalUrl: SHARE_CARD_LANDING_BASE_URL || 'https://rift-rewind-chronicle.vercel.app/share',
-        imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
-      });
-      res
-        .status(404)
-        .set('Content-Type', 'text/html; charset=utf-8')
-        .set('Cache-Control', 'public, max-age=60')
-        .send(html);
-      return;
-    }
+		if (!cardRecord) {
+			const html = renderShareCardPreview({
+				title: "Share card unavailable | Rift Rewind Chronicle",
+				description:
+					"This share card may have expired or been removed. Generate your own Rift Rewind recap to share with friends.",
+				canonicalUrl:
+					SHARE_CARD_LANDING_BASE_URL ||
+					"https://rift-rewind-chronicle.vercel.app/share",
+				imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
+			});
+			res
+				.status(404)
+				.set("Content-Type", "text/html; charset=utf-8")
+				.set("Cache-Control", "public, max-age=60")
+				.send(html);
+			return;
+		}
 
-    const payload = buildShareCardPayload(cardRecord);
-    const summonerLabel = payload.player.riotId
-      ? `${payload.player.riotId}${payload.player.tagLine ? `#${payload.player.tagLine}` : ''}`
-      : 'Rift Rewind Summoner';
-    const title = `${summonerLabel}'s Rift Rewind Chronicle`;
-    const descriptionSource = (payload.caption || '').trim() || SHARE_CARD_PREVIEW_DEFAULT_DESCRIPTION;
-    const description = truncate(descriptionSource, 240);
-    const canonicalUrl = buildShareCardLandingUrl(payload.slug);
+		const payload = buildShareCardPayload(cardRecord);
+		const summonerLabel = payload.player.riotId
+			? `${payload.player.riotId}${payload.player.tagLine ? `#${payload.player.tagLine}` : ""}`
+			: "Rift Rewind Summoner";
+		const title = `${summonerLabel}'s Rift Rewind Chronicle`;
+		const descriptionSource =
+			(payload.caption || "").trim() || SHARE_CARD_PREVIEW_DEFAULT_DESCRIPTION;
+		const description = truncate(descriptionSource, 240);
+		const canonicalUrl = buildShareCardLandingUrl(payload.slug);
 
-    const html = renderShareCardPreview({
-      title,
-      description,
-      canonicalUrl,
-      imageUrl: payload.imageUrl,
-    });
+		const html = renderShareCardPreview({
+			title,
+			description,
+			canonicalUrl,
+			imageUrl: payload.imageUrl,
+		});
 
-    res
-      .status(200)
-      .set('Content-Type', 'text/html; charset=utf-8')
-      .set('Cache-Control', `public, max-age=${SHARE_CARD_PREVIEW_CACHE_SECONDS}`)
-      .send(html);
-  } catch (error) {
-    console.error('Error rendering share card preview:', error);
-    const html = renderShareCardPreview({
-      title: 'Rift Rewind Chronicle',
-      description: 'We hit a snag generating this preview. Please try again in a moment.',
-      canonicalUrl: SHARE_CARD_LANDING_BASE_URL || 'https://rift-rewind-chronicle.vercel.app/share',
-      imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
-    });
-    res
-      .status(500)
-      .set('Content-Type', 'text/html; charset=utf-8')
-      .set('Cache-Control', 'no-store')
-      .send(html);
-  }
+		res
+			.status(200)
+			.set("Content-Type", "text/html; charset=utf-8")
+			.set(
+				"Cache-Control",
+				`public, max-age=${SHARE_CARD_PREVIEW_CACHE_SECONDS}`,
+			)
+			.send(html);
+	} catch (error) {
+		console.error("Error rendering share card preview:", error);
+		const html = renderShareCardPreview({
+			title: "Rift Rewind Chronicle",
+			description:
+				"We hit a snag generating this preview. Please try again in a moment.",
+			canonicalUrl:
+				SHARE_CARD_LANDING_BASE_URL ||
+				"https://rift-rewind-chronicle.vercel.app/share",
+			imageUrl: SHARE_CARD_PREVIEW_FALLBACK_IMAGE,
+		});
+		res
+			.status(500)
+			.set("Content-Type", "text/html; charset=utf-8")
+			.set("Cache-Control", "no-store")
+			.send(html);
+	}
 });
 
 // ==================== X AUTH & POSTING ====================
 
-app.post('/api/x/request-token', async (_req, res) => {
-  try {
-    const data = await requestXAuthToken();
-    const response: XRequestTokenResponse = {
-      success: true,
-      data,
-    };
-    return res.json(response);
-  } catch (error: any) {
-    console.error('Error requesting X token:', error);
-    const response: XRequestTokenResponse = {
-      success: false,
-      error: error.message || 'Failed to reach X',
-    };
-    return res.status(500).json(response);
-  }
+app.post("/api/x/request-token", async (_req, res) => {
+	try {
+		const data = await requestXAuthToken();
+		const response: XRequestTokenResponse = {
+			success: true,
+			data,
+		};
+		return res.json(response);
+	} catch (error: any) {
+		console.error("Error requesting X token:", error);
+		const response: XRequestTokenResponse = {
+			success: false,
+			error: error.message || "Failed to reach X",
+		};
+		return res.status(500).json(response);
+	}
 });
 
-app.post('/api/x/access-token', async (req, res) => {
-  const { oauthToken, oauthVerifier } = req.body as XAccessTokenRequest;
-  if (!oauthToken || !oauthVerifier) {
-    const response: XAccessTokenResponse = {
-      success: false,
-      error: 'oauthToken and oauthVerifier are required',
-    };
-    return res.status(400).json(response);
-  }
+app.post("/api/x/access-token", async (req, res) => {
+	const { oauthToken, oauthVerifier } = req.body as XAccessTokenRequest;
+	if (!oauthToken || !oauthVerifier) {
+		const response: XAccessTokenResponse = {
+			success: false,
+			error: "oauthToken and oauthVerifier are required",
+		};
+		return res.status(400).json(response);
+	}
 
-  try {
-    const data = await exchangeXAccessToken(oauthToken, oauthVerifier);
-    const response: XAccessTokenResponse = {
-      success: true,
-      data,
-    };
-    return res.json(response);
-  } catch (error: any) {
-    console.error('Error exchanging X token:', error);
-    const response: XAccessTokenResponse = {
-      success: false,
-      error: error.message || 'Failed to confirm X login',
-    };
-    return res.status(400).json(response);
-  }
+	try {
+		const data = await exchangeXAccessToken(oauthToken, oauthVerifier);
+		const response: XAccessTokenResponse = {
+			success: true,
+			data,
+		};
+		return res.json(response);
+	} catch (error: any) {
+		console.error("Error exchanging X token:", error);
+		const response: XAccessTokenResponse = {
+			success: false,
+			error: error.message || "Failed to confirm X login",
+		};
+		return res.status(400).json(response);
+	}
 });
 
-app.post('/api/x/post-tweet', async (req, res) => {
-  const { caption, cardDataUrl, oauthToken, oauthTokenSecret } = req.body as XPostTweetRequest;
-  if (!caption || !cardDataUrl || !oauthToken || !oauthTokenSecret) {
-    const response: XPostTweetResponse = {
-      success: false,
-      error: 'caption, cardDataUrl, oauthToken, and oauthTokenSecret are required',
-    };
-    return res.status(400).json(response);
-  }
+app.post("/api/x/post-tweet", async (req, res) => {
+	const { caption, cardDataUrl, oauthToken, oauthTokenSecret } =
+		req.body as XPostTweetRequest;
+	if (!caption || !cardDataUrl || !oauthToken || !oauthTokenSecret) {
+		const response: XPostTweetResponse = {
+			success: false,
+			error:
+				"caption, cardDataUrl, oauthToken, and oauthTokenSecret are required",
+		};
+		return res.status(400).json(response);
+	}
 
-  try {
-    const data = await postTweetWithImage({
-      caption,
-      cardDataUrl,
-      oauthToken,
-      oauthTokenSecret,
-    });
-    const response: XPostTweetResponse = {
-      success: true,
-      data,
-    };
-    return res.json(response);
-  } catch (error: any) {
-    console.error('Error posting to X:', error);
-    const response: XPostTweetResponse = {
-      success: false,
-      error: error.message || 'Failed to post on X',
-    };
-    return res.status(500).json(response);
-  }
+	try {
+		const data = await postTweetWithImage({
+			caption,
+			cardDataUrl,
+			oauthToken,
+			oauthTokenSecret,
+		});
+		const response: XPostTweetResponse = {
+			success: true,
+			data,
+		};
+		return res.json(response);
+	} catch (error: any) {
+		console.error("Error posting to X:", error);
+		const response: XPostTweetResponse = {
+			success: false,
+			error: error.message || "Failed to post on X",
+		};
+		return res.status(500).json(response);
+	}
 });
-
 
 // ==================== FRIEND GROUPS ====================
 
@@ -769,13 +794,26 @@ app.get("/api/group/:groupId", async (req, res) => {
 // ==================== START SERVER ====================
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Rift Rewind API server running on http://localhost:${PORT}`);
-  console.log(`\n📊 Configuration:`);
-  console.log(`  ✅ Riot API Key: ${!!process.env.RIOT_API_KEY ? 'Configured' : '❌ Missing'}`);
-  console.log(`  ✅ Supabase: ${!!process.env.SUPABASE_URL ? 'Configured' : '❌ Missing'}`);
-  console.log(`  ✅ AWS Bedrock: ${!!process.env.AWS_ACCESS_KEY_ID ? 'Configured' : '❌ Missing (using mocks)'}`);
-  const hasXConfig = !!process.env.X_API_KEY && !!process.env.X_API_SECRET && !!process.env.X_CALLBACK_URL;
-  console.log(`  ✅ X API: ${hasXConfig ? 'Configured' : '❌ Missing (X login disabled)'}`);
+	console.log(
+		`\n🚀 Rift Rewind API server running on http://localhost:${PORT}`,
+	);
+	console.log(`\n📊 Configuration:`);
+	console.log(
+		`  ✅ Riot API Key: ${!!process.env.RIOT_API_KEY ? "Configured" : "❌ Missing"}`,
+	);
+	console.log(
+		`  ✅ Supabase: ${!!process.env.SUPABASE_URL ? "Configured" : "❌ Missing"}`,
+	);
+	console.log(
+		`  ✅ AWS Bedrock: ${!!process.env.AWS_ACCESS_KEY_ID ? "Configured" : "❌ Missing (using mocks)"}`,
+	);
+	const hasXConfig =
+		!!process.env.X_API_KEY &&
+		!!process.env.X_API_SECRET &&
+		!!process.env.X_CALLBACK_URL;
+	console.log(
+		`  ✅ X API: ${hasXConfig ? "Configured" : "❌ Missing (X login disabled)"}`,
+	);
 });
 
 // ==================== CHAT STREAMING ====================
@@ -840,19 +878,5 @@ app.post("/api/chat", async (req, res) => {
 		let streamedText = ""; // Track what we've already sent to client
 	} catch (error: any) {
 		console.error("Error in /api/chat:", error);
-
-  } catch (error: any) {
-    console.error('Error in /api/chat:', error);
-    
-    // If headers not sent yet, send JSON error
-    if (!res.headersSent) {
-      return res.status(500).json({ success: false, error: error.message || 'Chat failed' });
-    }
-    
-    // Otherwise send error in stream (only if stream hasn't ended)
-    if (!res.writableEnded) {
-      res.write(JSON.stringify({ error: error.message || 'Chat failed' }) + '\n');
-      res.end();
-    }
-  }
+	}
 });
