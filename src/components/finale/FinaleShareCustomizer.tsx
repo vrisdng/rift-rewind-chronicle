@@ -37,11 +37,11 @@ import { toast } from "@/components/ui/sonner";
 import {
 	PolarAngleAxis,
 	PolarGrid,
-	PolarRadiusAxis,
 	Radar,
 	RadarChart,
 	ResponsiveContainer,
 } from "recharts";
+import { METRIC_DEFINITIONS, type MetricDatum } from "@/components/ui/metrics-radar";
 import { useShareCardUpload } from "@/hooks/useShareCardUpload";
 type BackgroundOptionType = "color" | "image" | "gradient";
 interface BackgroundOption {
@@ -329,20 +329,44 @@ export const FinaleShareCustomizer = ({
 			backgroundColor: "#050505",
 		};
 	}, [selectedBackgroundOption]);
-	const radarData = useMemo(
+	const radarData = useMemo<MetricDatum[]>(
 		() =>
-			radarMetricKeys.map((metricKey) => ({
-				metric: metricKey,
-				label:
-					metricKey.charAt(0).toUpperCase() +
-					metricKey
-						.slice(1)
-						.replace(/([A-Z])/g, " $1")
-						.trim(),
-				value: playerData.derivedMetrics?.[metricKey] ?? 0,
+			METRIC_DEFINITIONS.map((definition) => ({
+				...definition,
+				value: Number(playerData.derivedMetrics?.[definition.key] ?? 0),
 			})),
 		[playerData.derivedMetrics],
 	);
+	const renderRadarIconTick = ({
+		x,
+		y,
+		cx,
+		cy,
+		payload,
+	}: {
+		x: number;
+		y: number;
+		cx: number;
+		cy: number;
+		payload: { value: string };
+	}) => {
+		const datum = radarData.find((metric) => metric.label === payload.value);
+		if (!datum) {
+			return null;
+		}
+		const Icon = datum.icon;
+		const dx = x - cx;
+		const dy = y - cy;
+		const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+		const offset = 28;
+		const offsetX = x + (dx / distance) * offset;
+		const offsetY = y + (dy / distance) * offset;
+		return (
+			<g transform={`translate(${offsetX - 10}, ${offsetY - 10})`}>
+				<Icon className="h-5 w-5 text-white/75" />
+			</g>
+		);
+	};
 	const statBlocks = useMemo(() => {
 		const items: Array<{ label: string; value: string }> = [];
 		if (showWinRate) {
@@ -603,30 +627,30 @@ export const FinaleShareCustomizer = ({
 									}}
 								/>
 								{selectedBackground === "radar" && (
-									<div className="absolute inset-0 flex items-center justify-center opacity-20">
+									<div className="absolute inset-0 flex items-center justify-center opacity-25">
 										<div className="h-full w-full scale-150">
 											<ResponsiveContainer width="100%" height="100%">
-												<RadarChart data={radarData} outerRadius={120}>
-													<PolarGrid stroke="rgba(255,255,255,0.4)" />
+												<RadarChart
+													data={radarData}
+													cx="50%"
+													cy="50%"
+													outerRadius="68%"
+												>
+													<PolarGrid stroke="rgba(255,255,255,0.45)" radialLines={false} />
 													<PolarAngleAxis
 														dataKey="label"
-														tick={{
-															fill: "rgba(255,255,255,0.6)",
-															fontSize: 14,
-														}}
-													/>
-													<PolarRadiusAxis
-														angle={30}
-														domain={[0, 100]}
-														stroke="rgba(255,255,255,0.4)"
+														tick={renderRadarIconTick}
+														tickLine={false}
+														axisLine={false}
 													/>
 													<Radar
 														name="Profile"
 														dataKey="value"
-														stroke="hsl(var(--primary))"
-														fill="hsl(var(--primary))"
-														fillOpacity={0.5}
-														strokeWidth={2}
+														stroke="#C8AA6E"
+														fill="#C8AA6E"
+														fillOpacity={0.28}
+														strokeWidth={1.5}
+														isAnimationActive={false}
 													/>
 												</RadarChart>
 											</ResponsiveContainer>
