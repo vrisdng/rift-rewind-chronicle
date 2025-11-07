@@ -109,6 +109,12 @@ export type {
   ShareCardPayload,
   CreateShareCardResponse,
   GetShareCardResponse,
+  XRequestTokenResponse,
+  XAccessTokenRequest,
+  XAccessTokenPayload,
+  XAccessTokenResponse,
+  XPostTweetRequest,
+  XPostTweetResponse,
 
   // Utilities
   ProgressUpdate,

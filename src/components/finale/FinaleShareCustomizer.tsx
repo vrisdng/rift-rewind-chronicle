@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
-import { CANONICAL_SHARE_URL, type PlayerStats } from "@/lib/api";
+import {
+	CANONICAL_SHARE_URL,
+	postRecapToX,
+	startXAuthSession,
+	type PlayerStats,
+} from "@/lib/api";
+import { X_AUTH_STORAGE_KEY, type StoredXSession } from "@/lib/x-auth";
 import {
 	Dialog,
 	DialogContent,
@@ -23,7 +29,6 @@ import {
 	Loader2,
 	MessageCircle,
 	Send,
-	Share2,
 	Sparkles,
 	Twitter,
 } from "lucide-react";
@@ -71,7 +76,8 @@ const radarMetricKeys: Array<keyof PlayerStats["derivedMetrics"]> = [
 	"aggression",
 	"teamfighting",
 ];
-type SharePlatform = "x" | "telegram" | "whatsapp" | "instagram";
+type SharePlatform = "telegram" | "whatsapp" | "instagram";
+type XAuthSessionState = StoredXSession;
 
 function buildDefaultShareCaption(playerData: PlayerStats): string {
 	const title = playerData.insights?.title || "My League Year";
@@ -129,12 +135,72 @@ export const FinaleShareCustomizer = ({
 		resetShareCard,
 	} = useShareCardUpload(playerData);
 	const [isGeneratingShareCard, setIsGeneratingShareCard] = useState(false);
-	const [canUseNativeShare, setCanUseNativeShare] = useState(false);
-	useEffect(() => {
-		if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-			setCanUseNativeShare(true);
+	const [xSession, setXSession] = useState<XAuthSessionState | null>(() => {
+		if (typeof window === "undefined") {
+			return null;
+		}
+		try {
+			const stored = window.localStorage.getItem(X_AUTH_STORAGE_KEY);
+			return stored ? (JSON.parse(stored) as XAuthSessionState) : null;
+		} catch {
+			return null;
+		}
+	});
+	const [isConnectingToX, setIsConnectingToX] = useState(false);
+	const [isPostingToX, setIsPostingToX] = useState(false);
+	const persistXSession = useCallback((session: XAuthSessionState | null) => {
+		setXSession(session);
+		if (typeof window === "undefined") {
+			return;
+		}
+		if (session) {
+			window.localStorage.setItem(X_AUTH_STORAGE_KEY, JSON.stringify(session));
+		} else {
+			window.localStorage.removeItem(X_AUTH_STORAGE_KEY);
 		}
 	}, []);
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		const handleStorage = (event: StorageEvent) => {
+			if (event.key !== X_AUTH_STORAGE_KEY) {
+				return;
+			}
+			if (!event.newValue) {
+				setXSession(null);
+				return;
+			}
+			try {
+				setXSession(JSON.parse(event.newValue) as XAuthSessionState);
+			} catch {
+				setXSession(null);
+			}
+		};
+		window.addEventListener("storage", handleStorage);
+		return () => window.removeEventListener("storage", handleStorage);
+	}, []);
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		const handleMessage = (event: MessageEvent) => {
+			if (event.origin !== window.location.origin) {
+				return;
+			}
+			if (
+				event.data &&
+				typeof event.data === "object" &&
+				event.data.type === "X_AUTH_SUCCESS" &&
+				event.data.payload
+			) {
+				persistXSession(event.data.payload as XAuthSessionState);
+				toast.success("X account connected!");
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [persistXSession]);
 	useEffect(() => {
 		if (shareUploadError) {
 			toast.error(shareUploadError);
@@ -148,6 +214,18 @@ export const FinaleShareCustomizer = ({
 	const isShareReady =
 		Boolean(shareCard) && shareCard?.caption === trimmedShareCaption;
 	const shareBusy = isGeneratingShareCard || isUploadingShareCard;
+	const generateShareCardPng = useCallback(async () => {
+		if (!cardRef.current) {
+			throw new Error("Card preview is not ready yet.");
+		}
+		return toPng(cardRef.current, {
+			cacheBust: true,
+			width: 640,
+			height: 388,
+			pixelRatio: 1,
+			backgroundColor: "#050505",
+		});
+	}, [cardRef]);
 
 	// Use controlled state if provided, otherwise use internal state
 	const open = controlledOpen ?? internalOpen;
@@ -311,17 +389,12 @@ export const FinaleShareCustomizer = ({
 	};
 	const handleDownload = async () => {
 		if (!cardRef.current) {
+			toast.error("Card preview is not ready yet.");
 			return;
 		}
 		try {
 			toast("Preparing share card...");
-			const dataUrl = await toPng(cardRef.current, {
-				cacheBust: true,
-				width: 640,
-				height: 388,
-				pixelRatio: 1,
-				backgroundColor: "#050505",
-			});
+			const dataUrl = await generateShareCardPng();
 			const anchor = document.createElement("a");
 			const slug =
 				playerData.riotId
@@ -337,36 +410,40 @@ export const FinaleShareCustomizer = ({
 			toast.error("Failed to create PNG. Try again.");
 		}
 	};
-	const handlePrepareShareCard = async () => {
-		if (!cardRef.current) {
-			toast.error("Card preview is not ready yet.");
-			return;
-		}
-		try {
-			setIsGeneratingShareCard(true);
-			toast("Preparing share card...");
-			const dataUrl = await toPng(cardRef.current, {
-				cacheBust: true,
-				width: 640,
-				height: 388,
-				pixelRatio: 1,
-				backgroundColor: "#050505",
-			});
-			const card = await uploadShareCard(dataUrl, trimmedShareCaption);
-			toast.success("Share card ready!");
-			if (card) {
-				// Ensure tab stays on share
-				setActiveTab("share");
+	const handlePrepareShareCard = useCallback(
+		async (options?: { silent?: boolean }) => {
+			if (!cardRef.current) {
+				if (!options?.silent) {
+					toast.error("Card preview is not ready yet.");
+				}
+				return;
 			}
-		} catch (error) {
-			console.error(error);
-			const message =
-				error instanceof Error ? error.message : "Failed to prepare share card";
-			toast.error(message);
-		} finally {
-			setIsGeneratingShareCard(false);
-		}
-	};
+			try {
+				setIsGeneratingShareCard(true);
+				if (!options?.silent) {
+					toast("Preparing share card...");
+				}
+				const dataUrl = await generateShareCardPng();
+				const card = await uploadShareCard(dataUrl, trimmedShareCaption);
+				if (!options?.silent) {
+					toast.success("Share card ready!");
+				}
+				if (card) {
+					setActiveTab("share");
+				}
+			} catch (error) {
+				console.error(error);
+				const message =
+					error instanceof Error ? error.message : "Failed to prepare share card";
+				if (!options?.silent) {
+					toast.error(message);
+				}
+			} finally {
+				setIsGeneratingShareCard(false);
+			}
+		},
+		[generateShareCardPng, trimmedShareCaption, uploadShareCard, setActiveTab],
+	);
 	const handleCopyShareText = async () => {
 		const textToCopy = shareText;
 		try {
@@ -389,44 +466,12 @@ export const FinaleShareCustomizer = ({
 			toast.error("Unable to copy automatically. Please copy manually.");
 		}
 	};
-	const handleNativeShare = async () => {
-		if (!canUseNativeShare) {
-			toast.info("Native sharing is not available on this device.");
-			return;
-		}
-		if (!isShareReady) {
-			toast.info("Generate your share image first.");
-			return;
-		}
-		try {
-			await navigator.share({
-				title: `${playerData.riotId}'s Rift Rewind`,
-				text: shareText,
-				url: CANONICAL_SHARE_URL,
-			});
-		} catch (error) {
-			if ((error as Error).name !== "AbortError") {
-				console.error(error);
-				toast.error("Sharing was interrupted. Try again.");
-			}
-		}
-	};
 	const handleShareToPlatform = (platform: SharePlatform) => {
-		if (!isShareReady && platform !== "instagram") {
-			toast.info("Generate your share image first.");
-			return;
-		}
-
 		const encodedText = encodeURIComponent(shareText);
 		const encodedCaption = encodeURIComponent(trimmedShareCaption);
 		const encodedUrl = encodeURIComponent(CANONICAL_SHARE_URL);
 
 		switch (platform) {
-			case "x": {
-				const shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
-				window.open(shareUrl, "_blank", "noopener,noreferrer");
-				break;
-			}
 			case "telegram": {
 				const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
 				window.open(shareUrl, "_blank", "noopener,noreferrer");
@@ -448,6 +493,66 @@ export const FinaleShareCustomizer = ({
 				break;
 		}
 	};
+	const handleConnectToX = async () => {
+		try {
+			setIsConnectingToX(true);
+			const { authUrl } = await startXAuthSession();
+			const popup = window.open(
+				authUrl,
+				"rift-rewind-x-auth",
+				"width=600,height=700",
+			);
+			if (!popup) {
+				toast.error("Allow pop-ups to connect your X account.");
+			}
+		} catch (error) {
+			console.error(error);
+			const message = error instanceof Error ? error.message : "Failed to contact X";
+			toast.error(message);
+		} finally {
+			setIsConnectingToX(false);
+		}
+	};
+	const handleDisconnectFromX = () => {
+		persistXSession(null);
+		toast.info("Disconnected from X.");
+	};
+	const handlePostToX = async () => {
+		if (!xSession) {
+			toast.info("Connect your X account first.");
+			return;
+		}
+		try {
+			setIsPostingToX(true);
+			toast("Rendering your recap...");
+			const cardDataUrl = await generateShareCardPng();
+			const result = await postRecapToX({
+				caption: shareText,
+				cardDataUrl,
+				oauthToken: xSession.oauthToken,
+				oauthTokenSecret: xSession.oauthTokenSecret,
+			});
+			toast.success("Tweet posted!");
+			if (result.truncated) {
+				toast.info("Caption was trimmed to fit X's 280 character limit.");
+			}
+			if (result.tweetUrl) {
+				window.open(result.tweetUrl, "_blank", "noopener,noreferrer");
+			}
+		} catch (error) {
+			console.error(error);
+			const message = error instanceof Error ? error.message : "Failed to post on X";
+			toast.error(message);
+		} finally {
+			setIsPostingToX(false);
+		}
+	};
+	useEffect(() => {
+		if (activeTab !== "share" || shareBusy || isShareReady) {
+			return;
+		}
+		void handlePrepareShareCard({ silent: true });
+	}, [activeTab, shareBusy, isShareReady, handlePrepareShareCard]);
 	const handleOpenChange = (value: boolean) => {
 		setOpen(value);
 	};
@@ -774,10 +879,13 @@ export const FinaleShareCustomizer = ({
 											className="border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 text-white"
 										/>
 									</div>
-									{shareCard && !isShareReady && (
+									<p className="text-xs text-white/60">
+										Your share image refreshes automatically whenever you edit
+										the caption or card design.
+									</p>
+									{shareBusy && (
 										<p className="text-xs text-[#FACC15]">
-											Caption or design changed. Regenerate to update your
-											share link.
+											Updating the stored preview with your latest changes...
 										</p>
 									)}
 								</section>
@@ -796,67 +904,71 @@ export const FinaleShareCustomizer = ({
 											type="button"
 											variant="outline"
 											className="lol-heading flex-1 min-w-[200px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E]"
-											onClick={handlePrepareShareCard}
-											disabled={shareBusy}
+											onClick={xSession ? handlePostToX : handleConnectToX}
+											disabled={xSession ? isPostingToX : isConnectingToX}
 										>
-											{shareBusy ? (
+											{xSession ? (
+												isPostingToX ? (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												) : (
+													<Twitter className="mr-2 h-4 w-4" />
+												)
+											) : isConnectingToX ? (
 												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 											) : (
-												<Share2 className="mr-2 h-4 w-4" />
+												<Twitter className="mr-2 h-4 w-4" />
 											)}
-											{isShareReady ? "Regenerate Image" : "Generate Share Image"}
-										</Button>
-										<Button
-											type="button"
-											variant="outline"
-											className="lol-heading flex-1 min-w-[180px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E]"
-											onClick={handleNativeShare}
-											disabled={!canUseNativeShare || shareBusy || !isShareReady}
-										>
-											<Send className="mr-2 h-4 w-4" />
-											Share via Device
+											{xSession
+												? isPostingToX
+													? "Posting..."
+													: "Post Recap to X"
+												: isConnectingToX
+													? "Opening X..."
+													: "Connect X Account"}
 										</Button>
 									</div>
-									{shareCard && (
+									{xSession ? (
 										<div className="rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-4">
-											<p className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80 uppercase">
-												Stored Preview
-											</p>
-											<div className="mt-3 overflow-hidden rounded-lg border border-[rgba(200,170,110,0.2)] bg-[#050912]/80">
-												<img
-													src={shareCard.imageUrl}
-													alt="Rift Rewind share card preview"
-													className="w-full object-contain"
-												/>
+											<div className="flex flex-wrap items-center justify-between gap-3">
+												<div>
+													<p className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80 uppercase">
+														Connected Account
+													</p>
+													<p className="text-sm text-white">
+														@{xSession.screenName || xSession.userId}
+													</p>
+												</div>
+												<Button
+													type="button"
+													variant="ghost"
+													className="text-xs uppercase text-white/70 hover:text-white"
+													onClick={handleDisconnectFromX}
+												>
+													Disconnect
+												</Button>
 											</div>
-											<p className="mt-2 text-[0.65rem] text-white/55">
-												Ready for sharing — saved{" "}
-												{new Date(shareCard.createdAt).toLocaleString()}
+											<p className="mt-2 text-xs text-white/65">
+												We’ll capture your latest design and attach the PNG plus
+												caption automatically.
 											</p>
 										</div>
+									) : (
+										<p className="text-xs text-white/60">
+											Connect your X account to log in once and post your recap
+											with the generated PNG in a single tap.
+										</p>
 									)}
 								</section>
 								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
 									<h4 className="lol-heading text-lg text-[#C8AA6E]">
 										Share on Social
 									</h4>
-									<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-										<Button
-											type="button"
-											variant="outline"
-											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
-											onClick={() => handleShareToPlatform("x")}
-											disabled={!isShareReady || shareBusy}
-										>
-											<Twitter className="h-4 w-4" />
-											X
-										</Button>
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 										<Button
 											type="button"
 											variant="outline"
 											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
 											onClick={() => handleShareToPlatform("telegram")}
-											disabled={!isShareReady || shareBusy}
 										>
 											<Send className="h-4 w-4" />
 											Telegram
@@ -866,7 +978,6 @@ export const FinaleShareCustomizer = ({
 											variant="outline"
 											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
 											onClick={() => handleShareToPlatform("whatsapp")}
-											disabled={!isShareReady || shareBusy}
 										>
 											<MessageCircle className="h-4 w-4" />
 											WhatsApp
@@ -881,11 +992,10 @@ export const FinaleShareCustomizer = ({
 											Instagram
 										</Button>
 									</div>
-									{!isShareReady && (
-										<p className="text-xs text-white/60">
-											Generate your share image to unlock quick-share buttons.
-										</p>
-									)}
+									<p className="text-xs text-white/60">
+										Use these quick links for messenger apps. Instagram opens
+										the site so you can upload the PNG manually.
+									</p>
 								</section>
 							</TabsContent>
 						</Tabs>

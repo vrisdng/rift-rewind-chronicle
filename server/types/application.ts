@@ -368,6 +368,52 @@ export interface GetShareCardResponse {
   error?: string;
 }
 
+// ==================== X (TWITTER) INTEGRATION ====================
+
+export interface XRequestTokenResponse {
+  success: boolean;
+  data?: {
+    authUrl: string;
+    oauthToken: string;
+  };
+  error?: string;
+}
+
+export interface XAccessTokenRequest {
+  oauthToken: string;
+  oauthVerifier: string;
+}
+
+export interface XAccessTokenPayload {
+  oauthToken: string;
+  oauthTokenSecret: string;
+  screenName: string;
+  userId: string;
+}
+
+export interface XAccessTokenResponse {
+  success: boolean;
+  data?: XAccessTokenPayload;
+  error?: string;
+}
+
+export interface XPostTweetRequest {
+  caption: string;
+  cardDataUrl: string;
+  oauthToken: string;
+  oauthTokenSecret: string;
+}
+
+export interface XPostTweetResponse {
+  success: boolean;
+  data?: {
+    tweetUrl: string;
+    tweetId: string;
+    truncated?: boolean;
+  };
+  error?: string;
+}
+
 // ==================== PROGRESS TRACKING ====================
 
 /**
