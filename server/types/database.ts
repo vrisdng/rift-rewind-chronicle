@@ -4,7 +4,12 @@
  * Table names and column names use snake_case to match PostgreSQL conventions
  */
 
-import type { DerivedMetrics, AIInsights } from './application.ts';
+import type {
+  DerivedMetrics,
+  AIInsights,
+  PlayerElement,
+  ElementPersona,
+} from './application.ts';
 import type { ChampionStats, ProPlayerProfile } from './application.ts';
 
 // ==================== PLAYERS TABLE ====================
@@ -53,6 +58,8 @@ export interface DBPlayer {
   derived_metrics: DerivedMetrics; // All calculated metrics
   insights: AIInsights; // AI-generated insights
   archetype: string; // Player archetype name
+  element_profile: PlayerElement | null;
+  persona: ElementPersona | null;
 
   // Pro comparison (JSONB column)
   pro_comparison: {

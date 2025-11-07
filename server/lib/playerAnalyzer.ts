@@ -5,7 +5,7 @@
  */
 
 import { getClient } from './riot.ts';
-import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate } from '../types/index.ts';
+import type { RiotMatch, PlayerStats, DBMatch, ProgressUpdate, DerivedMetrics } from '../types/index.ts';
 import {
   convertMatchToDBFormat,
   calculateChampionStats,
@@ -18,7 +18,12 @@ import {
   calculateAverageKDA,
   calculateAverageStats,
 } from './matchAnalyzer.ts';
-import { calculateDerivedMetrics, determinePlayerIdentity } from './playerMetrics.ts';
+import {
+  calculateDerivedMetrics,
+  determinePlayerIdentity,
+  determinePlayerElement,
+  getPersonaForElement,
+} from './playerMetrics.ts';
 import { detectWatershedMoment } from './watershedDetector.ts';
 import { generatePlayerInsights } from './insightGenerator.ts';
 import {
@@ -264,6 +269,8 @@ export async function analyzePlayer(
     performanceTrend,
     derivedMetrics,
     archetype: playerIdentity.archetype,
+    element: playerIdentity.element,
+    persona: playerIdentity.persona,
     watershedMoment: watershedMoment || undefined,
     // New identity fields
     proComparison: playerIdentity.proComparison,
@@ -325,6 +332,8 @@ async function savePlayerAnalysis(stats: PlayerStats, matches: DBMatch[]): Promi
     narrative_story: stats.insights?.story_arc || '',
     insights: stats.insights as any,
     archetype: stats.archetype.name,
+    element_profile: stats.element as any,
+    persona: stats.persona as any,
     // New identity fields
     pro_comparison: stats.proComparison as any,
     top_strengths: stats.topStrengths as any,
@@ -366,6 +375,27 @@ export async function getCachedPlayerStats(
   return await convertDBPlayerToStats(dbPlayer);
 }
 
+function hydrateDerivedMetrics(metrics?: Partial<DerivedMetrics>): DerivedMetrics {
+  return {
+    aggression: metrics?.aggression ?? 50,
+    farming: metrics?.farming ?? 50,
+    vision: metrics?.vision ?? 50,
+    consistency: metrics?.consistency ?? 50,
+    earlyGameStrength: metrics?.earlyGameStrength ?? 50,
+    lateGameScaling: metrics?.lateGameScaling ?? 50,
+    comebackRate: metrics?.comebackRate ?? 50,
+    clutchFactor: metrics?.clutchFactor ?? 50,
+    tiltFactor: metrics?.tiltFactor ?? 50,
+    championPoolDepth: metrics?.championPoolDepth ?? 50,
+    improvementVelocity: metrics?.improvementVelocity ?? 50,
+    roaming: metrics?.roaming ?? 50,
+    teamfighting: metrics?.teamfighting ?? 50,
+    snowballRate: metrics?.snowballRate ?? 50,
+    winrateVariance: metrics?.winrateVariance ?? 50,
+    offMetaPickRate: metrics?.offMetaPickRate ?? 50,
+  };
+}
+
 /**
  * Convert DB player to PlayerStats format
  */
@@ -382,7 +412,17 @@ async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
   const currentStreak = getCurrentStreak(matches);
   const performanceTrend = calculatePerformanceTrends(matches);
 
-  const derived = dbPlayer.derived_metrics || {};
+  const derived = hydrateDerivedMetrics(dbPlayer.derived_metrics);
+  const archetypeProfile = {
+    name: dbPlayer.archetype || 'Unknown',
+    description: dbPlayer.archetype_description || '',
+    distance: dbPlayer.archetype_distance || 0,
+    matchPercentage: derived.consistency || 0,
+    icon: dbPlayer.archetype_icon || '🎮',
+  };
+  const elementProfile = dbPlayer.element_profile || determinePlayerElement(derived);
+  const personaProfile =
+    dbPlayer.persona || getPersonaForElement(archetypeProfile.name, elementProfile);
   
   return {
     puuid: dbPlayer.puuid,
@@ -409,13 +449,9 @@ async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
     currentStreak,
     performanceTrend,
     derivedMetrics: derived,
-    archetype: {
-      name: dbPlayer.archetype || 'Unknown',
-      description: dbPlayer.archetype_description || '',
-      distance: dbPlayer.archetype_distance || 0,
-      matchPercentage: derived.consistency || 0,
-      icon: dbPlayer.archetype_icon || '🎮',
-    },
+    archetype: archetypeProfile,
+    element: elementProfile,
+    persona: personaProfile,
     // New identity fields from database
     proComparison: dbPlayer.pro_comparison || undefined,
     topStrengths: dbPlayer.top_strengths || undefined,
