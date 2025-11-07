@@ -33,7 +33,6 @@ export function initSounds() {
     const audio = new Audio(src);
     audio.volume = 0.18;
     audio.preload = 'auto';
-    // audio.loop = true;
     return audio;
   });
 
