@@ -15,7 +15,9 @@ let audioInitialized = false;
 let introPlayed = false;
 
 const BGM_TRACKS = [
-  '/sounds/background-music.mp3',
+  '/sounds/background-music-legends-never-die.mp3',
+  '/sounds/background-music-sacrifice.mp3',
+  '/sounds/background-music-gods.mp3'
 ];
 
 export function initSounds() {
