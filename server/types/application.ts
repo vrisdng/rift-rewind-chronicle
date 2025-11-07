@@ -327,6 +327,47 @@ export interface CreateGroupResponse {
   error?: string;
 }
 
+// ==================== SHARE CARD API ====================
+
+export interface ShareCardPlayerSummary {
+  puuid?: string;
+  riotId: string;
+  tagLine: string;
+  totalGames: number;
+  winRate: number;
+  archetype: Pick<PlayerArchetype, 'name' | 'description'>;
+  insights?: Pick<AIInsights, 'title'> | null;
+}
+
+export interface CreateShareCardRequest {
+  cardDataUrl: string;
+  caption?: string;
+  player: ShareCardPlayerSummary;
+}
+
+export interface ShareCardPayload {
+  slug: string;
+  imageUrl: string;
+  caption: string;
+  player: {
+    riotId: string | null;
+    tagLine: string | null;
+  };
+  createdAt: string;
+}
+
+export interface CreateShareCardResponse {
+  success: boolean;
+  data?: ShareCardPayload;
+  error?: string;
+}
+
+export interface GetShareCardResponse {
+  success: boolean;
+  data?: ShareCardPayload;
+  error?: string;
+}
+
 // ==================== PROGRESS TRACKING ====================
 
 /**

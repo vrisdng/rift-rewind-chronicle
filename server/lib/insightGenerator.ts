@@ -10,6 +10,7 @@ import type {
   ChampionStats,
   WatershedMoment,
   AIInsights,
+  ShareCardPlayerSummary,
 } from '../types/index.ts';
 import { invokeBedrockClaude, parseAIResponse } from './bedrockClient.ts';
 
@@ -173,6 +174,24 @@ ${riotId}'s 2024 Season:
 }
 
 /**
+ * Generate shareable card text from a lightweight summary
+ */
+export function generateShareableTextFromSummary(
+  summary: ShareCardPlayerSummary
+): string {
+  const title = summary.insights?.title || 'My League Year';
+
+  return `${title}
+
+${summary.riotId}'s 2024 Season:
+• ${summary.totalGames} games • ${summary.winRate.toFixed(1)}% WR
+• ${summary.archetype.name}
+• ${summary.archetype.description}
+
+#RiftRewind #LeagueOfLegends`;
+}
+
+/**
  * Validate AI insights response
  */
 export function validateInsights(insights: AIInsights): boolean {
@@ -213,5 +232,6 @@ export default {
   generatePlayerInsights,
   generateQuickSummary,
   generateShareableText,
+  generateShareableTextFromSummary,
   validateInsights,
 };

@@ -2,10 +2,29 @@ import express from 'express';
 import cors from 'cors';
 import { getClient } from './lib/riot.ts';
 import { analyzePlayer, getCachedPlayerStats } from './lib/playerAnalyzer.ts';
-import { createFriendGroup, getFriendGroup } from './lib/supabaseClient.ts';
+import {
+  createFriendGroup,
+  getFriendGroup,
+  createShareCard,
+  getShareCardBySlug,
+  getShareCardPublicUrl,
+  getShareCardsBucket,
+  getSupabaseClient,
+} from './lib/supabaseClient.ts';
 import { invokeBedrockClaude, invokeBedrockClaudeStream } from './lib/bedrockClient.ts';
 import { buildChatbotSystemPrompt } from './prompts/chatbot-system-prompt.ts';
-import type { AnalyzePlayerRequest, CreateGroupRequest, ProgressUpdate } from './types/index.ts';
+import {
+  AnalyzePlayerRequest,
+  CreateGroupRequest,
+  ProgressUpdate,
+  CreateShareCardRequest,
+  CreateShareCardResponse,
+  GetShareCardResponse,
+  ShareCardPayload,
+  DBShareCard,
+} from './types/index.ts';
+import { generateShareableTextFromSummary } from './lib/insightGenerator.ts';
+import { nanoid } from 'nanoid';
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -50,6 +69,30 @@ function parseNavigationActions(text: string): {
   return { actions: navigationActions, cleanedText };
 }
 
+const MAX_SHARE_CARD_BYTES = 5 * 1024 * 1024; // 5MB safety limit
+
+function buildSlug(riotId: string): string {
+  const normalized = riotId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 30);
+  return `${normalized || 'summoner'}-${nanoid(6)}`;
+}
+
+function buildShareCardPayload(card: DBShareCard): ShareCardPayload {
+  return {
+    slug: card.slug,
+    imageUrl: getShareCardPublicUrl(card.image_path),
+    caption: card.caption ?? '',
+    player: {
+      riotId: card.player_riot_id,
+      tagLine: card.player_tag_line,
+    },
+    createdAt: card.created_at ?? new Date().toISOString(),
+  };
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -57,7 +100,7 @@ app.use(cors({
   origin: ['http://localhost:8080', 'http://localhost:3000'],
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '7mb' }));
 
 // ==================== PLAYER ANALYSIS ====================
 
@@ -215,6 +258,166 @@ app.get('/api/player/:riotId/:tagLine', async (req, res) => {
       success: false,
       error: error.message || 'Failed to fetch player data',
     });
+  }
+});
+
+
+// ==================== SHARE CARDS ====================
+
+/**
+ * POST /api/share-cards
+ * Upload shareable PNGs to Supabase Storage and persist metadata
+ */
+app.post('/api/share-cards', async (req, res) => {
+  const body = req.body as CreateShareCardRequest;
+  try {
+    const { cardDataUrl, caption, player } = body;
+
+    if (!cardDataUrl || typeof cardDataUrl !== 'string') {
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'Missing cardDataUrl',
+      };
+      return res.status(400).json(response);
+    }
+
+    if (!player || !player.riotId || !player.tagLine) {
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'Player information is required',
+      };
+      return res.status(400).json(response);
+    }
+
+    const [prefix, base64Data] = cardDataUrl.split(',');
+    if (!prefix?.startsWith('data:image/png') || !base64Data) {
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'cardDataUrl must be a PNG data URL',
+      };
+      return res.status(400).json(response);
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    if (!buffer.length) {
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'cardDataUrl is empty',
+      };
+      return res.status(400).json(response);
+    }
+
+    if (buffer.length > MAX_SHARE_CARD_BYTES) {
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'PNG exceeds 5MB limit',
+      };
+      return res.status(413).json(response);
+    }
+
+    const supabase = getSupabaseClient();
+    const bucketId = getShareCardsBucket();
+    const slug = buildSlug(player.riotId);
+    const filePath = `${slug}.png`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucketId)
+      .upload(filePath, buffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Error uploading share card:', uploadError);
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'Failed to store share card',
+      };
+      return res.status(500).json(response);
+    }
+
+    const finalCaption =
+      caption?.trim() && caption.trim().length > 0
+        ? caption.trim()
+        : generateShareableTextFromSummary(player);
+
+    try {
+      const cardRecord = await createShareCard({
+        slug,
+        player_puuid: player.puuid ?? null,
+        player_riot_id: player.riotId,
+        player_tag_line: player.tagLine,
+        caption: finalCaption,
+        image_path: filePath,
+        player_snapshot: player,
+      });
+
+      const payload = buildShareCardPayload(cardRecord);
+      const response: CreateShareCardResponse = {
+        success: true,
+        data: payload,
+      };
+      return res.json(response);
+    } catch (error: any) {
+      console.error('Error creating share card record:', error);
+      // Best-effort cleanup to avoid orphaned files
+      await supabase.storage.from(bucketId).remove([filePath]);
+      const response: CreateShareCardResponse = {
+        success: false,
+        error: 'Failed to save share card',
+      };
+      return res.status(500).json(response);
+    }
+  } catch (error: any) {
+    console.error('Unexpected error creating share card:', error);
+    const response: CreateShareCardResponse = {
+      success: false,
+      error: error.message || 'Unexpected error',
+    };
+    return res.status(500).json(response);
+  }
+});
+
+/**
+ * GET /api/share-cards/:slug
+ * Fetch share card metadata for landing page rendering
+ */
+app.get('/api/share-cards/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) {
+      const response: GetShareCardResponse = {
+        success: false,
+        error: 'Slug is required',
+      };
+      return res.status(400).json(response);
+    }
+
+    const cardRecord = await getShareCardBySlug(slug);
+
+    if (!cardRecord) {
+      const response: GetShareCardResponse = {
+        success: false,
+        error: 'Share card not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const payload = buildShareCardPayload(cardRecord);
+    const response: GetShareCardResponse = {
+      success: true,
+      data: payload,
+    };
+
+    return res.json(response);
+  } catch (error: any) {
+    console.error('Error fetching share card:', error);
+    const response: GetShareCardResponse = {
+      success: false,
+      error: error.message || 'Failed to fetch share card',
+    };
+    return res.status(500).json(response);
   }
 });
 

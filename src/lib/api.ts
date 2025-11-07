@@ -149,7 +149,47 @@ export interface MetricWeakness {
   suggestion: string;
 }
 
+export interface ShareCardPlayerSummary {
+  puuid?: string;
+  riotId: string;
+  tagLine: string;
+  totalGames: number;
+  winRate: number;
+  archetype: Pick<PlayerArchetype, "name" | "description">;
+  insights?: Pick<AIInsights, "title"> | null;
+}
+
+export interface CreateShareCardRequest {
+  cardDataUrl: string;
+  caption?: string;
+  player: ShareCardPlayerSummary;
+}
+
+export interface ShareCardPayload {
+  slug: string;
+  imageUrl: string;
+  caption: string;
+  player: {
+    riotId: string | null;
+    tagLine: string | null;
+  };
+  createdAt: string;
+}
+
+export interface CreateShareCardResponse {
+  success: boolean;
+  data?: ShareCardPayload;
+  error?: string;
+}
+
+export interface GetShareCardResponse {
+  success: boolean;
+  data?: ShareCardPayload;
+  error?: string;
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const CANONICAL_SHARE_URL = 'https://rift-rewind-chronicle.vercel.app/';
 
 export interface ProgressUpdate {
   stage: string;
@@ -337,4 +377,41 @@ export async function getFriendGroup(groupId: string) {
     console.error('Error fetching group:', error);
     throw error;
   }
+}
+
+/**
+ * Upload a share card and persist metadata
+ */
+export async function createShareCard(
+  request: CreateShareCardRequest
+): Promise<ShareCardPayload> {
+  const response = await fetch(`${API_URL}/api/share-cards`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const result = (await response.json()) as CreateShareCardResponse;
+
+  if (!response.ok || !result.success || !result.data) {
+    throw new Error(result.error || 'Failed to create share card');
+  }
+
+  return result.data;
+}
+
+/**
+ * Fetch a share card by slug
+ */
+export async function fetchShareCard(slug: string): Promise<ShareCardPayload> {
+  const response = await fetch(`${API_URL}/api/share-cards/${slug}`);
+  const result = (await response.json()) as GetShareCardResponse;
+
+  if (!response.ok || !result.success || !result.data) {
+    throw new Error(result.error || 'Share card not found');
+  }
+
+  return result.data;
 }

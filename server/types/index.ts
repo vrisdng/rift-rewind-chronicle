@@ -57,6 +57,8 @@ export type {
   DBFriendGroup,
   DBFriendGroupMember,
   DBPerformanceTrend,
+  DBShareCard,
+  DBShareCardInsert,
 
   // Helper types for database operations
   DBPlayerInsert,
@@ -102,6 +104,11 @@ export type {
   AnalyzePlayerResponse,
   CreateGroupRequest,
   CreateGroupResponse,
+  ShareCardPlayerSummary,
+  CreateShareCardRequest,
+  ShareCardPayload,
+  CreateShareCardResponse,
+  GetShareCardResponse,
 
   // Utilities
   ProgressUpdate,

@@ -13,6 +13,7 @@ import SocialComparisons from "./pages/SocialComparisons";
 import ShareableMoments from "./pages/ShareableMoments";
 import Finale from "./pages/Finale";
 import NotFound from "./pages/NotFound";
+import ShareCardLanding from "./pages/ShareCardLanding";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
 					<Route path="/social" element={<SocialComparisons />} />
 					<Route path="/shareable" element={<ShareableMoments />} />
 					<Route path="/finale" element={<Finale />} />
+					<Route path="/share/:slug" element={<ShareCardLanding />} />
 					{/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 					<Route path="*" element={<NotFound />} />
 				</Routes>
