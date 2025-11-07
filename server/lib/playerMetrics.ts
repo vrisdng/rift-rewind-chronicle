@@ -10,28 +10,14 @@ import type {
   ArchetypeProfile,
   PlayerArchetype,
   ProPlayerProfile,
+  PlayerIdentity,
+  PlayerElement,
+  ElementPersona,
+  ElementName,
 } from '../types/index.ts';
 
 import { WORLDS_2024_PRO_PLAYERS } from '../constants/pro-player.ts';
-import { ARCHETYPES } from '../constants/archetype.ts';
-
-// ==================== TYPE DEFINITIONS ====================
-
-/**
- * Player identity including archetype and pro comparison
- */
-export interface PlayerIdentity {
-  archetype: PlayerArchetype;
-  proComparison: {
-    primary: ProPlayerProfile;
-    secondary: ProPlayerProfile;
-    similarity: number;
-    description: string;
-  };
-  topStrengths: Array<{ metric: string; value: number; percentile: number }>;
-  needsWork: Array<{ metric: string; value: number; suggestion: string }>;
-  playfulComparison: string;
-}
+import { ARCHETYPES, ELEMENTS, ELEMENT_PERSONAS } from '../constants/archetype.ts';
 
 /**
  * Metric importance weights for distance calculations
@@ -47,6 +33,8 @@ const METRIC_WEIGHTS: Record<keyof DerivedMetrics, number> = {
   comebackRate: 1.0,
   tiltFactor: 0.9,
   snowballRate: 0.9,
+  winrateVariance: 0.8,
+  offMetaPickRate: 0.6,
   vision: 0.8,
   roaming: 0.8,
   improvementVelocity: 0.7,
@@ -148,6 +136,96 @@ function getWeaknesses(metrics: DerivedMetrics): Array<{ metric: string; value: 
   }));
 }
 
+const ELEMENT_SCORE_FUNCTIONS: Record<ElementName, (metrics: DerivedMetrics) => number> = {
+  Inferno: (metrics) =>
+    0.35 * getMetricValue(metrics, 'aggression') +
+    0.25 * getMetricValue(metrics, 'earlyGameStrength') +
+    0.15 * getMetricValue(metrics, 'snowballRate') -
+    0.15 * getMetricValue(metrics, 'consistency'),
+  Tide: (metrics) =>
+    0.35 * getMetricValue(metrics, 'lateGameScaling') +
+    0.2 * getMetricValue(metrics, 'consistency') +
+    0.15 * getMetricValue(metrics, 'comebackRate') -
+    0.1 * getMetricValue(metrics, 'aggression'),
+  Gale: (metrics) =>
+    0.3 * getMetricValue(metrics, 'roaming') +
+    0.25 * getMetricValue(metrics, 'teamfighting') +
+    0.15 * getMetricValue(metrics, 'earlyGameStrength'),
+  Terra: (metrics) =>
+    0.35 * getMetricValue(metrics, 'vision') +
+    0.25 * getMetricValue(metrics, 'consistency') +
+    0.15 * (100 - getMetricValue(metrics, 'tiltFactor')),
+  Void: (metrics) =>
+    0.3 * (100 - getMetricValue(metrics, 'consistency')) +
+    0.2 * getMetricValue(metrics, 'aggression') +
+    0.2 * getMetricValue(metrics, 'winrateVariance') +
+    0.1 * getMetricValue(metrics, 'offMetaPickRate'),
+};
+
+function getMetricValue(metrics: DerivedMetrics, key: keyof DerivedMetrics): number {
+  const value = metrics[key];
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 50;
+  }
+  return value;
+}
+
+function clampScore(value: number): number {
+  if (Number.isNaN(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+/**
+ * Determine the dominant elemental micropersona based on weighted metrics
+ */
+export function determinePlayerElement(metrics: DerivedMetrics): PlayerElement {
+  const scored = ELEMENTS.map((element) => {
+    const scoreFn = ELEMENT_SCORE_FUNCTIONS[element.name];
+    const rawScore = scoreFn ? scoreFn(metrics) : 0;
+    return {
+      element,
+      score: clampScore(rawScore),
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  const top = scored[0] ?? { element: ELEMENTS[0], score: 50 };
+
+  return {
+    name: top.element.name,
+    icon: top.element.icon,
+    description: top.element.description,
+    keywords: top.element.keywords,
+    score: top.score,
+  };
+}
+
+/**
+ * Combine archetype + element into a named persona
+ */
+export function getPersonaForElement(archetypeName: string, element: PlayerElement): ElementPersona {
+  const persona = ELEMENT_PERSONAS.find(
+    (combo) => combo.archetype === archetypeName && combo.element === element.name
+  );
+
+  if (persona) {
+    return {
+      codename: persona.codename,
+      description: persona.description,
+      archetypeName: archetypeName,
+      elementName: element.name,
+    };
+  }
+
+  return {
+    codename: `${element.name} ${archetypeName}`,
+    description: 'Unique fusion of playstyle and elemental energy.',
+    archetypeName,
+    elementName: element.name,
+  };
+}
+
 /**
  * Format metric key to readable name
  */
@@ -167,6 +245,8 @@ function formatMetricName(metric: keyof DerivedMetrics): string {
     roaming: 'Roaming',
     teamfighting: 'Teamfighting',
     snowballRate: 'Snowball Potential',
+    winrateVariance: 'Win Rate Variance',
+    offMetaPickRate: 'Off-Meta Pick Rate',
   };
   return nameMap[metric] || metric;
 }
@@ -190,6 +270,8 @@ function getSuggestionForMetric(metric: keyof DerivedMetrics): string {
     roaming: 'Push wave and look for plays. Communicate with team before roaming.',
     teamfighting: 'Focus on positioning and target selection. Watch pro teamfights for positioning tips.',
     snowballRate: 'After getting ahead, focus on denying enemy resources and maintaining vision control.',
+    winrateVariance: 'Stabilize your sessions. Review loss streaks and reset after big swings.',
+    offMetaPickRate: 'Track success on experimental champions and keep a couple of reliable staples ready.',
   };
   return suggestions[metric] || 'Keep practicing and reviewing your games.';
 }
@@ -274,6 +356,8 @@ export function calculateDerivedMetrics(matches: DBMatch[]): DerivedMetrics {
     roaming: calculateRoaming(matches),
     teamfighting: calculateTeamfighting(matches),
     snowballRate: calculateSnowballRate(matches),
+    winrateVariance: calculateWinrateVariance(matches),
+    offMetaPickRate: calculateOffMetaPickRate(matches),
   };
 }
 
@@ -293,6 +377,8 @@ function getDefaultMetrics(): DerivedMetrics {
     roaming: 50,
     teamfighting: 50,
     snowballRate: 50,
+    winrateVariance: 50,
+    offMetaPickRate: 50,
   };
 }
 
@@ -551,6 +637,64 @@ function calculateSnowballRate(matches: DBMatch[]): number {
   return Math.round(snowballRate);
 }
 
+/**
+ * Win Rate Variance: volatility of rolling win percentages
+ */
+function calculateWinrateVariance(matches: DBMatch[]): number {
+  if (matches.length < 10) {
+    return 50;
+  }
+
+  const sorted = [...matches].sort(
+    (a, b) => new Date(a.game_date).getTime() - new Date(b.game_date).getTime()
+  );
+
+  const windowSize = Math.min(8, Math.max(4, Math.floor(sorted.length / 5)));
+  if (windowSize < 4) {
+    return 50;
+  }
+
+  const rollingWinRates: number[] = [];
+  for (let i = 0; i <= sorted.length - windowSize; i++) {
+    const slice = sorted.slice(i, i + windowSize);
+    const wins = slice.filter((m) => m.result).length;
+    rollingWinRates.push(wins / windowSize);
+  }
+
+  if (rollingWinRates.length < 2) {
+    return 50;
+  }
+
+  const avg = rollingWinRates.reduce((sum, rate) => sum + rate, 0) / rollingWinRates.length;
+  const variance =
+    rollingWinRates.reduce((sum, rate) => sum + Math.pow(rate - avg, 2), 0) / rollingWinRates.length;
+  const stdDev = Math.sqrt(variance); // 0-0.5 typical range
+
+  const normalized = Math.min(stdDev / 0.25, 1); // 25% std dev = 100
+  return Math.round(normalized * 100);
+}
+
+/**
+ * Off-meta pick rate: frequency of rarely played champions
+ */
+function calculateOffMetaPickRate(matches: DBMatch[]): number {
+  if (matches.length === 0) {
+    return 50;
+  }
+
+  const championCounts = new Map<string, number>();
+  for (const match of matches) {
+    championCounts.set(match.champion_name, (championCounts.get(match.champion_name) || 0) + 1);
+  }
+
+  const experimentalGames = matches.filter(
+    (match) => (championCounts.get(match.champion_name) || 0) <= 2
+  );
+
+  const rate = (experimentalGames.length / matches.length) * 100;
+  return Math.round(rate);
+}
+
 // ==================== ARCHETYPE MATCHING ====================
 
 /**
@@ -694,20 +838,26 @@ export function determinePlayerIdentity(metrics: DerivedMetrics): PlayerIdentity
   // 1. Find their archetype (playstyle category) using relative scoring
   const archetype = determineArchetypeRelative(metrics);
 
-  // 2. Find closest pro player (aspirational comparison)
+  // 2. Determine elemental micropersona
+  const element = determinePlayerElement(metrics);
+  const persona = getPersonaForElement(archetype.name, element);
+
+  // 3. Find closest pro player (aspirational comparison)
   const proMatch = matchToProPlayer(metrics);
 
-  // 3. Identify top strengths
+  // 4. Identify top strengths
   const topStrengths = getTopStrengths(metrics);
 
-  // 4. Identify areas for improvement
+  // 5. Identify areas for improvement
   const needsWork = getWeaknesses(metrics);
 
-  // 5. Generate playful comparison
+  // 6. Generate playful comparison
   const playfulComparison = getPlayfulComparison(metrics);
 
   return {
     archetype,
+    element,
+    persona,
     proComparison: {
       primary: proMatch.primary,
       secondary: proMatch.secondary,

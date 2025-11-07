@@ -30,6 +30,8 @@ export interface DerivedMetrics {
   roaming: number; // Map presence outside lane
   teamfighting: number; // Damage/utility in teamfights
   snowballRate: number; // Ability to capitalize on leads
+  winrateVariance: number; // Volatility of rolling win rates
+  offMetaPickRate: number; // Frequency of rare/experimental champion picks
 }
 
 /**
@@ -54,6 +56,23 @@ export interface PlayerArchetype {
   icon: string;
 }
 
+export type ElementName = 'Inferno' | 'Tide' | 'Gale' | 'Terra' | 'Void';
+
+export interface PlayerElement {
+  name: ElementName;
+  icon: string;
+  description: string;
+  keywords: string[];
+  score: number; // 0-100 confidence
+}
+
+export interface ElementPersona {
+  codename: string;
+  description: string;
+  archetypeName: string;
+  elementName: ElementName;
+}
+
 /**
  * Pro player profile for comparison
  */
@@ -73,6 +92,8 @@ export interface ProPlayerProfile {
  */
 export interface PlayerIdentity {
   archetype: PlayerArchetype;
+  element: PlayerElement;
+  persona: ElementPersona;
   proComparison: {
     primary: ProPlayerProfile;
     secondary: ProPlayerProfile;
@@ -218,6 +239,8 @@ export interface PlayerStats {
   // Advanced analytics
   derivedMetrics: DerivedMetrics;
   archetype: PlayerArchetype;
+  element?: PlayerElement;
+  persona?: ElementPersona;
   watershedMoment?: WatershedMoment;
 
   // Pro player comparison

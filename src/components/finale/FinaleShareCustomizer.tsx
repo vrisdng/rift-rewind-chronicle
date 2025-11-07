@@ -41,7 +41,10 @@ import {
 	RadarChart,
 	ResponsiveContainer,
 } from "recharts";
-import { METRIC_DEFINITIONS, type MetricDatum } from "@/components/ui/metrics-radar";
+import {
+	METRIC_DEFINITIONS,
+	type MetricDatum,
+} from "@/components/ui/metrics-radar";
 import { useShareCardUpload } from "@/hooks/useShareCardUpload";
 type BackgroundOptionType = "color" | "image" | "gradient";
 interface BackgroundOption {
@@ -86,15 +89,17 @@ function buildDefaultShareCaption(playerData: PlayerStats): string {
 
 ${playerData.riotId}'s 2024 Season:
 • ${playerData.totalGames} games • ${playerData.winRate.toFixed(1)}% WR
-• ${playerData.archetype.name}
-• ${playerData.archetype.description}
+• ${playerData.persona?.codename || playerData.archetype?.name || "Unknown"}
+• ${playerData.persona?.description || playerData.archetype?.description || ""}
 
 #RiftRewind #LeagueOfLegends`;
 }
 
 function buildShareText(caption: string): string {
 	const trimmed = caption.trim();
-	return trimmed.length ? `${trimmed}\n${CANONICAL_SHARE_URL}` : CANONICAL_SHARE_URL;
+	return trimmed.length
+		? `${trimmed}\n${CANONICAL_SHARE_URL}`
+		: CANONICAL_SHARE_URL;
 }
 
 export const FinaleShareCustomizer = ({
@@ -236,8 +241,9 @@ export const FinaleShareCustomizer = ({
 		size: triggerSize = "lg",
 		className: triggerClassName,
 	} = triggerProps ?? {};
-	const triggerContentIcon =
-		triggerIcon ?? <Sparkles className="mr-2 h-5 w-5 text-[#0A1428]" />;
+	const triggerContentIcon = triggerIcon ?? (
+		<Sparkles className="mr-2 h-5 w-5 text-[#0A1428]" />
+	);
 	const triggerButtonClassName = cn(
 		"lol-heading text-lg px-12 py-6 h-auto font-bold tracking-[0.3em] uppercase bg-[#C8AA6E] text-[#0A1428] hover:bg-[#d7b977] border-[#C8AA6E]/60 shadow-[0_18px_40px_rgba(8,12,22,0.55)] transition-transform hover:-translate-y-0.5 focus-visible:ring-[#C8AA6E]",
 		triggerClassName,
@@ -459,7 +465,9 @@ export const FinaleShareCustomizer = ({
 			} catch (error) {
 				console.error(error);
 				const message =
-					error instanceof Error ? error.message : "Failed to prepare share card";
+					error instanceof Error
+						? error.message
+						: "Failed to prepare share card";
 				if (!options?.silent) {
 					toast.error(message);
 				}
@@ -472,7 +480,10 @@ export const FinaleShareCustomizer = ({
 	const handleCopyShareText = async () => {
 		const textToCopy = shareText;
 		try {
-			if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+			if (
+				navigator.clipboard &&
+				typeof navigator.clipboard.writeText === "function"
+			) {
 				await navigator.clipboard.writeText(textToCopy);
 			} else {
 				const textarea = document.createElement("textarea");
@@ -511,7 +522,11 @@ export const FinaleShareCustomizer = ({
 				toast.info(
 					"Instagram requires manual upload. Copy the caption and share your JPEG in the app.",
 				);
-				window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+				window.open(
+					"https://www.instagram.com/",
+					"_blank",
+					"noopener,noreferrer",
+				);
 				break;
 			}
 			default:
@@ -532,7 +547,8 @@ export const FinaleShareCustomizer = ({
 			}
 		} catch (error) {
 			console.error(error);
-			const message = error instanceof Error ? error.message : "Failed to contact X";
+			const message =
+				error instanceof Error ? error.message : "Failed to contact X";
 			toast.error(message);
 		} finally {
 			setIsConnectingToX(false);
@@ -566,7 +582,8 @@ export const FinaleShareCustomizer = ({
 			}
 		} catch (error) {
 			console.error(error);
-			const message = error instanceof Error ? error.message : "Failed to post on X";
+			const message =
+				error instanceof Error ? error.message : "Failed to post on X";
 			toast.error(message);
 		} finally {
 			setIsPostingToX(false);
@@ -636,7 +653,10 @@ export const FinaleShareCustomizer = ({
 													cy="50%"
 													outerRadius="68%"
 												>
-													<PolarGrid stroke="rgba(255,255,255,0.45)" radialLines={false} />
+													<PolarGrid
+														stroke="rgba(255,255,255,0.45)"
+														radialLines={false}
+													/>
 													<PolarAngleAxis
 														dataKey="label"
 														tick={renderRadarIconTick}
@@ -676,14 +696,15 @@ export const FinaleShareCustomizer = ({
 									</header>
 									<div className="space-y-5">
 										<div className="space-y-2 text-left">
-											<p className="lol-subheading text-[0.7rem] tracking-[0.45em] text-[#C8AA6E]/65">
-												Archetype
-											</p>
 											<h3 className="lol-heading text-[2.4rem] text-white tracking-[0.22em] drop-shadow-[0_0_35px_rgba(10,20,40,0.7)]">
-												{playerData.archetype.name}
+												{playerData.persona?.codename ||
+													playerData.archetype?.name ||
+													"Unknown"}
 											</h3>
 											<p className="text-sm leading-relaxed text-white/75">
-												{playerData.archetype.description}
+												{playerData.persona?.description ||
+													playerData.archetype?.description ||
+													""}
 											</p>
 										</div>
 										{!!statBlocks.length && (
@@ -973,8 +994,8 @@ export const FinaleShareCustomizer = ({
 												</Button>
 											</div>
 											<p className="mt-2 text-xs text-white/65">
-												We’ll capture your latest design and attach the JPEG plus
-												caption automatically.
+												We’ll capture your latest design and attach the JPEG
+												plus caption automatically.
 											</p>
 										</div>
 									) : (

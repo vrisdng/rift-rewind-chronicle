@@ -30,6 +30,8 @@ export interface PlayerStats {
 	performanceTrend: PerformanceTrend[];
 	derivedMetrics: DerivedMetrics;
 	archetype: PlayerArchetype;
+	element?: PlayerElement;
+	persona?: ElementPersona;
 	watershedMoment?: WatershedMoment;
 	insights?: AIInsights;
 	proComparison?: ProComparison;
@@ -88,6 +90,8 @@ export interface DerivedMetrics {
 	roaming: number;
 	teamfighting: number;
 	snowballRate: number;
+	winrateVariance: number;
+	offMetaPickRate: number;
 }
 
 export interface PlayerArchetype {
@@ -96,6 +100,23 @@ export interface PlayerArchetype {
 	distance: number;
 	matchPercentage: number;
 	icon: string;
+}
+
+export type ElementName = "Inferno" | "Tide" | "Gale" | "Terra" | "Void";
+
+export interface PlayerElement {
+	name: ElementName;
+	icon: string;
+	description: string;
+	keywords: string[];
+	score: number;
+}
+
+export interface ElementPersona {
+	codename: string;
+	description: string;
+	archetypeName: string;
+	elementName: ElementName;
 }
 
 export interface WatershedMoment {
