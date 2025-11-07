@@ -389,7 +389,7 @@ app.get("/api/player/:riotId/:tagLine", async (req, res) => {
 
 /**
  * POST /api/share-cards
- * Upload shareable PNGs to Supabase Storage and persist metadata
+ * Upload shareable cards (JPEG) to Supabase Storage and persist metadata
  */
 app.post("/api/share-cards", async (req, res) => {
 	const body = req.body as CreateShareCardRequest;
@@ -413,10 +413,12 @@ app.post("/api/share-cards", async (req, res) => {
 		}
 
 		const [prefix, base64Data] = cardDataUrl.split(",");
-		if (!prefix?.startsWith("data:image/png") || !base64Data) {
+		const mimeMatch = prefix?.match(/^data:(image\/png|image\/jpeg)/);
+		const mimeType = mimeMatch?.[1];
+		if (!mimeType || !base64Data) {
 			const response: CreateShareCardResponse = {
 				success: false,
-				error: "cardDataUrl must be a PNG data URL",
+				error: "cardDataUrl must be a PNG or JPEG data URL",
 			};
 			return res.status(400).json(response);
 		}
@@ -432,9 +434,10 @@ app.post("/api/share-cards", async (req, res) => {
 		}
 
 		if (buffer.length > MAX_SHARE_CARD_BYTES) {
+			const maxSizeMb = Math.round(MAX_SHARE_CARD_BYTES / (1024 * 1024));
 			const response: CreateShareCardResponse = {
 				success: false,
-				error: "PNG exceeds 5MB limit",
+				error: `Share card image exceeds ${maxSizeMb}MB limit`,
 			};
 			return res.status(413).json(response);
 		}
@@ -442,12 +445,13 @@ app.post("/api/share-cards", async (req, res) => {
 		const supabase = getSupabaseClient();
 		const bucketId = getShareCardsBucket();
 		const slug = buildSlug(player.riotId);
-		const filePath = `${slug}.png`;
+		const fileExtension = mimeType === "image/png" ? "png" : "jpeg";
+		const filePath = `${slug}.${fileExtension}`;
 
 		const { error: uploadError } = await supabase.storage
 			.from(bucketId)
 			.upload(filePath, buffer, {
-				contentType: "image/png",
+				contentType: mimeType,
 				upsert: false,
 			});
 

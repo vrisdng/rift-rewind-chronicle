@@ -32,7 +32,7 @@ import {
 	Sparkles,
 	Twitter,
 } from "lucide-react";
-import { toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
 import {
 	PolarAngleAxis,
@@ -214,16 +214,17 @@ export const FinaleShareCustomizer = ({
 	const isShareReady =
 		Boolean(shareCard) && shareCard?.caption === trimmedShareCaption;
 	const shareBusy = isGeneratingShareCard || isUploadingShareCard;
-	const generateShareCardPng = useCallback(async () => {
+	const generateShareCardJpeg = useCallback(async () => {
 		if (!cardRef.current) {
 			throw new Error("Card preview is not ready yet.");
 		}
-		return toPng(cardRef.current, {
+		return toJpeg(cardRef.current, {
 			cacheBust: true,
 			width: 640,
 			height: 388,
 			pixelRatio: 1,
 			backgroundColor: "#050505",
+			quality: 0.95,
 		});
 	}, [cardRef]);
 
@@ -394,20 +395,20 @@ export const FinaleShareCustomizer = ({
 		}
 		try {
 			toast("Preparing share card...");
-			const dataUrl = await generateShareCardPng();
+			const dataUrl = await generateShareCardJpeg();
 			const anchor = document.createElement("a");
 			const slug =
 				playerData.riotId
 					.toLowerCase()
 					.replace(/[^a-z0-9]+/g, "-")
 					.replace(/(^-|-$)/g, "") || "rewind";
-			anchor.download = `rift-rewind-${slug}-share-card.png`;
+			anchor.download = `rift-rewind-${slug}-share-card.jpeg`;
 			anchor.href = dataUrl;
 			anchor.click();
 			toast.success("Share card downloaded!");
 		} catch (error) {
 			console.error(error);
-			toast.error("Failed to create PNG. Try again.");
+			toast.error("Failed to create JPEG. Try again.");
 		}
 	};
 	const handlePrepareShareCard = useCallback(
@@ -423,7 +424,7 @@ export const FinaleShareCustomizer = ({
 				if (!options?.silent) {
 					toast("Preparing share card...");
 				}
-				const dataUrl = await generateShareCardPng();
+				const dataUrl = await generateShareCardJpeg();
 				const card = await uploadShareCard(dataUrl, trimmedShareCaption);
 				if (!options?.silent) {
 					toast.success("Share card ready!");
@@ -442,7 +443,7 @@ export const FinaleShareCustomizer = ({
 				setIsGeneratingShareCard(false);
 			}
 		},
-		[generateShareCardPng, trimmedShareCaption, uploadShareCard, setActiveTab],
+		[generateShareCardJpeg, trimmedShareCaption, uploadShareCard, setActiveTab],
 	);
 	const handleCopyShareText = async () => {
 		const textToCopy = shareText;
@@ -484,7 +485,7 @@ export const FinaleShareCustomizer = ({
 			}
 			case "instagram": {
 				toast.info(
-					"Instagram requires manual upload. Copy the caption and share your PNG in the app.",
+					"Instagram requires manual upload. Copy the caption and share your JPEG in the app.",
 				);
 				window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
 				break;
@@ -525,7 +526,7 @@ export const FinaleShareCustomizer = ({
 		try {
 			setIsPostingToX(true);
 			toast("Rendering your recap...");
-			const cardDataUrl = await generateShareCardPng();
+			const cardDataUrl = await generateShareCardJpeg();
 			const result = await postRecapToX({
 				caption: shareText,
 				cardDataUrl,
@@ -698,7 +699,7 @@ export const FinaleShareCustomizer = ({
 							variant="hero"
 						>
 							<Download className="mr-2 h-4 w-4 text-[#0A1428]" />
-							Download PNG
+							Download JPEG
 						</Button>
 						{onDownloadAll && (
 							<Button
@@ -948,14 +949,14 @@ export const FinaleShareCustomizer = ({
 												</Button>
 											</div>
 											<p className="mt-2 text-xs text-white/65">
-												We’ll capture your latest design and attach the PNG plus
+												We’ll capture your latest design and attach the JPEG plus
 												caption automatically.
 											</p>
 										</div>
 									) : (
 										<p className="text-xs text-white/60">
 											Connect your X account to log in once and post your recap
-											with the generated PNG in a single tap.
+											with the generated JPEG in a single tap.
 										</p>
 									)}
 								</section>
@@ -994,7 +995,7 @@ export const FinaleShareCustomizer = ({
 									</div>
 									<p className="text-xs text-white/60">
 										Use these quick links for messenger apps. Instagram opens
-										the site so you can upload the PNG manually.
+										the site so you can upload the JPEG manually.
 									</p>
 								</section>
 							</TabsContent>
