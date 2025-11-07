@@ -10,10 +10,13 @@ import type {
   PlayerStats,
   FriendGroup,
   AnalyzePlayerResponse,
+  DBShareCard,
+  DBShareCardInsert,
 } from '../types/index.ts';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SHARE_CARDS_BUCKET = process.env.SHARE_CARDS_BUCKET || 'share-cards';
 
 if (!SUPABASE_URL) {
   throw new Error('SUPABASE_URL is not set in environment variables');
@@ -196,6 +199,64 @@ export async function markWatershedMoment(
     console.error('Error marking watershed moment:', error);
     throw error;
   }
+}
+
+// ==================== SHARE CARD OPERATIONS ====================
+
+/**
+ * Create a new share card record
+ */
+export async function createShareCard(
+  shareCard: DBShareCardInsert
+): Promise<DBShareCard> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('share_cards')
+    .insert(shareCard)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error creating share card:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Look up a share card by slug
+ */
+export async function getShareCardBySlug(slug: string): Promise<DBShareCard | null> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('share_cards')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    console.error('Error fetching share card:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Generate a public URL for a stored share card image
+ */
+export function getShareCardPublicUrl(imagePath: string): string {
+  const supabase = getSupabaseClient();
+  const { data } = supabase.storage.from(SHARE_CARDS_BUCKET).getPublicUrl(imagePath);
+  return data.publicUrl;
+}
+
+export function getShareCardsBucket(): string {
+  return SHARE_CARDS_BUCKET;
 }
 
 // ==================== FRIEND GROUP OPERATIONS ====================

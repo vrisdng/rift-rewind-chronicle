@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
-import type { PlayerStats } from "@/lib/api";
+import {
+	CANONICAL_SHARE_URL,
+	postRecapToX,
+	startXAuthSession,
+	type PlayerStats,
+} from "@/lib/api";
+import { X_AUTH_STORAGE_KEY, type StoredXSession } from "@/lib/x-auth";
 import {
 	Dialog,
 	DialogContent,
@@ -12,9 +18,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { Download, Loader2, Sparkles } from "lucide-react";
-import { toPng } from "html-to-image";
+import {
+	Copy,
+	Download,
+	Instagram,
+	Loader2,
+	MessageCircle,
+	Send,
+	Sparkles,
+	Twitter,
+} from "lucide-react";
+import { toJpeg } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
 import {
 	PolarAngleAxis,
@@ -24,6 +42,7 @@ import {
 	ResponsiveContainer,
 } from "recharts";
 import { METRIC_DEFINITIONS, type MetricDatum } from "@/components/ui/metrics-radar";
+import { useShareCardUpload } from "@/hooks/useShareCardUpload";
 type BackgroundOptionType = "color" | "image" | "gradient";
 interface BackgroundOption {
 	id: string;
@@ -50,6 +69,34 @@ interface FinaleShareCustomizerProps {
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }
+const radarMetricKeys: Array<keyof PlayerStats["derivedMetrics"]> = [
+	"vision",
+	"farming",
+	"roaming",
+	"aggression",
+	"teamfighting",
+];
+type SharePlatform = "telegram" | "whatsapp" | "instagram";
+type XAuthSessionState = StoredXSession;
+
+function buildDefaultShareCaption(playerData: PlayerStats): string {
+	const title = playerData.insights?.title || "My League Year";
+
+	return `${title}
+
+${playerData.riotId}'s 2024 Season:
+• ${playerData.totalGames} games • ${playerData.winRate.toFixed(1)}% WR
+• ${playerData.archetype.name}
+• ${playerData.archetype.description}
+
+#RiftRewind #LeagueOfLegends`;
+}
+
+function buildShareText(caption: string): string {
+	const trimmed = caption.trim();
+	return trimmed.length ? `${trimmed}\n${CANONICAL_SHARE_URL}` : CANONICAL_SHARE_URL;
+}
+
 export const FinaleShareCustomizer = ({
 	playerData,
 	triggerLabel,
@@ -68,7 +115,118 @@ export const FinaleShareCustomizer = ({
 	const [showAverageKda, setShowAverageKda] = useState(true);
 	const [selectedBackground, setSelectedBackground] =
 		useState<string>("prestige-gold");
+	const [activeTab, setActiveTab] = useState<"customize" | "share">(
+		"customize",
+	);
 	const cardRef = useRef<HTMLDivElement | null>(null);
+	const defaultShareCaption = useMemo(
+		() => buildDefaultShareCaption(playerData),
+		[playerData],
+	);
+	const [shareCaption, setShareCaption] = useState(defaultShareCaption);
+	useEffect(() => {
+		setShareCaption(defaultShareCaption);
+	}, [defaultShareCaption]);
+	const {
+		shareCard,
+		isUploading: isUploadingShareCard,
+		error: shareUploadError,
+		uploadShareCard,
+		resetShareCard,
+	} = useShareCardUpload(playerData);
+	const [isGeneratingShareCard, setIsGeneratingShareCard] = useState(false);
+	const [xSession, setXSession] = useState<XAuthSessionState | null>(() => {
+		if (typeof window === "undefined") {
+			return null;
+		}
+		try {
+			const stored = window.localStorage.getItem(X_AUTH_STORAGE_KEY);
+			return stored ? (JSON.parse(stored) as XAuthSessionState) : null;
+		} catch {
+			return null;
+		}
+	});
+	const [isConnectingToX, setIsConnectingToX] = useState(false);
+	const [isPostingToX, setIsPostingToX] = useState(false);
+	const persistXSession = useCallback((session: XAuthSessionState | null) => {
+		setXSession(session);
+		if (typeof window === "undefined") {
+			return;
+		}
+		if (session) {
+			window.localStorage.setItem(X_AUTH_STORAGE_KEY, JSON.stringify(session));
+		} else {
+			window.localStorage.removeItem(X_AUTH_STORAGE_KEY);
+		}
+	}, []);
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		const handleStorage = (event: StorageEvent) => {
+			if (event.key !== X_AUTH_STORAGE_KEY) {
+				return;
+			}
+			if (!event.newValue) {
+				setXSession(null);
+				return;
+			}
+			try {
+				setXSession(JSON.parse(event.newValue) as XAuthSessionState);
+			} catch {
+				setXSession(null);
+			}
+		};
+		window.addEventListener("storage", handleStorage);
+		return () => window.removeEventListener("storage", handleStorage);
+	}, []);
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		const handleMessage = (event: MessageEvent) => {
+			if (event.origin !== window.location.origin) {
+				return;
+			}
+			if (
+				event.data &&
+				typeof event.data === "object" &&
+				event.data.type === "X_AUTH_SUCCESS" &&
+				event.data.payload
+			) {
+				persistXSession(event.data.payload as XAuthSessionState);
+				toast.success("X account connected!");
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [persistXSession]);
+	useEffect(() => {
+		if (shareUploadError) {
+			toast.error(shareUploadError);
+		}
+	}, [shareUploadError]);
+	const trimmedShareCaption = shareCaption.trim();
+	const shareText = useMemo(
+		() => buildShareText(trimmedShareCaption),
+		[trimmedShareCaption],
+	);
+	const isShareReady =
+		Boolean(shareCard) && shareCard?.caption === trimmedShareCaption;
+	const shareBusy = isGeneratingShareCard || isUploadingShareCard;
+	const generateShareCardJpeg = useCallback(async () => {
+		if (!cardRef.current) {
+			throw new Error("Card preview is not ready yet.");
+		}
+		return toJpeg(cardRef.current, {
+			cacheBust: true,
+			width: 640,
+			height: 388,
+			pixelRatio: 1,
+			backgroundColor: "#050505",
+			quality: 0.95,
+		});
+	}, [cardRef]);
 
 	// Use controlled state if provided, otherwise use internal state
 	const open = controlledOpen ?? internalOpen;
@@ -238,34 +396,188 @@ export const FinaleShareCustomizer = ({
 		showGamesPlayed,
 		showWinRate,
 	]);
+	const handleToggleWinRate = (checked: boolean) => {
+		resetShareCard();
+		setShowWinRate(checked);
+	};
+	const handleToggleGamesPlayed = (checked: boolean) => {
+		resetShareCard();
+		setShowGamesPlayed(checked);
+	};
+	const handleToggleAverageKda = (checked: boolean) => {
+		resetShareCard();
+		setShowAverageKda(checked);
+	};
+	const handleSelectBackground = (optionId: string) => {
+		resetShareCard();
+		setSelectedBackground(optionId);
+	};
 	const handleDownload = async () => {
 		if (!cardRef.current) {
+			toast.error("Card preview is not ready yet.");
 			return;
 		}
 		try {
 			toast("Preparing share card...");
-			const dataUrl = await toPng(cardRef.current, {
-				cacheBust: true,
-				width: 640,
-				height: 388,
-				pixelRatio: 1,
-				backgroundColor: "#050505",
-			});
+			const dataUrl = await generateShareCardJpeg();
 			const anchor = document.createElement("a");
 			const slug =
 				playerData.riotId
 					.toLowerCase()
 					.replace(/[^a-z0-9]+/g, "-")
 					.replace(/(^-|-$)/g, "") || "rewind";
-			anchor.download = `rift-rewind-${slug}-share-card.png`;
+			anchor.download = `rift-rewind-${slug}-share-card.jpeg`;
 			anchor.href = dataUrl;
 			anchor.click();
 			toast.success("Share card downloaded!");
 		} catch (error) {
 			console.error(error);
-			toast.error("Failed to create PNG. Try again.");
+			toast.error("Failed to create JPEG. Try again.");
 		}
 	};
+	const handlePrepareShareCard = useCallback(
+		async (options?: { silent?: boolean }) => {
+			if (!cardRef.current) {
+				if (!options?.silent) {
+					toast.error("Card preview is not ready yet.");
+				}
+				return;
+			}
+			try {
+				setIsGeneratingShareCard(true);
+				if (!options?.silent) {
+					toast("Preparing share card...");
+				}
+				const dataUrl = await generateShareCardJpeg();
+				const card = await uploadShareCard(dataUrl, trimmedShareCaption);
+				if (!options?.silent) {
+					toast.success("Share card ready!");
+				}
+				if (card) {
+					setActiveTab("share");
+				}
+			} catch (error) {
+				console.error(error);
+				const message =
+					error instanceof Error ? error.message : "Failed to prepare share card";
+				if (!options?.silent) {
+					toast.error(message);
+				}
+			} finally {
+				setIsGeneratingShareCard(false);
+			}
+		},
+		[generateShareCardJpeg, trimmedShareCaption, uploadShareCard, setActiveTab],
+	);
+	const handleCopyShareText = async () => {
+		const textToCopy = shareText;
+		try {
+			if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+				await navigator.clipboard.writeText(textToCopy);
+			} else {
+				const textarea = document.createElement("textarea");
+				textarea.value = textToCopy;
+				textarea.style.position = "fixed";
+				textarea.style.opacity = "0";
+				document.body.appendChild(textarea);
+				textarea.focus();
+				textarea.select();
+				document.execCommand("copy");
+				document.body.removeChild(textarea);
+			}
+			toast.success("Copied caption and link!");
+		} catch (error) {
+			console.error(error);
+			toast.error("Unable to copy automatically. Please copy manually.");
+		}
+	};
+	const handleShareToPlatform = (platform: SharePlatform) => {
+		const encodedText = encodeURIComponent(shareText);
+		const encodedCaption = encodeURIComponent(trimmedShareCaption);
+		const encodedUrl = encodeURIComponent(CANONICAL_SHARE_URL);
+
+		switch (platform) {
+			case "telegram": {
+				const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
+				window.open(shareUrl, "_blank", "noopener,noreferrer");
+				break;
+			}
+			case "whatsapp": {
+				const shareUrl = `https://wa.me/?text=${encodedText}`;
+				window.open(shareUrl, "_blank", "noopener,noreferrer");
+				break;
+			}
+			case "instagram": {
+				toast.info(
+					"Instagram requires manual upload. Copy the caption and share your JPEG in the app.",
+				);
+				window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+				break;
+			}
+			default:
+				break;
+		}
+	};
+	const handleConnectToX = async () => {
+		try {
+			setIsConnectingToX(true);
+			const { authUrl } = await startXAuthSession();
+			const popup = window.open(
+				authUrl,
+				"rift-rewind-x-auth",
+				"width=600,height=700",
+			);
+			if (!popup) {
+				toast.error("Allow pop-ups to connect your X account.");
+			}
+		} catch (error) {
+			console.error(error);
+			const message = error instanceof Error ? error.message : "Failed to contact X";
+			toast.error(message);
+		} finally {
+			setIsConnectingToX(false);
+		}
+	};
+	const handleDisconnectFromX = () => {
+		persistXSession(null);
+		toast.info("Disconnected from X.");
+	};
+	const handlePostToX = async () => {
+		if (!xSession) {
+			toast.info("Connect your X account first.");
+			return;
+		}
+		try {
+			setIsPostingToX(true);
+			toast("Rendering your recap...");
+			const cardDataUrl = await generateShareCardJpeg();
+			const result = await postRecapToX({
+				caption: shareText,
+				cardDataUrl,
+				oauthToken: xSession.oauthToken,
+				oauthTokenSecret: xSession.oauthTokenSecret,
+			});
+			toast.success("Tweet posted!");
+			if (result.truncated) {
+				toast.info("Caption was trimmed to fit X's 280 character limit.");
+			}
+			if (result.tweetUrl) {
+				window.open(result.tweetUrl, "_blank", "noopener,noreferrer");
+			}
+		} catch (error) {
+			console.error(error);
+			const message = error instanceof Error ? error.message : "Failed to post on X";
+			toast.error(message);
+		} finally {
+			setIsPostingToX(false);
+		}
+	};
+	useEffect(() => {
+		if (activeTab !== "share" || shareBusy || isShareReady) {
+			return;
+		}
+		void handlePrepareShareCard({ silent: true });
+	}, [activeTab, shareBusy, isShareReady, handlePrepareShareCard]);
 	const handleOpenChange = (value: boolean) => {
 		setOpen(value);
 	};
@@ -294,8 +606,8 @@ export const FinaleShareCustomizer = ({
 						Customize Your Share Card
 					</DialogTitle>
 					<DialogDescription className="lol-body text-sm text-white/70">
-						Tailor the details you want to highlight before downloading a
-						share-ready PNG.
+						Tailor your recap, then generate a share-ready caption with quick
+						links for your favorite platforms.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,640px)_1fr]">
@@ -411,7 +723,7 @@ export const FinaleShareCustomizer = ({
 							variant="hero"
 						>
 							<Download className="mr-2 h-4 w-4 text-[#0A1428]" />
-							Download PNG
+							Download JPEG
 						</Button>
 						{onDownloadAll && (
 							<Button
@@ -430,118 +742,288 @@ export const FinaleShareCustomizer = ({
 							</Button>
 						)}
 					</div>
-					<div className="space-y-8">
-						<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-							<h4 className="lol-heading text-lg text-[#C8AA6E]">
-								Display Options
-							</h4>
-							<div className="space-y-4">
-								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-									<div>
-										<Label
-											htmlFor="show-winrate"
-											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-										>
-											Win Rate
-										</Label>
-										<p className="text-[0.7rem] text-white/60">
-											Show your season win percentage.
-										</p>
-									</div>
-									<Switch
-										id="show-winrate"
-										checked={showWinRate}
-										onCheckedChange={setShowWinRate}
-									/>
-								</div>
-								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-									<div>
-										<Label
-											htmlFor="show-games"
-											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-										>
-											Games Played
-										</Label>
-										<p className="text-[0.7rem] text-white/60">
-											Highlight your total matches played.
-										</p>
-									</div>
-									<Switch
-										id="show-games"
-										checked={showGamesPlayed}
-										onCheckedChange={setShowGamesPlayed}
-									/>
-								</div>
-								<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-									<div>
-										<Label
-											htmlFor="show-kda"
-											className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-										>
-											Average KDA
-										</Label>
-										<p className="text-[0.7rem] text-white/60">
-											Include your average kill/death/assist ratio.
-										</p>
-									</div>
-									<Switch
-										id="show-kda"
-										checked={showAverageKda}
-										onCheckedChange={setShowAverageKda}
-									/>
-								</div>
-							</div>
-						</section>
-						<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-							<h4 className="lol-heading text-lg text-[#C8AA6E]">
-								Background
-							</h4>
-							<p className="text-sm text-white/65">
-								Choose between your top champion splash art or stock backdrops.
-							</p>
-							<div className="grid grid-cols-2 gap-4">
-								{backgroundOptions.map((option) => (
-									<button
-										key={option.id}
-										type="button"
-										onClick={() => setSelectedBackground(option.id)}
-										className={cn(
-											"group relative overflow-hidden rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-[#C8AA6E]/60",
-											selectedBackground === option.id
-												? "border-[#C8AA6E]/60 shadow-[0_12px_30px_rgba(200,170,110,0.18)]"
-												: "hover:border-[#C8AA6E]/40",
-										)}
-									>
-										<div
-											className="relative h-24 w-full overflow-hidden rounded-[10px] bg-[#050912]"
-											style={
-												option.type === "image"
-													? {
-															backgroundImage: `url(${option.value})`,
-															backgroundSize: "cover",
-															backgroundPosition: "center",
-														}
-													: option.type === "gradient"
-														? { backgroundImage: option.value }
-													: { backgroundColor: option.value }
-											}
-										>
-											<div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/10 via-[#050912]/35 to-[#050912]/70" />
-										</div>
-										<div className="p-3 text-left">
-											<p className="lol-heading text-sm text-[#C8AA6E]">
-												{option.label}
-											</p>
-											{option.description && (
-												<p className="text-[0.7rem] text-white/65">
-													{option.description}
+					<div className="space-y-6">
+						<Tabs
+							value={activeTab}
+							onValueChange={(value) =>
+								setActiveTab(value as "customize" | "share")
+							}
+						>
+							<TabsList className="w-full justify-start rounded-xl border border-[rgba(200,170,110,0.25)] bg-[#0A1428]/70 p-1 text-white/70">
+								<TabsTrigger
+									value="customize"
+									className="lol-heading flex-1 rounded-lg text-xs tracking-[0.35em] uppercase data-[state=active]:bg-[#C8AA6E]/20 data-[state=active]:text-white"
+								>
+									Customize Card
+								</TabsTrigger>
+								<TabsTrigger
+									value="share"
+									className="lol-heading flex-1 rounded-lg text-xs tracking-[0.35em] uppercase data-[state=active]:bg-[#C8AA6E]/20 data-[state=active]:text-white"
+								>
+									Share
+								</TabsTrigger>
+							</TabsList>
+							<TabsContent value="customize" className="mt-4 space-y-6">
+								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+									<h4 className="lol-heading text-lg text-[#C8AA6E]">
+										Display Options
+									</h4>
+									<div className="space-y-4">
+										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
+											<div>
+												<Label
+													htmlFor="show-winrate"
+													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
+												>
+													Win Rate
+												</Label>
+												<p className="text-[0.7rem] text-white/60">
+													Show your season win percentage.
 												</p>
-											)}
+											</div>
+											<Switch
+												id="show-winrate"
+												checked={showWinRate}
+												onCheckedChange={handleToggleWinRate}
+											/>
 										</div>
-									</button>
-								))}
-							</div>
-						</section>
+										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
+											<div>
+												<Label
+													htmlFor="show-games"
+													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
+												>
+													Games Played
+												</Label>
+												<p className="text-[0.7rem] text-white/60">
+													Highlight your total matches played.
+												</p>
+											</div>
+											<Switch
+												id="show-games"
+												checked={showGamesPlayed}
+												onCheckedChange={handleToggleGamesPlayed}
+											/>
+										</div>
+										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
+											<div>
+												<Label
+													htmlFor="show-kda"
+													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
+												>
+													Average KDA
+												</Label>
+												<p className="text-[0.7rem] text-white/60">
+													Include your average kill/death/assist ratio.
+												</p>
+											</div>
+											<Switch
+												id="show-kda"
+												checked={showAverageKda}
+												onCheckedChange={handleToggleAverageKda}
+											/>
+										</div>
+									</div>
+								</section>
+								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+									<h4 className="lol-heading text-lg text-[#C8AA6E]">
+										Background
+									</h4>
+									<p className="text-sm text-white/65">
+										Choose between your top champion splash art or stock
+										backdrops.
+									</p>
+									<div className="grid grid-cols-2 gap-4">
+										{backgroundOptions.map((option) => (
+											<button
+												key={option.id}
+												type="button"
+												onClick={() => handleSelectBackground(option.id)}
+												className={cn(
+													"group relative overflow-hidden rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-[#C8AA6E]/60",
+													selectedBackground === option.id
+														? "border-[#C8AA6E]/60 shadow-[0_12px_30px_rgba(200,170,110,0.18)]"
+														: "hover:border-[#C8AA6E]/40",
+												)}
+											>
+												<div
+													className="relative h-24 w-full overflow-hidden rounded-[10px] bg-[#050912]"
+													style={
+														option.type === "image"
+															? {
+																	backgroundImage: `url(${option.value})`,
+																	backgroundSize: "cover",
+																	backgroundPosition: "center",
+																}
+															: option.type === "gradient"
+																? { backgroundImage: option.value }
+																: { backgroundColor: option.value }
+													}
+												>
+													<div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/10 via-[#050912]/35 to-[#050912]/70" />
+												</div>
+												<div className="p-3 text-left">
+													<p className="lol-heading text-sm text-[#C8AA6E]">
+														{option.label}
+													</p>
+													{option.description && (
+														<p className="text-[0.7rem] text-white/65">
+															{option.description}
+														</p>
+													)}
+												</div>
+											</button>
+										))}
+									</div>
+								</section>
+							</TabsContent>
+							<TabsContent value="share" className="mt-4 space-y-6">
+								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+									<div className="space-y-2">
+										<h4 className="lol-heading text-lg text-[#C8AA6E]">
+											Share Caption
+										</h4>
+										<Textarea
+											value={shareCaption}
+											onChange={(event) => setShareCaption(event.target.value)}
+											rows={6}
+											className="resize-none border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 text-white"
+										/>
+										<p className="text-xs text-white/60">
+											Personalize your message. We’ll attach the Rift Rewind
+											site automatically.
+										</p>
+									</div>
+									<div className="space-y-2">
+										<Label className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80">
+											Website Link
+										</Label>
+										<Input
+											readOnly
+											value={CANONICAL_SHARE_URL}
+											className="border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 text-white"
+										/>
+									</div>
+									<p className="text-xs text-white/60">
+										Your share image refreshes automatically whenever you edit
+										the caption or card design.
+									</p>
+									{shareBusy && (
+										<p className="text-xs text-[#FACC15]">
+											Updating the stored preview with your latest changes...
+										</p>
+									)}
+								</section>
+								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+									<div className="flex flex-wrap gap-3">
+										<Button
+											type="button"
+											variant="hero"
+											className="lol-heading flex-1 min-w-[160px] bg-[#C8AA6E] text-[#0A1428] uppercase tracking-[0.25em]"
+											onClick={handleCopyShareText}
+										>
+											<Copy className="mr-2 h-4 w-4" />
+											Copy Caption
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											className="lol-heading flex-1 min-w-[200px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E]"
+											onClick={xSession ? handlePostToX : handleConnectToX}
+											disabled={xSession ? isPostingToX : isConnectingToX}
+										>
+											{xSession ? (
+												isPostingToX ? (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												) : (
+													<Twitter className="mr-2 h-4 w-4" />
+												)
+											) : isConnectingToX ? (
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											) : (
+												<Twitter className="mr-2 h-4 w-4" />
+											)}
+											{xSession
+												? isPostingToX
+													? "Posting..."
+													: "Post Recap to X"
+												: isConnectingToX
+													? "Opening X..."
+													: "Connect X Account"}
+										</Button>
+									</div>
+									{xSession ? (
+										<div className="rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-4">
+											<div className="flex flex-wrap items-center justify-between gap-3">
+												<div>
+													<p className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80 uppercase">
+														Connected Account
+													</p>
+													<p className="text-sm text-white">
+														@{xSession.screenName || xSession.userId}
+													</p>
+												</div>
+												<Button
+													type="button"
+													variant="ghost"
+													className="text-xs uppercase text-white/70 hover:text-white"
+													onClick={handleDisconnectFromX}
+												>
+													Disconnect
+												</Button>
+											</div>
+											<p className="mt-2 text-xs text-white/65">
+												We’ll capture your latest design and attach the JPEG plus
+												caption automatically.
+											</p>
+										</div>
+									) : (
+										<p className="text-xs text-white/60">
+											Connect your X account to log in once and post your recap
+											with the generated JPEG in a single tap.
+										</p>
+									)}
+								</section>
+								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
+									<h4 className="lol-heading text-lg text-[#C8AA6E]">
+										Share on Social
+									</h4>
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+										<Button
+											type="button"
+											variant="outline"
+											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
+											onClick={() => handleShareToPlatform("telegram")}
+										>
+											<Send className="h-4 w-4" />
+											Telegram
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
+											onClick={() => handleShareToPlatform("whatsapp")}
+										>
+											<MessageCircle className="h-4 w-4" />
+											WhatsApp
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											className="lol-heading flex items-center justify-center gap-2 border-[#C8AA6E]/40 text-[#C8AA6E]"
+											onClick={() => handleShareToPlatform("instagram")}
+										>
+											<Instagram className="h-4 w-4" />
+											Instagram
+										</Button>
+									</div>
+									<p className="text-xs text-white/60">
+										Use these quick links for messenger apps. Instagram opens
+										the site so you can upload the JPEG manually.
+									</p>
+								</section>
+							</TabsContent>
+						</Tabs>
 					</div>
 				</div>
 			</DialogContent>

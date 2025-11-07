@@ -199,6 +199,39 @@ export interface DBFriendGroupMember {
   joined_at?: string;
 }
 
+// ==================== SHARE_CARDS TABLE ====================
+
+/**
+ * share_cards table schema
+ * Stores generated share cards and metadata for sharing flows
+ */
+export interface DBShareCard {
+  id: string;
+  slug: string;
+  player_puuid: string | null;
+  player_riot_id: string | null;
+  player_tag_line: string | null;
+  caption: string | null;
+  image_path: string;
+  player_snapshot: Record<string, unknown> | null;
+  download_count: number;
+  last_shared_at: string | null;
+  expires_at: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DBShareCardInsert {
+  slug: string;
+  player_puuid?: string | null;
+  player_riot_id?: string | null;
+  player_tag_line?: string | null;
+  caption?: string | null;
+  image_path: string;
+  player_snapshot?: Record<string, unknown> | null;
+  expires_at?: string | null;
+}
+
 // ==================== PERFORMANCE_TRENDS TABLE ====================
 
 /**
