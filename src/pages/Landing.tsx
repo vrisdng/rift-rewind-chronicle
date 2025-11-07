@@ -7,6 +7,7 @@ import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { playClick, startAudioExperience } from "@/lib/sound";
 
 // Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
@@ -274,7 +275,14 @@ const Landing = () => {
               size="lg"
               className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
-              onClick={() => navigate("dashboard-new", { state: { playerData } })}
+              onClick={() => {
+                try {
+                  playClick();
+                  startAudioExperience();
+                }catch{
+                  // swallow
+                }
+                navigate("dashboard-new", { state: { playerData } })}}
             >
               Enter
             </Button>
