@@ -159,10 +159,17 @@ function parseFormResponse(text: string): Record<string, string> {
   return result;
 }
 
-function extractPngData(cardDataUrl: string): { base64: string; size: number } {
+function extractImageData(cardDataUrl: string): {
+  base64: string;
+  size: number;
+  mimeType: 'image/png' | 'image/jpeg';
+} {
   const [prefix, base64] = cardDataUrl.split(',');
-  if (!prefix?.startsWith('data:image/png') || !base64) {
-    throw new Error('cardDataUrl must be a PNG data URL');
+  const mimeMatch = prefix?.match(/^data:(image\/png|image\/jpeg)/);
+  const mimeType = mimeMatch?.[1] as 'image/png' | 'image/jpeg' | undefined;
+
+  if (!mimeType || !base64) {
+    throw new Error('cardDataUrl must be a PNG or JPEG data URL');
   }
 
   const buffer = Buffer.from(base64, 'base64');
@@ -170,10 +177,10 @@ function extractPngData(cardDataUrl: string): { base64: string; size: number } {
     throw new Error('cardDataUrl was empty');
   }
   if (buffer.length > 5 * 1024 * 1024) {
-    throw new Error('PNG must be 5MB or smaller for X uploads');
+    throw new Error('Images must be 5MB or smaller for X uploads');
   }
 
-  return { base64, size: buffer.length };
+  return { base64, size: buffer.length, mimeType };
 }
 
 function normalizeCaption(caption: string): { text: string; truncated: boolean } {
@@ -361,7 +368,7 @@ export async function postTweetWithImage(payload: XPostTweetRequest): Promise<{
   tweetUrl: string;
   truncated: boolean;
 }> {
-  const { base64 } = extractPngData(payload.cardDataUrl);
+  const { base64 } = extractImageData(payload.cardDataUrl);
   const { text, truncated } = normalizeCaption(payload.caption);
 
   const media = await uploadMediaToX(base64, payload.oauthToken, payload.oauthTokenSecret);
