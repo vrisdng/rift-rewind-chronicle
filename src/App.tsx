@@ -15,6 +15,7 @@ import Finale from "./pages/Finale";
 import NotFound from "./pages/NotFound";
 import ShareCardLanding from "./pages/ShareCardLanding";
 import XAuthCallback from "./pages/XAuthCallback";
+import ChampionMap from "./pages/ChampionMap";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
 					<Route path="/highlights" element={<Highlights />} />
 					<Route path="/archetype" element={<Archetype />} />
 					<Route path="/growth-map" element={<GrowthMap />} />
+					<Route path="/champion-map" element={<ChampionMap />} />
 					<Route path="/social" element={<SocialComparisons />} />
 					<Route path="/shareable" element={<ShareableMoments />} />
 					<Route path="/finale" element={<Finale />} />
