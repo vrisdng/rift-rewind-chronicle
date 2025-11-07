@@ -11,18 +11,18 @@ import {
 } from "recharts";
 import { Eye, Flame, Navigation, Users, Wheat, type LucideIcon } from "lucide-react";
 
-type MetricKey = "vision" | "farming" | "roaming" | "aggression" | "teamfighting";
+export type MetricKey = "vision" | "farming" | "roaming" | "aggression" | "teamfighting";
 
-type MetricDefinition = {
+export type MetricDefinition = {
   key: MetricKey;
   label: string;
   icon: LucideIcon;
   description: string;
 };
 
-type MetricDatum = MetricDefinition & { value: number };
+export type MetricDatum = MetricDefinition & { value: number };
 
-const METRIC_DEFINITIONS: MetricDefinition[] = [
+export const METRIC_DEFINITIONS: MetricDefinition[] = [
   {
     key: "vision",
     label: "Vision",
