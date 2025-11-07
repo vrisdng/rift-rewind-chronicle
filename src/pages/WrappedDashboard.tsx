@@ -45,6 +45,10 @@ type NarrationPhase = "hidden" | "entering" | "exiting";
 const NARRATION_DISPLAY_DURATION = 1400;
 const NARRATION_FADE_DURATION = 400;
 
+const SLIDE_DURATIONS: Record<string, number> = {
+	intro: 3000,
+};
+
 const WrappedDashboard = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -232,13 +236,15 @@ const WrappedDashboard = () => {
 		setNarrationText(activeSlide.narration);
 		setNarrationPhase("entering");
 
+		const displayDuration = SLIDE_DURATIONS[activeSlide.id] ?? NARRATION_DISPLAY_DURATION;
+
 		const displayTimer = window.setTimeout(() => {
 			setNarrationPhase("exiting");
-		}, NARRATION_DISPLAY_DURATION);
+		}, displayDuration);
 
 		const exitTimer = window.setTimeout(() => {
 			setNarrationPhase("hidden");
-		}, NARRATION_DISPLAY_DURATION + NARRATION_FADE_DURATION);
+		}, displayDuration + NARRATION_FADE_DURATION);
 
 		return () => {
 			window.clearTimeout(displayTimer);
