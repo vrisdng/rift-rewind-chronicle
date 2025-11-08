@@ -225,11 +225,11 @@ export const FinaleShareCustomizer = ({
 		}
 		return toJpeg(cardRef.current, {
 			cacheBust: true,
-			width: 640,
-			height: 388,
+			width: 1280,
+			height: 776,
 			pixelRatio: 1,
 			backgroundColor: "#050505",
-			quality: 0.95,
+			quality: 0.9,
 		});
 	}, [cardRef]);
 
@@ -330,8 +330,9 @@ export const FinaleShareCustomizer = ({
 		}
 		return {
 			backgroundImage: `url(${selectedBackgroundOption.value})`,
-			backgroundSize: "cover",
+			backgroundSize: "contain",
 			backgroundPosition: "center",
+			backgroundRepeat: "no-repeat",
 			backgroundColor: "#050505",
 		};
 	}, [selectedBackgroundOption]);
