@@ -9,7 +9,15 @@ export const StoryArcSlide = ({ playerData }: StoryArcSlideProps) => {
 
   return (
     <div className="w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-hidden">
-      <div className="w-full h-full overflow-y-auto py-8 px-4 sm:px-8">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
+        style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
+      />
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      <div className="w-full h-full overflow-y-auto py-8 px-4 sm:px-8 relative z-10">
         <div className="max-w-4xl mx-auto w-full space-y-6 animate-fade-in relative z-10">
           {/* Title */}
           <div className="text-center space-y-2">

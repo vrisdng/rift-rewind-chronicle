@@ -289,6 +289,14 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 	return (
 		<>
 			<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+				{/* Background Image */}
+				<div 
+					className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+					style={{ backgroundImage: 'url(/images/background-1.jpg)' }}
+				/>
+				{/* Dark Overlay */}
+				<div className="absolute inset-0 bg-black/60" />
+				
 				<div className="absolute left-6 top-6 z-20 flex max-w-xs flex-col items-start gap-3 text-left">
 					<div className="rounded-2xl border border-white/20 bg-black/80 px-4 py-3 text-sm leading-relaxed text-white shadow-lg backdrop-blur">
 						<span>{typedMessage}</span>

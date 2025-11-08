@@ -10,6 +10,14 @@ export const PersonaSlide = ({ playerData }: PersonaSlideProps) => {
 
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+			{/* Background Image */}
+			<div 
+				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+				style={{ backgroundImage: 'url(/images/background.jpg)' }}
+			/>
+			{/* Dark Overlay */}
+			<div className="absolute inset-0 bg-black/60" />
+			
 			<div className="max-w-4xl w-full space-y-8 animate-fade-in relative z-10">
 				{/* Title */}
 				<div className="text-center space-y-2">

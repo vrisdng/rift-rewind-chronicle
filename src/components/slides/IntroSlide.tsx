@@ -7,9 +7,17 @@ interface IntroSlideProps {
 export const IntroSlide = ({ playerData }: IntroSlideProps) => {
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden">
+			{/* Background Image */}
+			<div 
+				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+				style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
+			/>
+			{/* Dark Overlay */}
+			<div className="absolute inset-0 bg-black/60" />
+			
 			{/* Minimal accent decoration - not distracting */}
-			<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent" />
-			<div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent" />
+			<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent z-20" />
+			<div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#C8AA6E]/30 to-transparent z-20" />
 
 			<div className="text-center space-y-12 animate-fade-in relative z-10 max-w-4xl mx-auto w-full px-8">
 				{/* Year - Beaufort font, italic, bold */}
