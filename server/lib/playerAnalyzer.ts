@@ -115,7 +115,7 @@ export async function analyzePlayer(
   tagLine: string,
   region: string = 'sg2',
   onProgress?: (update: ProgressUpdate) => void,
-  forceRegenerateInsights: boolean = true
+  forceRegenerateInsights: boolean = false
 ): Promise<PlayerStats> {
   const client = getClient({ region: region as any });
 

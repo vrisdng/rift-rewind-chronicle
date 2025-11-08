@@ -38,7 +38,7 @@ export const PerformanceTrendSlide = ({ playerData }: PerformanceTrendSlideProps
     <div className=" w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-auto">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat "
         style={{ backgroundImage: 'url(/images/background.jpg)' }}
       />
       {/* Dark Overlay */}

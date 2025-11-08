@@ -285,7 +285,7 @@ app.post("/api/analyze-stream", async (req, res) => {
 			riotId,
 			tagLine,
 			region = "sg2",
-			forceRegenerateInsights = true,
+			forceRegenerateInsights = false,
 		} = req.body as AnalyzePlayerRequest & {
 			forceRegenerateInsights?: boolean;
 		};

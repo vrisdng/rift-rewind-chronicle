@@ -8,6 +8,7 @@ import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { savePlayerSnapshot } from "@/lib/player-storage";
 import { playClick, playIntroThenBgm } from "@/lib/sound";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
@@ -28,6 +29,7 @@ const Landing = () => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [progress, setProgress] = useState(0);
   const [progressStage, setProgressStage] = useState("");
+  const [isZooming, setIsZooming] = useState(false);
 
 
   const startAnalysis = async () => {
@@ -73,9 +75,19 @@ const Landing = () => {
         (error) => {
           setIsLoading(false);
           console.error('Failed to analyze player:', error);
+
+          // Check if it's a "not found" error
+          const isNotFoundError = error && (
+            error.toLowerCase().includes('not found') ||
+            error.toLowerCase().includes('data not found') ||
+            error.toLowerCase().includes('no results found')
+          );
+
           toast({
-            title: "Analysis Failed",
-            description: error || "Could not analyze player. Please try again.",
+            title: isNotFoundError ? "Summoner Not Found" : "Analysis Failed",
+            description: isNotFoundError
+              ? "Please check that your summoner name, tag, and region are correct."
+              : error || "Could not analyze player. Please try again.",
             variant: "destructive",
           });
         }
@@ -84,16 +96,42 @@ const Landing = () => {
       setIsLoading(false);
       console.error('Failed to analyze player:', error);
       const message = error instanceof Error ? error.message : "Could not analyze player. Please try again.";
+
+      // Check if it's a "not found" error
+      const isNotFoundError = message && (
+        message.toLowerCase().includes('not found') ||
+        message.toLowerCase().includes('data not found') ||
+        message.toLowerCase().includes('no results found')
+      );
+
       toast({
-        title: "Analysis Failed",
-        description: message,
+        title: isNotFoundError ? "Summoner Not Found" : "Analysis Failed",
+        description: isNotFoundError
+          ? "Please check that your summoner name, tag, and region are correct."
+          : message,
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <motion.div
+      className="relative min-h-screen w-full overflow-hidden"
+      initial={{ scale: 1, opacity: 1 }}
+      animate={isZooming ? {
+        scale: 5,
+        opacity: 0,
+        filter: "blur(20px)"
+      } : {
+        scale: 1,
+        opacity: 1,
+        filter: "blur(0px)"
+      }}
+      transition={{
+        duration: 0.8,
+        ease: [0.6, 0.01, 0.05, 0.95] // Custom easing for fast acceleration
+      }}
+    >
       {/* Background Video - Full coverage */}
       <div className="fixed inset-0 w-full h-full bg-black">
         {/* Local video as background - muted and looping */}
@@ -196,28 +234,30 @@ const Landing = () => {
 
           {/* Progress Bar */}
           {isLoading && (
-            <div className="w-full max-w-xl mx-2 sm:mx-auto mb-8 p-4 sm:p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
-              <div className="space-y-3 sm:space-y-4">
-                {/* Progress Bar */}
-                <div className="w-full bg-[#0A1428] h-3 overflow-hidden border border-[#C8AA6E]/40">
-                  <div
-                    className="bg-gradient-to-r from-[#C8AA6E] to-[#F0E6D2] h-full transition-all duration-500 ease-out shadow-[0_0_20px_rgba(200,170,110,0.6)]"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
+            <div className="w-full max-w-xl px-4 sm:px-0 mx-auto mb-8">
+              <div className="p-4 sm:p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Progress Bar */}
+                  <div className="w-full bg-[#0A1428] h-3 overflow-hidden border border-[#C8AA6E]/40">
+                    <div
+                      className="bg-gradient-to-r from-[#C8AA6E] to-[#F0E6D2] h-full transition-all duration-500 ease-out shadow-[0_0_20px_rgba(200,170,110,0.6)]"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
 
-                {/* Progress Text */}
-                <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
-                  <span className="text-gray-300 font-bold uppercase tracking-wide truncate">{progressStage}</span>
-                  <span className="text-[#C8AA6E] font-black text-sm sm:text-base flex-shrink-0">{progress}%</span>
-                </div>
+                  {/* Progress Text */}
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-gray-300 font-bold uppercase tracking-wide text-[0.65rem] sm:text-sm truncate flex-1 min-w-0">{progressStage}</span>
+                    <span className="text-[#C8AA6E] font-black text-sm sm:text-base flex-shrink-0">{progress}%</span>
+                  </div>
 
-                {/* Loading Message */}
-                {loadingMessage && (
-                  <p className="text-xs sm:text-sm text-gray-400 text-center font-medium break-words">
-                    {loadingMessage}
-                  </p>
-                )}
+                  {/* Loading Message */}
+                  {loadingMessage && (
+                    <p className="text-[0.7rem] sm:text-sm text-gray-400 text-center font-medium break-words leading-relaxed">
+                      {loadingMessage}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -228,43 +268,10 @@ const Landing = () => {
               <h3 className="text-3xl font-black mb-2 text-white uppercase tracking-wide">
                 {playerData.riotId} <span className="text-[#C8AA6E]">#{playerData.tagLine}</span>
               </h3>
-              <p className="text-gray-300 mb-6 text-lg font-semibold">
-                {playerData.archetype.icon} {playerData.archetype.name}
-              </p>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div className="text-center p-4 bg-[#0A1428]/60 border border-[#C8AA6E]/30">
-                  <div className="text-4xl font-black text-[#C8AA6E]">{playerData.totalGames}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mt-1">Games Played</div>
-                </div>
-                <div className="text-center p-4 bg-[#0A1428]/60 border border-[#C8AA6E]/30">
-                  <div className="text-4xl font-black text-[#C8AA6E]">{playerData.winRate.toFixed(1)}%</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mt-1">Victory Rate</div>
-                </div>
-              </div>
-
-              {/* Top Champions */}
-              <div>
-                <h4 className="text-lg font-black mb-3 uppercase tracking-wider text-[#C8AA6E]">Champion Mastery</h4>
-                <div className="space-y-3">
-                  {playerData.topChampions.slice(0, 3).map((champ, idx) => (
-                    <div key={champ.championName} className="flex justify-between items-center p-3 bg-[#0A1428]/40 border-l-4 border-[#C8AA6E]">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#C8AA6E] font-black text-xl">#{idx + 1}</span>
-                        <span className="font-bold text-white text-base">{champ.championName}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[#C8AA6E] font-black text-lg">{champ.winRate.toFixed(0)}%</span>
-                        <span className="text-gray-400 ml-2 text-sm font-semibold">({champ.games})</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
               <Button
               size="lg"
-              className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
+              className="px-16 py-7 h-10 bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
               onClick={() => {
                 try {
@@ -273,19 +280,23 @@ const Landing = () => {
                 }catch{
                   // swallow
                 }
-                navigate("dashboard-new", { state: { playerData } })}}
+                // Trigger zoom animation
+                setIsZooming(true);
+                // Navigate after zoom animation completes
+                setTimeout(() => {
+                  navigate("dashboard", { state: { playerData } });
+                }, 800); // Match framer-motion animation duration
+              }}
             >
               Enter
             </Button>
             </div>
 
-            
-          )}
 
-          {/* CTA Button */}
+          )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

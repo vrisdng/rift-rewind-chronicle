@@ -9,7 +9,7 @@ export const IntroSlide = ({ playerData }: IntroSlideProps) => {
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden">
 			{/* Background Image */}
 			<div 
-				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+				className="absolute inset-0 bg-cover bg-center bg-no-repeat "
 				style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
 			/>
 			{/* Dark Overlay */}
