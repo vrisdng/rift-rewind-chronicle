@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
-import {
-	CANONICAL_SHARE_URL,
-	postRecapToX,
-	startXAuthSession,
-	type PlayerStats,
-} from "@/lib/api";
-import { X_AUTH_STORAGE_KEY, type StoredXSession } from "@/lib/x-auth";
+import { CANONICAL_SHARE_URL, type PlayerStats } from "@/lib/api";
 import {
 	Dialog,
 	DialogContent,
@@ -16,13 +10,13 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
+	ChevronLeft,
+	ChevronRight,
 	Copy,
 	Download,
 	Instagram,
@@ -30,7 +24,6 @@ import {
 	MessageCircle,
 	Send,
 	Sparkles,
-	Twitter,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
@@ -80,7 +73,6 @@ const radarMetricKeys: Array<keyof PlayerStats["derivedMetrics"]> = [
 	"teamfighting",
 ];
 type SharePlatform = "telegram" | "whatsapp" | "instagram";
-type XAuthSessionState = StoredXSession;
 
 function buildDefaultShareCaption(playerData: PlayerStats): string {
 	const title = playerData.insights?.title || "My League Year";
@@ -115,9 +107,9 @@ export const FinaleShareCustomizer = ({
 	onOpenChange,
 }: FinaleShareCustomizerProps) => {
 	const [internalOpen, setInternalOpen] = useState(false);
-	const [showWinRate, setShowWinRate] = useState(true);
-	const [showGamesPlayed, setShowGamesPlayed] = useState(true);
-	const [showAverageKda, setShowAverageKda] = useState(true);
+	const [showWinRate] = useState(true);
+	const [showGamesPlayed] = useState(true);
+	const [showAverageKda] = useState(true);
 	const [selectedBackground, setSelectedBackground] =
 		useState<string>("prestige-gold");
 	const [activeTab, setActiveTab] = useState<"customize" | "share">(
@@ -140,72 +132,6 @@ export const FinaleShareCustomizer = ({
 		resetShareCard,
 	} = useShareCardUpload(playerData);
 	const [isGeneratingShareCard, setIsGeneratingShareCard] = useState(false);
-	const [xSession, setXSession] = useState<XAuthSessionState | null>(() => {
-		if (typeof window === "undefined") {
-			return null;
-		}
-		try {
-			const stored = window.localStorage.getItem(X_AUTH_STORAGE_KEY);
-			return stored ? (JSON.parse(stored) as XAuthSessionState) : null;
-		} catch {
-			return null;
-		}
-	});
-	const [isConnectingToX, setIsConnectingToX] = useState(false);
-	const [isPostingToX, setIsPostingToX] = useState(false);
-	const persistXSession = useCallback((session: XAuthSessionState | null) => {
-		setXSession(session);
-		if (typeof window === "undefined") {
-			return;
-		}
-		if (session) {
-			window.localStorage.setItem(X_AUTH_STORAGE_KEY, JSON.stringify(session));
-		} else {
-			window.localStorage.removeItem(X_AUTH_STORAGE_KEY);
-		}
-	}, []);
-	useEffect(() => {
-		if (typeof window === "undefined") {
-			return;
-		}
-		const handleStorage = (event: StorageEvent) => {
-			if (event.key !== X_AUTH_STORAGE_KEY) {
-				return;
-			}
-			if (!event.newValue) {
-				setXSession(null);
-				return;
-			}
-			try {
-				setXSession(JSON.parse(event.newValue) as XAuthSessionState);
-			} catch {
-				setXSession(null);
-			}
-		};
-		window.addEventListener("storage", handleStorage);
-		return () => window.removeEventListener("storage", handleStorage);
-	}, []);
-	useEffect(() => {
-		if (typeof window === "undefined") {
-			return;
-		}
-		const handleMessage = (event: MessageEvent) => {
-			if (event.origin !== window.location.origin) {
-				return;
-			}
-			if (
-				event.data &&
-				typeof event.data === "object" &&
-				event.data.type === "X_AUTH_SUCCESS" &&
-				event.data.payload
-			) {
-				persistXSession(event.data.payload as XAuthSessionState);
-				toast.success("X account connected!");
-			}
-		};
-		window.addEventListener("message", handleMessage);
-		return () => window.removeEventListener("message", handleMessage);
-	}, [persistXSession]);
 	useEffect(() => {
 		if (shareUploadError) {
 			toast.error(shareUploadError);
@@ -409,22 +335,34 @@ export const FinaleShareCustomizer = ({
 		showGamesPlayed,
 		showWinRate,
 	]);
-	const handleToggleWinRate = (checked: boolean) => {
-		resetShareCard();
-		setShowWinRate(checked);
-	};
-	const handleToggleGamesPlayed = (checked: boolean) => {
-		resetShareCard();
-		setShowGamesPlayed(checked);
-	};
-	const handleToggleAverageKda = (checked: boolean) => {
-		resetShareCard();
-		setShowAverageKda(checked);
-	};
-	const handleSelectBackground = (optionId: string) => {
-		resetShareCard();
-		setSelectedBackground(optionId);
-	};
+	const handleSelectBackground = useCallback(
+		(optionId: string) => {
+			resetShareCard();
+			setSelectedBackground(optionId);
+		},
+		[resetShareCard],
+	);
+	const handlePreviousBackground = useCallback(() => {
+		const currentIndex = backgroundOptions.findIndex(
+			(option) => option.id === selectedBackground,
+		);
+		if (currentIndex > 0) {
+			handleSelectBackground(backgroundOptions[currentIndex - 1].id);
+		}
+	}, [backgroundOptions, selectedBackground, handleSelectBackground]);
+	const handleNextBackground = useCallback(() => {
+		const currentIndex = backgroundOptions.findIndex(
+			(option) => option.id === selectedBackground,
+		);
+		if (currentIndex < backgroundOptions.length - 1) {
+			handleSelectBackground(backgroundOptions[currentIndex + 1].id);
+		}
+	}, [backgroundOptions, selectedBackground, handleSelectBackground]);
+	const currentBackgroundIndex = backgroundOptions.findIndex(
+		(option) => option.id === selectedBackground,
+	);
+	const canGoPrevious = currentBackgroundIndex > 0;
+	const canGoNext = currentBackgroundIndex < backgroundOptions.length - 1;
 	const handleDownload = async () => {
 		if (!cardRef.current) {
 			toast.error("Card preview is not ready yet.");
@@ -540,62 +478,6 @@ export const FinaleShareCustomizer = ({
 				break;
 		}
 	};
-	const handleConnectToX = async () => {
-		try {
-			setIsConnectingToX(true);
-			const { authUrl } = await startXAuthSession();
-			const popup = window.open(
-				authUrl,
-				"rift-rewind-x-auth",
-				"width=600,height=700",
-			);
-			if (!popup) {
-				toast.error("Allow pop-ups to connect your X account.");
-			}
-		} catch (error) {
-			console.error(error);
-			const message =
-				error instanceof Error ? error.message : "Failed to contact X";
-			toast.error(message);
-		} finally {
-			setIsConnectingToX(false);
-		}
-	};
-	const handleDisconnectFromX = () => {
-		persistXSession(null);
-		toast.info("Disconnected from X.");
-	};
-	const handlePostToX = async () => {
-		if (!xSession) {
-			toast.info("Connect your X account first.");
-			return;
-		}
-		try {
-			setIsPostingToX(true);
-			toast("Rendering your recap...");
-			const cardDataUrl = await generateShareCardJpeg();
-			const result = await postRecapToX({
-				caption: shareText,
-				cardDataUrl,
-				oauthToken: xSession.oauthToken,
-				oauthTokenSecret: xSession.oauthTokenSecret,
-			});
-			toast.success("Tweet posted!");
-			if (result.truncated) {
-				toast.info("Caption was trimmed to fit X's 280 character limit.");
-			}
-			if (result.tweetUrl) {
-				window.open(result.tweetUrl, "_blank", "noopener,noreferrer");
-			}
-		} catch (error) {
-			console.error(error);
-			const message =
-				error instanceof Error ? error.message : "Failed to post on X";
-			toast.error(message);
-		} finally {
-			setIsPostingToX(false);
-		}
-	};
 	useEffect(() => {
 		if (activeTab !== "share" || shareBusy || isShareReady) {
 			return;
@@ -636,7 +518,44 @@ export const FinaleShareCustomizer = ({
 				</DialogHeader>
 				<div className="mt-6 flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,640px)_1fr]">
 					<div className="flex flex-col items-center w-full">
-						<div className="relative w-full max-w-[640px]">
+						<div className="relative w-full max-w-[640px] group">
+							{/* Previous Background Button */}
+							<button
+								type="button"
+								onClick={handlePreviousBackground}
+								disabled={!canGoPrevious}
+								className={cn(
+									"absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[#0A1428]/90 border border-[#C8AA6E]/40 flex items-center justify-center transition-all backdrop-blur-sm",
+									canGoPrevious
+										? "opacity-0 group-hover:opacity-100 hover:bg-[#C8AA6E]/20 hover:border-[#C8AA6E] hover:scale-110"
+										: "opacity-0 cursor-not-allowed",
+								)}
+							>
+								<ChevronLeft className="h-6 w-6 text-[#C8AA6E]" />
+							</button>
+
+							{/* Next Background Button */}
+							<button
+								type="button"
+								onClick={handleNextBackground}
+								disabled={!canGoNext}
+								className={cn(
+									"absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-[#0A1428]/90 border border-[#C8AA6E]/40 flex items-center justify-center transition-all backdrop-blur-sm",
+									canGoNext
+										? "opacity-0 group-hover:opacity-100 hover:bg-[#C8AA6E]/20 hover:border-[#C8AA6E] hover:scale-110"
+										: "opacity-0 cursor-not-allowed",
+								)}
+							>
+								<ChevronRight className="h-6 w-6 text-[#C8AA6E]" />
+							</button>
+
+							{/* Background Indicator */}
+							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-[#0A1428]/90 border border-[#C8AA6E]/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+								<p className="lol-heading text-[0.6rem] text-[#C8AA6E] tracking-[0.2em] uppercase whitespace-nowrap">
+									{selectedBackgroundOption?.label || "Background"}
+								</p>
+							</div>
+
 							<div
 								ref={cardRef}
 								className="relative aspect-[640/388] w-full overflow-hidden rounded-2xl sm:rounded-[28px] border border-[rgba(200,170,110,0.28)] bg-[#0A1428] shadow-[0_25px_60px_rgba(8,12,22,0.65)] transition-all"
@@ -744,6 +663,62 @@ export const FinaleShareCustomizer = ({
 								</div>
 							</div>
 						</div>
+
+						{/* Background Carousel */}
+						<div className="mt-4 sm:mt-6 w-full max-w-[640px] space-y-2">
+							<h4 className="lol-heading text-xs sm:text-sm text-[#C8AA6E] tracking-[0.3em] uppercase text-center">
+								Background
+							</h4>
+							<div className="relative overflow-hidden">
+								<div className="flex gap-2 overflow-x-auto pb-2 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[#C8AA6E]/50 scrollbar-track-[#0A1428]/30">
+									{backgroundOptions.map((option) => (
+										<button
+											key={option.id}
+											type="button"
+											onClick={() => handleSelectBackground(option.id)}
+											className={cn(
+												"group relative flex-shrink-0 w-32 sm:w-36 overflow-hidden rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-[#C8AA6E]/60 snap-start",
+												selectedBackground === option.id
+													? "border-[#C8AA6E] shadow-[0_8px_20px_rgba(200,170,110,0.25)] scale-105"
+													: "border-[rgba(200,170,110,0.2)] hover:border-[#C8AA6E]/40 hover:scale-102",
+											)}
+										>
+											<div
+												className="relative h-20 sm:h-24 w-full overflow-hidden bg-[#050912]"
+												style={
+													option.type === "image"
+														? {
+																backgroundImage: `url(${option.value})`,
+																backgroundSize: "cover",
+																backgroundPosition: "center",
+															}
+														: option.type === "gradient"
+															? { backgroundImage: option.value }
+															: { backgroundColor: option.value }
+												}
+											>
+												<div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/10 via-[#050912]/35 to-[#050912]/70" />
+												{selectedBackground === option.id && (
+													<div className="absolute inset-0 flex items-center justify-center bg-[#C8AA6E]/10">
+														<div className="h-6 w-6 rounded-full bg-[#C8AA6E] flex items-center justify-center">
+															<svg className="h-4 w-4 text-[#0A1428]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+															</svg>
+														</div>
+													</div>
+												)}
+											</div>
+											<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0A1428]/95 to-transparent p-2">
+												<p className="lol-heading text-[0.6rem] sm:text-xs text-[#C8AA6E] text-center truncate">
+													{option.label}
+												</p>
+											</div>
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+
 						<Button
 							onClick={handleDownload}
 							type="button"
@@ -771,141 +746,6 @@ export const FinaleShareCustomizer = ({
 						)}
 					</div>
 					<div className="space-y-6">
-						<Tabs
-							value={activeTab}
-							onValueChange={(value) =>
-								setActiveTab(value as "customize" | "share")
-							}
-						>
-							<TabsList className="w-full justify-start rounded-xl border border-[rgba(200,170,110,0.25)] bg-[#0A1428]/70 p-1 text-white/70">
-								<TabsTrigger
-									value="customize"
-									className="lol-heading flex-1 rounded-lg text-xs tracking-[0.35em] uppercase data-[state=active]:bg-[#C8AA6E]/20 data-[state=active]:text-white"
-								>
-									Customize Card
-								</TabsTrigger>
-								<TabsTrigger
-									value="share"
-									className="lol-heading flex-1 rounded-lg text-xs tracking-[0.35em] uppercase data-[state=active]:bg-[#C8AA6E]/20 data-[state=active]:text-white"
-								>
-									Share
-								</TabsTrigger>
-							</TabsList>
-							<TabsContent value="customize" className="mt-4 space-y-6">
-								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-									<h4 className="lol-heading text-lg text-[#C8AA6E]">
-										Display Options
-									</h4>
-									<div className="space-y-4">
-										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-											<div>
-												<Label
-													htmlFor="show-winrate"
-													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-												>
-													Win Rate
-												</Label>
-												<p className="text-[0.7rem] text-white/60">
-													Show your season win percentage.
-												</p>
-											</div>
-											<Switch
-												id="show-winrate"
-												checked={showWinRate}
-												onCheckedChange={handleToggleWinRate}
-											/>
-										</div>
-										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-											<div>
-												<Label
-													htmlFor="show-games"
-													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-												>
-													Games Played
-												</Label>
-												<p className="text-[0.7rem] text-white/60">
-													Highlight your total matches played.
-												</p>
-											</div>
-											<Switch
-												id="show-games"
-												checked={showGamesPlayed}
-												onCheckedChange={handleToggleGamesPlayed}
-											/>
-										</div>
-										<div className="flex items-center justify-between rounded-xl border border-[rgba(200,170,110,0.18)] bg-[#0A1428]/60 px-4 py-3 backdrop-blur-sm">
-											<div>
-												<Label
-													htmlFor="show-kda"
-													className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80"
-												>
-													Average KDA
-												</Label>
-												<p className="text-[0.7rem] text-white/60">
-													Include your average kill/death/assist ratio.
-												</p>
-											</div>
-											<Switch
-												id="show-kda"
-												checked={showAverageKda}
-												onCheckedChange={handleToggleAverageKda}
-											/>
-										</div>
-									</div>
-								</section>
-								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-									<h4 className="lol-heading text-lg text-[#C8AA6E]">
-										Background
-									</h4>
-									<p className="text-sm text-white/65">
-										Choose between your top champion splash art or stock
-										backdrops.
-									</p>
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-										{backgroundOptions.map((option) => (
-											<button
-												key={option.id}
-												type="button"
-												onClick={() => handleSelectBackground(option.id)}
-												className={cn(
-													"group relative overflow-hidden rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-[1px] transition-all focus:outline-none focus:ring-2 focus:ring-[#C8AA6E]/60",
-													selectedBackground === option.id
-														? "border-[#C8AA6E]/60 shadow-[0_12px_30px_rgba(200,170,110,0.18)]"
-														: "hover:border-[#C8AA6E]/40",
-												)}
-											>
-												<div
-													className="relative h-24 w-full overflow-hidden rounded-[10px] bg-[#050912]"
-													style={
-														option.type === "image"
-															? {
-																	backgroundImage: `url(${option.value})`,
-																	backgroundSize: "cover",
-																	backgroundPosition: "center",
-																}
-															: option.type === "gradient"
-																? { backgroundImage: option.value }
-																: { backgroundColor: option.value }
-													}
-												>
-													<div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/10 via-[#050912]/35 to-[#050912]/70" />
-												</div>
-												<div className="p-3 text-left">
-													<p className="lol-heading text-sm text-[#C8AA6E]">
-														{option.label}
-													</p>
-													{option.description && (
-														<p className="text-[0.7rem] text-white/65">
-															{option.description}
-														</p>
-													)}
-												</div>
-											</button>
-										))}
-									</div>
-								</section>
-							</TabsContent>
-							<TabsContent value="share" className="mt-4 space-y-6">
 								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
 									<div className="space-y-2">
 										<h4 className="lol-heading text-lg text-[#C8AA6E]">
@@ -918,7 +758,7 @@ export const FinaleShareCustomizer = ({
 											className="resize-none border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 text-white"
 										/>
 										<p className="text-xs text-white/60">
-											Personalize your message. We’ll attach the Rift Rewind
+											Personalize your message. We'll attach the Rift Rewind
 											site automatically.
 										</p>
 									</div>
@@ -932,6 +772,15 @@ export const FinaleShareCustomizer = ({
 											className="border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 text-white"
 										/>
 									</div>
+									<Button
+										type="button"
+										variant="hero"
+										className="lol-heading w-full bg-[#C8AA6E] text-[#0A1428] uppercase tracking-[0.25em] text-sm"
+										onClick={handleCopyShareText}
+									>
+										<Copy className="mr-2 h-4 w-4" />
+										Copy Caption & Link
+									</Button>
 									<p className="text-xs text-white/60">
 										Your share image refreshes automatically whenever you edit
 										the caption or card design.
@@ -939,76 +788,6 @@ export const FinaleShareCustomizer = ({
 									{shareBusy && (
 										<p className="text-xs text-[#FACC15]">
 											Updating the stored preview with your latest changes...
-										</p>
-									)}
-								</section>
-								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-									<div className="flex flex-col sm:flex-row flex-wrap gap-3">
-										<Button
-											type="button"
-											variant="hero"
-											className="lol-heading flex-1 min-w-[160px] bg-[#C8AA6E] text-[#0A1428] uppercase tracking-[0.25em] text-sm"
-											onClick={handleCopyShareText}
-										>
-											<Copy className="mr-2 h-4 w-4" />
-											Copy Caption
-										</Button>
-										<Button
-											type="button"
-											variant="outline"
-											className="lol-heading flex-1 min-w-[200px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E] text-sm"
-											onClick={xSession ? handlePostToX : handleConnectToX}
-											disabled={xSession ? isPostingToX : isConnectingToX}
-										>
-											{xSession ? (
-												isPostingToX ? (
-													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-												) : (
-													<Twitter className="mr-2 h-4 w-4" />
-												)
-											) : isConnectingToX ? (
-												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											) : (
-												<Twitter className="mr-2 h-4 w-4" />
-											)}
-											{xSession
-												? isPostingToX
-													? "Posting..."
-													: "Post Recap to X"
-												: isConnectingToX
-													? "Opening X..."
-													: "Connect X Account"}
-										</Button>
-									</div>
-									{xSession ? (
-										<div className="rounded-xl border border-[rgba(200,170,110,0.2)] bg-[#0A1428]/60 p-4">
-											<div className="flex flex-wrap items-center justify-between gap-3">
-												<div>
-													<p className="lol-heading text-xs tracking-[0.35em] text-[#C8AA6E]/80 uppercase">
-														Connected Account
-													</p>
-													<p className="text-sm text-white">
-														@{xSession.screenName || xSession.userId}
-													</p>
-												</div>
-												<Button
-													type="button"
-													variant="ghost"
-													className="text-xs uppercase text-white/70 hover:text-white"
-													onClick={handleDisconnectFromX}
-												>
-													Disconnect
-												</Button>
-											</div>
-											<p className="mt-2 text-xs text-white/65">
-												We’ll capture your latest design and attach the JPEG
-												plus caption automatically.
-											</p>
-										</div>
-									) : (
-										<p className="text-xs text-white/60">
-											Connect your X account to log in once and post your recap
-											with the generated JPEG in a single tap.
 										</p>
 									)}
 								</section>
@@ -1050,8 +829,6 @@ export const FinaleShareCustomizer = ({
 										the site so you can upload the JPEG manually.
 									</p>
 								</section>
-							</TabsContent>
-						</Tabs>
 					</div>
 				</div>
 			</DialogContent>
