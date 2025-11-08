@@ -211,7 +211,7 @@ export async function invokeBedrockClaudeStream(
 function getMockInsights(): AIInsights {
   return {
     story_arc:
-      "Your 2024 season was a journey of growth and adaptation. Starting strong in the early months, " +
+      "Your 2025 season was a journey of growth and adaptation. Starting strong in the early months, " +
       "you faced challenges mid-season but showed remarkable resilience. By year's end, you'd evolved " +
       "into a more calculated player, trading early aggression for consistent late-game dominance. " +
       "Your watershed moment came in August when you fundamentally shifted your approach, leading to " +

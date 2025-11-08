@@ -87,7 +87,7 @@ function buildDefaultShareCaption(playerData: PlayerStats): string {
 
 	return `${title}
 
-${playerData.riotId}'s 2024 Season:
+${playerData.riotId}'s 2025 Season:
 • ${playerData.totalGames} games • ${playerData.winRate.toFixed(1)}% WR
 • ${playerData.persona?.codename || playerData.archetype?.name || "Unknown"}
 • ${playerData.persona?.description || playerData.archetype?.description || ""}

@@ -192,7 +192,7 @@ const WrappedDashboard = () => {
 		if (playerData.insights?.story_arc) {
 			configuredSlides.push({
 				id: "story-arc",
-				narration: "Let's weave your 2024 Rift story.",
+				narration: "Let's weave your 2025 Rift story.",
 				content: <StoryArcSlide playerData={playerData} />,
 			});
 		}
