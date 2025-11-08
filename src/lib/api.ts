@@ -99,7 +99,6 @@ export interface PlayerArchetype {
 	description: string;
 	distance: number;
 	matchPercentage: number;
-	icon: string;
 }
 
 export type ElementName = "Inferno" | "Tide" | "Gale" | "Terra" | "Void";

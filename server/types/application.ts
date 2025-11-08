@@ -42,7 +42,6 @@ export interface ArchetypeProfile {
   name: string;
   description: string;
   profile: Partial<DerivedMetrics>; // Expected metric values
-  icon: string; // Emoji or icon identifier
 }
 
 /**
@@ -53,7 +52,6 @@ export interface PlayerArchetype {
   description: string;
   distance: number; // Euclidean distance from archetype
   matchPercentage: number; // 0-100, how well player fits
-  icon: string;
 }
 
 export type ElementName = 'Inferno' | 'Tide' | 'Gale' | 'Terra' | 'Void';

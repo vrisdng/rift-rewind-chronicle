@@ -418,7 +418,6 @@ async function convertDBPlayerToStats(dbPlayer: any): Promise<PlayerStats> {
     description: dbPlayer.archetype_description || '',
     distance: dbPlayer.archetype_distance || 0,
     matchPercentage: derived.consistency || 0,
-    icon: dbPlayer.archetype_icon,
   };
   const elementProfile = dbPlayer.element_profile || determinePlayerElement(derived);
   const personaProfile =
