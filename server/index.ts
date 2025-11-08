@@ -38,6 +38,7 @@ import {
 	exchangeXAccessToken,
 	postTweetWithImage,
 } from "./lib/xClient.ts";
+import { computeDuoSynergy } from "./lib/duoSynergy.ts";
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -381,6 +382,38 @@ app.get("/api/player/:riotId/:tagLine", async (req, res) => {
 		res.status(500).json({
 			success: false,
 			error: error.message || "Failed to fetch player data",
+		});
+	}
+});
+
+/**
+ * POST /api/duo-synergy
+ * Build duo synergy profile for two Riot IDs
+ */
+app.post("/api/duo-synergy", async (req, res) => {
+	try {
+		const { playerA, playerB } = req.body || {};
+
+		if (!playerA || !playerB) {
+			return res.status(400).json({
+				success: false,
+				error: "Both playerA and playerB are required.",
+			});
+		}
+
+		const data = await computeDuoSynergy(playerA, playerB);
+
+		res.json({
+			success: true,
+			data,
+		});
+	} catch (error: any) {
+		console.error("Error computing duo synergy:", error);
+		const message = error.message || "Failed to compute duo synergy";
+		const isClientError = /required|No shared matches|analyze/i.test(message);
+		res.status(isClientError ? 400 : 500).json({
+			success: false,
+			error: message,
 		});
 	}
 });

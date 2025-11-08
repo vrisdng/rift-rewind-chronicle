@@ -1,4 +1,5 @@
-import { forwardRef, useCallback, useMemo, useRef, useState } from "react";
+import {
+	forwardRef,useCallback, useMemo, useRef, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { ChampionStats, PlayerStats } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { toPng } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 type ShareAspectId = "story" | "grid" | "landscape";
 
@@ -37,6 +39,11 @@ interface LeagueTwinCopy {
 	description: string;
 	similarity?: number;
 }
+
+const CTA_BUBBLE_MESSAGES = [
+	"Want to know how hitting 1 more creep per minute will increase your win rate by 2%? Explore the Prediction Lab.",
+	"Want to know how your synergy is with your friend? Check out Synergy Duo.",
+] as const;
 
 const SHARE_ASPECTS: ShareAspect[] = [
 	{
@@ -117,8 +124,11 @@ interface FinaleSlideProps {
 }
 
 export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
+	const navigate = useNavigate();
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [showShareCustomizer, setShowShareCustomizer] = useState(false);
+	const [typedMessage, setTypedMessage] = useState("");
+	const [ctaIndex, setCtaIndex] = useState(0);
 	const cardRefs = useRef<Record<ShareAspectId, HTMLDivElement | null>>({
 		story: null,
 		grid: null,
@@ -257,9 +267,59 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 		}
 	}, [downloadCards, isGenerating]);
 
+	useEffect(() => {
+		let index = 0;
+		setTypedMessage("");
+		const message = CTA_BUBBLE_MESSAGES[ctaIndex];
+		const interval = window.setInterval(() => {
+			index += 1;
+			setTypedMessage(message.slice(0, index));
+			if (index >= message.length) {
+				window.clearInterval(interval);
+			}
+		}, 35);
+
+		return () => window.clearInterval(interval);
+	}, [ctaIndex]);
+
+	useEffect(() => {
+		const message = CTA_BUBBLE_MESSAGES[ctaIndex];
+		if (typedMessage.length !== message.length) {
+			return;
+		}
+		const timeout = window.setTimeout(() => {
+			setCtaIndex((prev) => (prev + 1) % CTA_BUBBLE_MESSAGES.length);
+		}, 3000);
+		return () => window.clearTimeout(timeout);
+	}, [typedMessage, ctaIndex]);
+
+	const caretVisible =
+		typedMessage.length < CTA_BUBBLE_MESSAGES[ctaIndex].length;
+
 	return (
 		<>
 			<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
+				<div className="absolute left-6 top-6 z-20 flex max-w-xs flex-col items-start gap-3 text-left">
+					<div className="rounded-2xl border border-white/20 bg-black/80 px-4 py-3 text-sm leading-relaxed text-white shadow-lg backdrop-blur">
+						<span>{typedMessage}</span>
+						{caretVisible && <span className="ml-1 inline-block animate-pulse align-middle">|</span>}
+					</div>
+					<Button
+						size="sm"
+						onClick={() => navigate("/predict-lab")}
+						className="bg-[#C8AA6E] text-[#0A1428] font-bold shadow-[0_0_20px_rgba(200,170,110,0.45)] transition transform hover:-translate-y-1 hover:bg-[#D4B982]"
+					>
+						Prediction Lab
+					</Button>
+					<Button
+						size="sm"
+						onClick={() => navigate("/duo-synergy")}
+						className="bg-white/10 text-white font-semibold border border-white/30 shadow-[0_0_20px_rgba(200,170,110,0.18)] transition transform hover:-translate-y-1"
+					>
+						Synergy Duo
+					</Button>
+				</div>
+
 				<div className="max-w-4xl w-full space-y-6 animate-fade-in relative z-10">
 					{/* Trophy Icon */}
 					<div className="text-center">

@@ -15,6 +15,8 @@ import Finale from "./pages/Finale";
 import NotFound from "./pages/NotFound";
 import ShareCardLanding from "./pages/ShareCardLanding";
 import XAuthCallback from "./pages/XAuthCallback";
+import PredictLab from "./pages/PredictLab";
+import DuoSynergy from "./pages/DuoSynergy";
 import { AudioButton } from "./components/ui/audio-toggle-button";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
 					<Route path="/social" element={<SocialComparisons />} />
 					<Route path="/shareable" element={<ShareableMoments />} />
 					<Route path="/finale" element={<Finale />} />
+					<Route path="/predict-lab" element={<PredictLab />} />
+					<Route path="/duo-synergy" element={<DuoSynergy />} />
 					<Route path="/share/:slug" element={<ShareCardLanding />} />
 					<Route path="/x/callback" element={<XAuthCallback />} />
 					{/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
