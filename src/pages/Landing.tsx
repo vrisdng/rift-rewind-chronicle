@@ -134,7 +134,8 @@ const Landing = () => {
           <p className="text-lg md:text-xl text-gray-200 mb-16 max-w-2xl mx-auto font-medium tracking-wide drop-shadow-lg">
             Your year on the Rift. Every win. Every play. Every legend forged.
           </p>
-
+          {!playerData && (
+            <div>
           {/* Summoner Search */}
           <div className="flex flex-col gap-3 max-w-xl mx-auto mb-8">
             <div className="flex gap-3 items-center">
@@ -197,6 +198,8 @@ const Landing = () => {
               )}
             </Button>
           </div>
+          </div>
+          )}
 
           {/* Progress Bar */}
           {isLoading && (
