@@ -27,13 +27,22 @@ export const ArchetypeSlide = ({ playerData }: ArchetypeSlideProps) => {
 				</div>
 
 				{/* Archetype Card */}
+				{/* Archetype Card */}
 				<div className="lol-card p-12 border-[#C8AA6E] text-center space-y-6">
 					<div className="flex justify-center">
-						<div className="w-32 h-32 rounded-full bg-[#C8AA6E]/10 flex items-center justify-center">
-							<span className="text-7xl">{playerData.archetype.icon}</span>
-						</div>
+						<img
+							src={playerData.archetype.icon}
+							alt={playerData.archetype.name}
+							className="w-20 h-20 object-contain"
+							onLoad={() => {
+								console.log('✅ Archetype icon loaded successfully:', playerData.archetype.icon);
+							}}
+							onError={(e) => {
+								console.error('❌ Failed to load archetype icon:', playerData.archetype.icon);
+								console.error('Full archetype data:', playerData.archetype);
+							}}
+						/>
 					</div>
-
 					<div className="space-y-4">
 						<h3 className="lol-heading text-5xl md:text-6xl text-[#C8AA6E]">
 							{playerData.archetype.name}
