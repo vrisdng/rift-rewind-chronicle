@@ -202,7 +202,7 @@ app.use(
 		credentials: true,
 	}),
 );
-app.use(express.json());
+app.use(express.json({ limit: "15mb" })); // Increase limit for base64 image uploads
 
 // ==================== PLAYER ANALYSIS ====================
 
