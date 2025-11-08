@@ -19,7 +19,7 @@ export const InsightsSlide = ({ playerData }: InsightsSlideProps) => {
 			<div className="absolute inset-0 bg-black/60" />
 			
 			<div className="w-full h-full overflow-y-auto px-4 sm:px-8 py-8 relative z-10">
-				<div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 animate-fade-in relative z-10 pb-8">
+				<div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 animate-fade-in relative z-10 pb-20">
 					{/* Title */}
 					<div className="text-center space-y-1">
 						<h2 className="lol-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#C8AA6E] break-words">
