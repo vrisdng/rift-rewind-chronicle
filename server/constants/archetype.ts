@@ -29,7 +29,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       consistency: 55,
       vision: 45,
     },
-    icon: '⚔️',
+    icon: '/images/icons/duelist.png',
   },
   {
     name: 'The Strategist',
@@ -43,7 +43,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       comebackRate: 70,
       aggression: 55,
     },
-    icon: '♟️',
+    icon: '/images/icons/strategist.png',
   },
   {
     name: 'The Playmaker',
@@ -57,7 +57,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       clutchFactor: 70,
       consistency: 60,
     },
-    icon: '🎭',
+    icon: '/images/icons/playmaker.png',
   },
   {
     name: 'The Anchor',
@@ -71,7 +71,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       comebackRate: 65,
       aggression: 45,
     },
-    icon: '⚓️',
+    icon: '/images/icons/anchor.png',
   },
   {
     name: 'The Scaler',
@@ -85,7 +85,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       earlyGameStrength: 40,
       aggression: 45,
     },
-    icon: '🌅',
+    icon: '/images/icons/scaler.png',
   },
   {
     name: 'The Snowballer',
@@ -99,7 +99,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       consistency: 60,
       lateGameScaling: 45,
     },
-    icon: '🌋',
+    icon: '/images/icons/snowballer.png',
   },
   {
     name: 'The Gambler',
@@ -113,7 +113,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       farming: 55,
       teamfighting: 60,
     },
-    icon: '🎲',
+    icon: '/images/icons/gambler.png',
   },
   {
     name: 'The Supportive Core',
@@ -127,7 +127,7 @@ export const ARCHETYPES: ArchetypeProfile[] = [
       tiltFactor: 30,
       aggression: 40,
     },
-    icon: '✨',
+    icon: '/images/icons/supportive.png',
   },
 ];
 
