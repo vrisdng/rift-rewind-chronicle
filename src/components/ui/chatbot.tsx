@@ -420,7 +420,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                 }}
               />
 
-              <span className="relative text-3xl transform -rotate-90 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]">🔥</span>
+              <img
+                src="/poro.png"
+                alt="Poro Coach"
+                className="relative w-8 h-8 transform -rotate-90 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
+              />
             </button>
 
             {/* Desktop: Octagonal floating button */}
@@ -451,7 +455,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                 }}
               />
 
-              <span className="relative text-4xl group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]">🔥</span>
+              <img
+                src="/poro.png"
+                alt="Poro Coach"
+                className="relative w-10 h-10 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
+              />
             </button>
           </div>
         )}
@@ -461,7 +469,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
             <div className="flex items-center justify-between p-4 border-b border-[#C8AA6E]/30 bg-gradient-to-b from-[#0A1428]/70 to-[#161f32]/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center">
-                  <span className="text-2xl">🔥</span>
+                  <img src="/poro.png" alt="Poro" className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="lol-heading text-sm text-[#C8AA6E]">RiftRewind Coach</div>
@@ -481,7 +489,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                   <div className="flex gap-3 justify-start">
                     {/* Coach avatar */}
                     <div className="w-9 h-9 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl">🔥</span>
+                      <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                     </div>
 
                     {/* Welcome message */}
@@ -515,7 +523,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                     {/* Avatar for assistant */}
                     {m.role === 'assistant' && (
                       <div className="w-9 h-9 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl">🔥</span>
+                        <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                       </div>
                     )}
 
