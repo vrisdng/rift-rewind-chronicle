@@ -50,27 +50,27 @@ export const ArchetypeSlide = ({ playerData }: ArchetypeSlideProps) => {
 						</p>
 					</div>
 
-					<div className="flex items-baseline justify-center gap-2 pt-4">
-						<div className="flex items-baseline gap-1">
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Info className="w-3 h-3 text-gray-500 cursor-help" />
-									</TooltipTrigger>
-									<TooltipContent side="bottom" className="max-w-xs">
-										<p className="text-xs">
-											Our confidence score in matching you to this archetype based on your gameplay patterns and statistics.
-										</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-							<span className="lol-subheading text-gray-500 text-xs">
-								Match Strength:
-							</span>
-						</div>
-						<span className="text-3xl font-bold text-[#C8AA6E] lol-body">
-							{playerData.archetype.matchPercentage}%
-						</span>
+					<div className="flex items-baseline justify-center gap-2">
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div className="flex items-baseline gap-2 cursor-help">
+										<span className="lol-subheading text-gray-500 text-3xl">
+											Match Strength:
+										</span>
+										<span className="text-3xl font-bold text-[#C8AA6E] lol-body">
+											{playerData.archetype.matchPercentage}%
+										</span>
+										<Info className="w-5 h-5 text-gray-500" />
+									</div>
+								</TooltipTrigger>
+								<TooltipContent side="bottom" className="max-w-xs">
+									<p className="text-xs">
+										Our confidence score in matching you to this archetype based on your gameplay patterns and statistics.
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					</div>
 				</div>
 			</div>
