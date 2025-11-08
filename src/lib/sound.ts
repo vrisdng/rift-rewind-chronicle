@@ -26,7 +26,7 @@ export function initSounds() {
 
   // Initialize intro audio
   introAudio = new Audio('/sounds/welcome-audio.mp3');
-  introAudio.volume = 0.15;
+  introAudio.volume = 0.20;
   introAudio.preload = 'auto';
 
   // Initialize all BGM tracks
