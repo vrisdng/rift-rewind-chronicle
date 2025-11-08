@@ -10,7 +10,15 @@ export const InsightsSlide = ({ playerData }: InsightsSlideProps) => {
 
 	return (
 		<div className="w-full h-screen flex flex-col lol-bg-subtle relative overflow-hidden">
-			<div className="w-full h-full overflow-y-auto px-4 sm:px-8 py-8">
+			{/* Background Image */}
+			<div 
+				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+				style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
+			/>
+			{/* Dark Overlay */}
+			<div className="absolute inset-0 bg-black/60" />
+			
+			<div className="w-full h-full overflow-y-auto px-4 sm:px-8 py-8 relative z-10">
 				<div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 animate-fade-in relative z-10 pb-8">
 					{/* Title */}
 					<div className="text-center space-y-1">

@@ -309,14 +309,14 @@ const WrappedDashboard = () => {
 				</div>
 			</Carousel>
 
-			{/* Navigation Controls */}
-			<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 md:gap-6 sm:bottom-6 md:bottom-8">
+			{/* Navigation Controls - constrained width to avoid chatbot overlap */}
+			<div className="absolute bottom-4 left-4 right-20 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 flex items-center justify-center gap-1 sm:gap-3 md:gap-6 sm:bottom-6 md:bottom-8">
 				<Button
 					variant="outline"
 					size="icon"
 					onClick={scrollPrev}
 					disabled={current === 0}
-					className="group relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95"
+					className="group relative h-9 w-9 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95 flex-shrink-0"
 					style={{
 						clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'
 					}}
@@ -327,19 +327,19 @@ const WrappedDashboard = () => {
 							boxShadow: '0 0 30px rgba(200, 170, 110, 0.4), inset 0 0 20px rgba(200, 170, 110, 0.1)'
 						}}
 					/>
-					<ChevronLeft className="relative h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
+					<ChevronLeft className="relative h-3.5 w-3.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
 				</Button>
 
-				{/* Dots indicator */}
-				<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2.5 px-1 sm:px-2 md:px-4">
+				{/* Dots indicator - scrollable on mobile if too many */}
+				<div className="flex items-center gap-0.5 sm:gap-1.5 md:gap-2.5 px-0.5 sm:px-2 md:px-4 overflow-x-auto max-w-[calc(100vw-13rem)] sm:max-w-none scrollbar-hide">
 					{Array.from({ length: totalSlides }).map((_, index) => (
 						<button
 							key={index}
 							onClick={() => api?.scrollTo(index)}
 							className={cn(
-								"h-1.5 transition-all duration-300 rounded-sm border touch-manipulation",
+								"h-1.5 transition-all duration-300 rounded-sm border touch-manipulation flex-shrink-0",
 								current === index
-									? "w-6 sm:w-8 md:w-10 bg-gold border-gold shadow-[0_0_10px_rgba(200,170,110,0.6)]"
+									? "w-5 sm:w-8 md:w-10 bg-gold border-gold shadow-[0_0_10px_rgba(200,170,110,0.6)]"
 									: "w-1.5 bg-gold/30 border-gold/50 hover:bg-gold/50 hover:border-gold/70 hover:shadow-[0_0_6px_rgba(200,170,110,0.3)] active:bg-gold/60",
 							)}
 						/>
@@ -351,7 +351,7 @@ const WrappedDashboard = () => {
 					size="icon"
 					onClick={scrollNext}
 					disabled={current === totalSlides - 1}
-					className="group relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95"
+					className="group relative h-9 w-9 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95 flex-shrink-0"
 					style={{
 						clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'
 					}}
@@ -362,7 +362,7 @@ const WrappedDashboard = () => {
 							boxShadow: '0 0 30px rgba(200, 170, 110, 0.4), inset 0 0 20px rgba(200, 170, 110, 0.1)'
 						}}
 					/>
-					<ChevronRight className="relative h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
+					<ChevronRight className="relative h-3.5 w-3.5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
 				</Button>
 			</div>
 			<Chatbot 

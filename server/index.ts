@@ -907,11 +907,14 @@ app.post("/api/chat", async (req, res) => {
 			.filter((msg: any) => msg.content && msg.content.trim().length > 0)
 			.slice(-10);
 
+		// Build messages array with only conversation history + current message
+		// Don't include system prompt here - it will be passed as a separate parameter
 		const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-			{ role: "user", content: systemPrompt },
 			...recentHistory,
 			{ role: "user", content: message },
 		];
+
+		console.log(`🔄 [API] Invoking Bedrock stream with ${messages.length} messages and system prompt`);
 
 		// Accumulate full response to parse navigation actions
 		let fullResponse = "";
@@ -964,7 +967,9 @@ app.post("/api/chat", async (req, res) => {
 				console.error(`❌ [API] Error stack:`, error.stack);
 				res.write(JSON.stringify({ error: error.message }) + "\n");
 				res.end();
-			}
+			},
+			// Pass system prompt as separate parameter (5th argument)
+			systemPrompt
 		);
 	} catch (error: any) {
 		console.error("❌ [API] Error in /api/chat:", error);

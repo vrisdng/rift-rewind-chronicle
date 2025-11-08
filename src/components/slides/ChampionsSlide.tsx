@@ -9,7 +9,15 @@ export const ChampionsSlide = ({ playerData }: ChampionsSlideProps) => {
 
   return (
     <div className="w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-hidden">
-      <div className="w-full h-full overflow-y-auto py-8 px-8">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
+        style={{ backgroundImage: 'url(/images/background.jpg)' }}
+      />
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      <div className="w-full h-full overflow-y-auto py-8 px-8 relative z-10">
         <div className="max-w-6xl mx-auto w-full space-y-8 animate-fade-in relative z-10">
           {/* Title */}
           <div className="text-center space-y-2">

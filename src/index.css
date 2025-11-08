@@ -542,6 +542,43 @@ All colors MUST be HSL.
       transform: translate3d(0, 0, 0);
     }
   }
+
+  /* Background zoom animations */
+  .animate-bg-zoom-in {
+    animation: bgZoomIn 20s ease-in-out infinite alternate;
+  }
+
+  .animate-bg-zoom-out {
+    animation: bgZoomOut 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes bgZoomIn {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes bgZoomOut {
+    0% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Hide scrollbar for elements */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
 }
 
 @layer base {

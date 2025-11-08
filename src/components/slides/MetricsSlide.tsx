@@ -9,6 +9,14 @@ interface MetricsSlideProps {
 export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative p-8 overflow-hidden">
+			{/* Background Image */}
+			<div 
+				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
+				style={{ backgroundImage: 'url(/images/background-1.jpg)' }}
+			/>
+			{/* Dark Overlay */}
+			<div className="absolute inset-0 bg-black/60" />
+			
 			<div className="max-w-6xl w-full space-y-8 animate-fade-in relative z-10">
 				{/* Title */}
 				<div className="text-center space-y-2">

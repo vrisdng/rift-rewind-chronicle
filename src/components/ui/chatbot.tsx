@@ -357,81 +357,30 @@ export const Chatbot: React.FC<ChatbotProps> = ({
 
   return (
     <div>
-      {/* Tab-style button for mobile, floating button for desktop */}
-      <div className="fixed right-0 top-1/3 md:bottom-8 md:right-8 md:top-auto z-40">
+      {/* Floating button - aligned with navigation controls */}
+      <div className="fixed right-4 bottom-4 sm:bottom-6 md:bottom-8 md:right-8 z-50">
         {!open && (
           <div className="relative">
-            {/* Roasting speech bubble - positioned differently for mobile vs desktop */}
+            {/* Roasting speech bubble - DESKTOP ONLY */}
             {showRoast && (
-              <>
-                {/* Mobile: Left-pointing speech bubble */}
-                <div className="md:hidden absolute right-16 top-1/2 -translate-y-1/2 w-52 animate-in slide-in-from-right-5 fade-in duration-300">
-                  <div className="relative bg-[rgba(10,20,40,0.95)] backdrop-blur-sm border-2 border-gold/40 p-3 shadow-xl"
-                    style={{
-                      clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)'
-                    }}
-                  >
-                    <div className="text-sm text-gold/90 lol-body">{currentRoast}</div>
-                    {/* Arrow pointing to tab */}
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-6 h-6 bg-[rgba(10,20,40,0.95)] border-t-2 border-r-2 border-gold/40 transform rotate-45"></div>
-                  </div>
+              <div className="hidden md:block absolute bottom-24 right-0 mb-2 w-64 animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="relative bg-[rgba(10,20,40,0.95)] backdrop-blur-sm border-2 border-gold/40 p-3 shadow-xl"
+                  style={{
+                    clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))'
+                  }}
+                >
+                  <div className="text-sm text-gold/90 lol-body">{currentRoast}</div>
+                  {/* Arrow pointing to bubble */}
+                  <div className="absolute -bottom-3 right-8 w-6 h-6 bg-[rgba(10,20,40,0.95)] border-r-2 border-b-2 border-gold/40 transform rotate-45"></div>
                 </div>
-
-                {/* Desktop: Bottom-pointing speech bubble */}
-                <div className="hidden md:block absolute bottom-24 right-0 mb-2 w-64 animate-in slide-in-from-bottom-5 fade-in duration-300">
-                  <div className="relative bg-[rgba(10,20,40,0.95)] backdrop-blur-sm border-2 border-gold/40 p-3 shadow-xl"
-                    style={{
-                      clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))'
-                    }}
-                  >
-                    <div className="text-sm text-gold/90 lol-body">{currentRoast}</div>
-                    {/* Arrow pointing to bubble */}
-                    <div className="absolute -bottom-3 right-8 w-6 h-6 bg-[rgba(10,20,40,0.95)] border-r-2 border-b-2 border-gold/40 transform rotate-45"></div>
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
-            {/* Mobile: Vertical tab on right edge */}
+            {/* Octagonal button - matching navigation button sizes */}
             <button
               aria-label="Open chat"
               onClick={handleOpenChat}
-              className="md:hidden group relative h-32 w-12 bg-[rgba(10,20,40,0.9)] border-2 border-r-0 border-gold hover:border-gold-emphasis transition-all duration-300 flex items-center justify-center overflow-hidden"
-              style={{
-                clipPath: 'polygon(0 8%, 15% 0, 100% 0, 100% 100%, 15% 100%, 0 92%)',
-                animation: showRoast
-                  ? 'wiggle 0.5s ease-in-out'
-                  : 'wiggle 3s ease-in-out infinite'
-              }}
-            >
-              {/* Gold glow on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#C8AA6E]/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  boxShadow: '0 0 30px rgba(200, 170, 110, 0.5), inset 0 0 20px rgba(200, 170, 110, 0.1)'
-                }}
-              />
-
-              {/* Pulsing glow ring */}
-              <div className="absolute inset-0 opacity-30"
-                style={{
-                  boxShadow: '0 0 20px rgba(200, 170, 110, 0.4)',
-                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                }}
-              />
-
-              <img
-                src="/poro.png"
-                alt="Poro Coach"
-                className="relative w-8 h-8 transform -rotate-90 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
-              />
-            </button>
-
-            {/* Desktop: Octagonal floating button */}
-            <button
-              aria-label="Open chat"
-              onClick={handleOpenChat}
-              className="hidden md:flex group relative w-[4.5rem] h-[4.5rem] bg-[rgba(10,20,40,0.9)] border-2 border-gold hover:border-gold-emphasis transition-all duration-300 items-center justify-center overflow-hidden"
+              className="group relative h-12 w-12 sm:h-14 sm:w-14 md:h-[4.5rem] md:w-[4.5rem] bg-[rgba(10,20,40,0.9)] border-2 border-gold hover:border-gold-emphasis transition-all duration-300 flex items-center justify-center overflow-hidden active:scale-95"
               style={{
                 clipPath: 'polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)',
                 animation: showRoast
@@ -458,7 +407,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
               <img
                 src="/poro.png"
                 alt="Poro Coach"
-                className="relative w-10 h-10 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
+                className="relative w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
               />
             </button>
           </div>
@@ -564,6 +513,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                                   // Navigate to slide in carousel
                                   onNavigateToSlide(action.slideId);
                                   console.log('🧭 [CHATBOT] Navigating to slide:', action.slideId);
+                                  // Close the chatbot after navigation
+                                  setOpen(false);
+                                  // Restart roast timers after closing
+                                  startRoastTimers();
                                 } else {
                                   // Fallback to page navigation if no slide navigation available
                                   console.warn('⚠️ [CHATBOT] No slide navigation handler, slideId:', action.slideId);

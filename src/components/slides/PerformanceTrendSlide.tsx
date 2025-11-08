@@ -36,7 +36,15 @@ export const PerformanceTrendSlide = ({ playerData }: PerformanceTrendSlideProps
 
   return (
     <div className=" w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-auto">
-      <div className="w-full h-full overflow-y-auto py-8 px-4 sm:px-8">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
+        style={{ backgroundImage: 'url(/images/background.jpg)' }}
+      />
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      <div className="w-full h-full overflow-y-auto py-8 px-4 sm:px-8 relative z-10">
         <div className="max-w-6xl mx-auto w-full space-y-6 animate-fade-in relative z-10">
           {/* Title */}
           <div className="text-center space-y-2">
