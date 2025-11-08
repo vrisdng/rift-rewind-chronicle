@@ -406,7 +406,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                 }}
               />
 
-              <span className="relative text-3xl transform -rotate-90 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]">🔥</span>
+              <img
+                src="/poro.png"
+                alt="Poro Coach"
+                className="relative w-8 h-8 transform -rotate-90 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
+              />
             </button>
 
             {/* Desktop: Octagonal floating button */}
@@ -437,7 +441,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                 }}
               />
 
-              <span className="relative text-4xl group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]">🔥</span>
+              <img
+                src="/poro.png"
+                alt="Poro Coach"
+                className="relative w-10 h-10 group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(200,170,110,0.6)]"
+              />
             </button>
           </div>
         )}
@@ -446,7 +454,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
           <div className="w-96 max-w-[90vw] h-[520px] bg-card/90 rounded-xl shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-border bg-gradient-to-b from-background/70 to-background/50">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">🔥</div>
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                  <img src="/poro.png" alt="Poro" className="w-6 h-6" />
+                </div>
                 <div>
                   <div className="font-semibold">RiftRewind Coach</div>
                   <div className="text-xs text-muted-foreground">Brutally honest. Occasionally helpful.</div>
@@ -464,8 +474,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                   {/* Welcome roast with avatar */}
                   <div className="flex gap-2 justify-start">
                     {/* Coach avatar */}
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-                      <span className="text-lg">🔥</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 overflow-hidden">
+                      <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                     </div>
                     
                     {/* Welcome message */}
@@ -498,8 +508,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                   <div className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {/* Avatar for assistant */}
                     {m.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-                        <span className="text-lg">🔥</span>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 overflow-hidden">
+                        <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                       </div>
                     )}
                     
