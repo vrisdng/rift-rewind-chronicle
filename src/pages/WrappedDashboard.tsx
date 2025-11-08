@@ -110,63 +110,33 @@ const WrappedDashboard = () => {
 		}
 
 		const configuredSlides: SlideConfig[] = [
+			// 1. Keep the first slide (Intro)
 			{
 				id: "intro",
 				narration: "Welcome back to the Rift—your legend continues.",
 				content: <IntroSlide playerData={playerData} />,
 			},
-			{
-				id: "archetype",
-				narration: "Based on your gameplay and stats, you are...",
-				content: <ArchetypeSlide playerData={playerData} />,
-			},
-		];
-
-		if (playerData.element) {
-			configuredSlides.push({
-				id: "element",
-				narration: "Your energy reflects something deeper...",
-				content: <ElementSlide playerData={playerData} />,
-			});
-		}
-
-		if (playerData.persona && playerData.element) {
-			configuredSlides.push({
-				id: "persona",
-				narration: "Together, they form your true persona.",
-				content: <PersonaSlide playerData={playerData} />,
-			});
-		}
-
-		configuredSlides.push(
-			{
-				id: "stats",
-				narration: "Let's see the numbers...",
-				content: <StatsSlide playerData={playerData} />,
-			},
+			// 2. Champion Mastery
 			{
 				id: "champions",
 				narration: "Your best champions are ready for the spotlight.",
 				content: <ChampionsSlide playerData={playerData} />,
 			},
-		);
+			// 3. Season Stats Slide
+			{
+				id: "stats",
+				narration: "Let's see the numbers...",
+				content: <StatsSlide playerData={playerData} />,
+			},
+			// 4. Your Playstyle (MetricsSlide)
+			{
+				id: "metrics",
+				narration: "Here's your full combat profile.",
+				content: <MetricsSlide playerData={playerData} />,
+			},
+		];
 
-		if (playerData.proComparison) {
-			configuredSlides.push({
-				id: "pro-comparison",
-				narration: "How do you stack up against the pros?",
-				content: <ProComparisonSlide playerData={playerData} />,
-			});
-		}
-
-		if (playerData.topStrengths && playerData.needsWork) {
-			configuredSlides.push({
-				id: "strengths-weaknesses",
-				narration: "Every champion has strengths and tells—here are yours.",
-				content: <StrengthsWeaknessesSlide playerData={playerData} />,
-			});
-		}
-
+		// 5. Your Journey (PerformanceTrendSlide)
 		if (playerData.performanceTrend && playerData.performanceTrend.length > 0) {
 			configuredSlides.push({
 				id: "performance-trend",
@@ -175,6 +145,50 @@ const WrappedDashboard = () => {
 			});
 		}
 
+		// 6. Full Picture (StrengthsWeaknessesSlide)
+		if (playerData.topStrengths && playerData.needsWork) {
+			configuredSlides.push({
+				id: "strengths-weaknesses",
+				narration: "Every champion has strengths and tells—here are yours.",
+				content: <StrengthsWeaknessesSlide playerData={playerData} />,
+			});
+		}
+
+		// 7. Your Archetype
+		configuredSlides.push({
+			id: "archetype",
+			narration: "Based on your gameplay and stats, you are...",
+			content: <ArchetypeSlide playerData={playerData} />,
+		});
+
+		// 8. Your Element
+		if (playerData.element) {
+			configuredSlides.push({
+				id: "element",
+				narration: "Your energy reflects something deeper...",
+				content: <ElementSlide playerData={playerData} />,
+			});
+		}
+
+		// 9. Your Persona
+		if (playerData.persona && playerData.element) {
+			configuredSlides.push({
+				id: "persona",
+				narration: "Together, they form your true persona.",
+				content: <PersonaSlide playerData={playerData} />,
+			});
+		}
+
+		// 10. Your Pro Twin
+		if (playerData.proComparison) {
+			configuredSlides.push({
+				id: "pro-comparison",
+				narration: "How do you stack up against the pros?",
+				content: <ProComparisonSlide playerData={playerData} />,
+			});
+		}
+
+		// 11. Duelist Redemption (Watershed)
 		if (playerData.watershedMoment) {
 			configuredSlides.push({
 				id: "watershed",
@@ -183,25 +197,21 @@ const WrappedDashboard = () => {
 			});
 		}
 
-		configuredSlides.push({
-			id: "metrics",
-			narration: "Here's your full combat profile.",
-			content: <MetricsSlide playerData={playerData} />,
-		});
-
-		if (playerData.insights?.story_arc) {
-			configuredSlides.push({
-				id: "story-arc",
-				narration: "Let's weave your 2024 Rift story.",
-				content: <StoryArcSlide playerData={playerData} />,
-			});
-		}
-
+		// 12. Hidden Insights
 		if (playerData.insights?.surprising_insights) {
 			configuredSlides.push({
 				id: "insights",
 				narration: "A few surprises the data uncovered.",
 				content: <InsightsSlide playerData={playerData} />,
+			});
+		}
+
+		// Story Arc (before finale)
+		if (playerData.insights?.story_arc) {
+			configuredSlides.push({
+				id: "story-arc",
+				narration: "Let's weave your 2024 Rift story.",
+				content: <StoryArcSlide playerData={playerData} />,
 			});
 		}
 
