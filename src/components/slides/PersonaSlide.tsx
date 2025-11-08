@@ -12,33 +12,35 @@ export const PersonaSlide = ({ playerData }: PersonaSlideProps) => {
 	const videoFilter = getElementFilter(playerData.element.name);
 
 	return (
-		<div className="w-full h-screen flex flex-col items-center justify-start lol-bg-subtle relative overflow-hidden">
-			{/* YouTube Video Background with Element-based Color Filter */}
+		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden">
+			{/* Video Background with Element-based Color Filter */}
 			<div className="absolute inset-0 w-full h-full bg-black">
-				<iframe
-					className="absolute inset-0 w-full h-full pointer-events-none border-0"
+				<video
+					className="absolute inset-0 w-full h-full object-cover pointer-events-none"
 					style={{
 						width: '177.77777778vh', // 16:9 aspect ratio
 						height: '56.25vw', // 16:9 aspect ratio
 						minWidth: '100%',
 						minHeight: '100%',
 						position: 'absolute',
-						top: '50%',
+						top: '40%',
 						left: '50%',
 						transform: 'translate(-50%, -50%) scale(1.2)',
 						filter: videoFilter,
 					}}
-					src="https://www.youtube.com/embed/fsJVmreYIvI?autoplay=1&mute=1&loop=1&playlist=fsJVmreYIvI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd1080"
-					title="Persona background video"
-					allow="autoplay; encrypted-media"
-				/>
+					autoPlay
+					muted
+					loop
+					playsInline
+				>
+					<source src="/videos/Fire Burning Hot Sparks Rising Background Free Video.mp4" type="video/mp4" />
+				</video>
 			</div>
 			{/* Dark Overlay for readability */}
 			<div className="absolute inset-0 bg-black/50" />
 
-			{/* Scrollable Content */}
-			<div className="w-full h-full overflow-y-auto overflow-x-hidden relative z-10">
-				<div className="max-w-4xl w-full space-y-6 sm:space-y-8 animate-fade-in mx-auto p-4 sm:p-6 md:p-8 py-8 sm:py-12">
+			{/* Centered Content */}
+			<div className="max-w-4xl w-full space-y-6 sm:space-y-8 animate-fade-in relative z-10 p-4 sm:p-6 md:p-8">
 				{/* Title */}
 				<div className="text-center space-y-2">
 					<div className="flex items-center justify-center gap-3 mb-2">
@@ -102,7 +104,6 @@ export const PersonaSlide = ({ playerData }: PersonaSlideProps) => {
 						</div>
 					</div>
 				</div>
-			</div>
 			</div>
 		</div>
 	);
