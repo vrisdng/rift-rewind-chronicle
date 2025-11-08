@@ -414,17 +414,17 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					<div className="flex flex-col sm:flex-row justify-center gap-3 pt-2 w-full sm:w-auto">
 						<Button
 							size="lg"
-							variant="outline"
 							onClick={() => setShowShareCustomizer(true)}
-							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
+							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
 							<Share2 className="mr-2 h-4 w-4" />
 							Share Results
 						</Button>
 						<Button
 							size="lg"
+							variant="outline"
 							onClick={() => window.location.href = '/'}
-							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
+							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
 							Start Again
 							<ArrowRight className="ml-2 h-4 w-4" />
