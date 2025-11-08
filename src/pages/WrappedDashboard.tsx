@@ -31,7 +31,8 @@ import { PerformanceTrendSlide } from "@/components/slides/PerformanceTrendSlide
 import { WatershedSlide } from "@/components/slides/WatershedSlide";
 import { MetricsSlide } from "@/components/slides/MetricsSlide";
 import { StoryArcSlide } from "@/components/slides/StoryArcSlide";
-import { InsightsSlide } from "@/components/slides/InsightsSlide";
+import { HiddenInsightsSlide } from "@/components/slides/HiddenInsightsSlide";
+import { LevelUpSlide } from "@/components/slides/LevelUpSlide";
 import { FinaleSlide } from "@/components/slides/FinaleSlide";
 
 type SlideConfig = {
@@ -200,13 +201,22 @@ const WrappedDashboard = () => {
 		// 12. Hidden Insights
 		if (playerData.insights?.surprising_insights) {
 			configuredSlides.push({
-				id: "insights",
+				id: "hidden-insights",
 				narration: "A few surprises the data uncovered.",
-				content: <InsightsSlide playerData={playerData} />,
+				content: <HiddenInsightsSlide playerData={playerData} />,
 			});
 		}
 
-		// 2026 Prediction (before finale)
+		// 13. Level Up Tips
+		if (playerData.insights?.improvement_tips && playerData.insights.improvement_tips.length > 0) {
+			configuredSlides.push({
+				id: "level-up",
+				narration: "Ready to take your game to the next level?",
+				content: <LevelUpSlide playerData={playerData} />,
+			});
+		}
+
+		// 14. 2026 Prediction (before finale)
 		if (playerData.insights?.season_prediction) {
 			configuredSlides.push({
 				id: "story-arc",
@@ -347,10 +357,10 @@ const WrappedDashboard = () => {
 							key={index}
 							onClick={() => api?.scrollTo(index)}
 							className={cn(
-								"h-1.5 transition-all duration-300 rounded-sm border touch-manipulation flex-shrink-0",
+								"h-1.5 transition-all duration-300 rounded-sm touch-manipulation flex-shrink-0",
 								current === index
-									? "w-5 sm:w-8 md:w-10 bg-gold border-gold shadow-[0_0_10px_rgba(200,170,110,0.6)]"
-									: "w-1.5 bg-gold/30 border-gold/50 hover:bg-gold/50 hover:border-gold/70 hover:shadow-[0_0_6px_rgba(200,170,110,0.3)] active:bg-gold/60",
+									? "w-5 sm:w-8 md:w-10 bg-[#C8AA6E] border-2 border-[#C8AA6E] shadow-[0_0_10px_rgba(200,170,110,0.6)]"
+									: "w-1.5 bg-transparent border border-gold/50 hover:bg-gold/20 hover:border-gold/70 hover:shadow-[0_0_6px_rgba(200,170,110,0.3)] active:bg-gold/40",
 							)}
 						/>
 					))}
