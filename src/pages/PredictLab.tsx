@@ -467,6 +467,16 @@ const PredictLab = () => {
                 ))}
               </CardContent>
             </Card>
+
+            <Card className="border-white/10 bg-black/50">
+              <CardContent className="flex flex-col gap-4 pt-6">
+                <div className="flex items-center gap-3 text-[#C8AA6E]">
+                  <Sparkles className="h-5 w-5" />
+                  <p className="text-sm uppercase tracking-[0.4em]">AI Coach</p>
+                </div>
+                <p className="text-lg text-white/90">{commentary}</p>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
@@ -573,21 +583,6 @@ const PredictLab = () => {
             </Card>
           </div>
         </section>
-
-        <Card className="border-white/10 bg-black/50">
-          <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3 text-[#C8AA6E]">
-              <Sparkles className="h-5 w-5" />
-              <p className="text-sm uppercase tracking-[0.4em]">AI Coach</p>
-            </div>
-            <p className="flex-1 text-lg text-white/90">{commentary}</p>
-            <div className="flex gap-3 text-xs text-white/60">
-              <div className="flex items-center gap-1"><Brain className="h-4 w-4" /> Mental</div>
-              <div className="flex items-center gap-1"><Activity className="h-4 w-4" /> Mechanics</div>
-              <div className="flex items-center gap-1"><Target className="h-4 w-4" /> Focus</div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
