@@ -181,7 +181,7 @@ const Landing = () => {
             <Button
               onClick={startAnalysis}
               disabled={isLoading}
-              className="w-full h-14 bg-[#C8AA6E] hover:bg-[#D4B982] text-[#0A1428] font-black text-lg uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
+              className="w-full h-14 bg-[#0A1428] hover:bg-[#0D1B35] text-[#C8AA6E] font-black text-lg uppercase tracking-wider transition-all duration-300 border-2 border-[#C8AA6E] hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
               style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
               {isLoading ? (

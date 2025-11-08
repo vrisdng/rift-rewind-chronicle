@@ -3,7 +3,8 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { playClick } from "@/lib/sound";
+import { playClick, playHover } from "@/lib/sound";
+import e from "express";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -39,8 +40,19 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, onClick, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, onMouseEnter, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      try {
+        // play hover sound effect
+        playHover();
+      } catch {
+        // swallow errors so hover still works
+      }
+      onMouseEnter?.(e);
+    }
+
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       try {
         playClick(); // play global sfx
@@ -49,7 +61,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       }
       onClick?.(e);
     };
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} onClick={handleClick} />;
+    return <Comp 
+      className={cn(buttonVariants({ variant, size, className }))} 
+      ref={ref} {...props} 
+      onMouseEnter={handleMouseEnter}
+      onClick={handleClick} 
+      />;
   },
 );
 Button.displayName = "Button";

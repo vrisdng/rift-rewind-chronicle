@@ -10,6 +10,7 @@
 let introAudio: HTMLAudioElement | null = null;
 let bgmAudios: HTMLAudioElement[] = [];
 let currentBgmIndex = 0;
+let hoverAudio: HTMLAudioElement | null = null;
 let clickAudio: HTMLAudioElement | null = null;
 let audioInitialized = false;
 let introPlayed = false;
@@ -31,7 +32,7 @@ export function initSounds() {
   // Initialize all BGM tracks
   bgmAudios = BGM_TRACKS.map(src => {
     const audio = new Audio(src);
-    audio.volume = 0.18;
+    audio.volume = 0.045;
     audio.preload = 'auto';
     return audio;
   });
@@ -43,10 +44,15 @@ export function initSounds() {
     });
   });
 
+  // Initialize hover SFX
+  hoverAudio = new Audio('/sounds/button-sound-effect-hover.mp3');
+  hoverAudio.preload = 'auto';
+  hoverAudio.volume = 0.45;
+
   // Initialize click SFX
-  clickAudio = new Audio('/sounds/button-sound-effect.mp3');
+  clickAudio = new Audio('/sounds/button-sound-effect-click.mp3');
   clickAudio.preload = 'auto';
-  clickAudio.volume = 0.15;
+  clickAudio.volume = 0.45;
 
   audioInitialized = true;
 }
@@ -134,6 +140,23 @@ export function stopAllAudio() {
     audio.pause();
     audio.currentTime = 0;
   });
+}
+
+/**
+ * Play button hover sound effect
+ */
+export function playHover() {
+  initSounds();
+  if (!hoverAudio) return;
+  
+  try {
+    const clone = hoverAudio.cloneNode() as HTMLAudioElement;
+    clone.volume = hoverAudio.volume;
+    clone.play().catch(() => {});
+  } catch (e) {
+    hoverAudio.currentTime = 0;
+    hoverAudio.play().catch(() => {});
+  }
 }
 
 /**
