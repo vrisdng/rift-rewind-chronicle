@@ -399,7 +399,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 
 					{/* Archetype Badge */}
 						<div className="lol-card inline-flex w-full items-center gap-3 px-6 py-3 border-[#C8AA6E]/40">
-							<div className="flex h-12 w-12 items-center justify-center bg-[#C8AA6E]/10 rounded">
+							<div className="flex h-12 w-12 items-center justify-center ">
 								<img
 									src={archetypeIcon}
 									alt={playerData.archetype.name}
