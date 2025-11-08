@@ -8,16 +8,18 @@ interface MetricsSlideProps {
 
 export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 	return (
-		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative p-8 overflow-hidden">
+		<div className="w-full h-screen flex flex-col items-center justify-start lol-bg-subtle relative overflow-hidden">
 			{/* Background Image */}
-			<div 
+			<div
 				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
 				style={{ backgroundImage: 'url(/images/background-1.jpg)' }}
 			/>
 			{/* Dark Overlay */}
 			<div className="absolute inset-0 bg-black/60" />
-			
-			<div className="max-w-6xl w-full space-y-8 animate-fade-in relative z-10">
+
+			{/* Scrollable Content */}
+			<div className="w-full h-full overflow-y-auto overflow-x-hidden relative z-10">
+				<div className="max-w-6xl w-full space-y-6 sm:space-y-8 animate-fade-in mx-auto p-4 sm:p-6 md:p-8 py-8 sm:py-12">
 				{/* Title */}
 				<div className="text-center space-y-2">
 					<h2 className="lol-heading text-4xl sm:text-5xl md:text-6xl text-[#C8AA6E]">
@@ -135,6 +137,7 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 						</div>
 					</div>
 				</div>
+			</div>
 			</div>
 		</div>
 	);

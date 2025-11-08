@@ -307,8 +307,8 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 				{/* Dark Overlay */}
 				<div className="absolute inset-0 bg-black/60" />
 				
-				<div className="absolute left-6 top-6 z-20 flex max-w-xs flex-col items-start gap-3 text-left">
-					<div className="rounded-2xl border border-white/20 bg-black/80 px-4 py-3 text-sm leading-relaxed text-white shadow-lg backdrop-blur">
+				<div className="absolute left-6  top-6 z-20 flex max-w-xs sm:max-w-4xl mx-auto flex-col items-start gap-3 text-left">
+					<div className="hidden sm:block w-full rounded-2xl border border-white/20 bg-black/80 px-4 py-3 text-sm leading-relaxed text-white shadow-lg backdrop-blur">
 						<span>{typedMessage}</span>
 						{caretVisible && <span className="ml-1 inline-block animate-pulse align-middle">|</span>}
 					</div>
@@ -396,8 +396,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					</div>
 
 					{/* Archetype Badge */}
-					<div className="flex justify-center">
-						<div className="lol-card inline-flex items-center gap-3 px-6 py-3 border-[#C8AA6E]/40">
+						<div className="lol-card inline-flex w-full items-center gap-3 px-6 py-3 border-[#C8AA6E]/40">
 							<div className="flex h-12 w-12 items-center justify-center bg-[#C8AA6E]/10 rounded">
 								<span className="text-2xl">{playerData.archetype.icon}</span>
 							</div>
@@ -410,7 +409,6 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 								</p>
 							</div>
 						</div>
-					</div>
 
 					{/* CTA Buttons */}
 					<div className="flex flex-col sm:flex-row justify-center gap-3 pt-2 w-full sm:w-auto">
