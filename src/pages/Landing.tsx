@@ -237,11 +237,18 @@ const Landing = () => {
             <div className="w-full max-w-xl px-4 sm:px-0 mx-auto mb-8">
               <div className="p-4 sm:p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
                 <div className="space-y-3 sm:space-y-4">
-                  {/* Progress Bar */}
-                  <div className="w-full bg-[#0A1428] h-3 overflow-hidden border border-[#C8AA6E]/40">
+                  {/* Progress Bar with Poro */}
+                  <div className="relative w-full bg-[#0A1428] h-3 overflow-visible border border-[#C8AA6E]/40">
                     <div
                       className="bg-gradient-to-r from-[#C8AA6E] to-[#F0E6D2] h-full transition-all duration-500 ease-out shadow-[0_0_20px_rgba(200,170,110,0.6)]"
                       style={{ width: `${progress}%` }}
+                    />
+                    {/* Poro at the end of progress bar */}
+                    <img
+                      src="/videos/poro_loading.gif"
+                      alt="Loading poro"
+                      className="absolute top-1/2 -translate-y-1/2 w-10 h-10 transition-all duration-500 ease-out"
+                      style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }}
                     />
                   </div>
 
