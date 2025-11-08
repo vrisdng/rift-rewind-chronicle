@@ -502,15 +502,69 @@ export const FinaleShareCustomizer = ({
 			toast.error("Unable to copy automatically. Please copy manually.");
 		}
 	};
-	const handleShareToPlatform = (platform: SharePlatform) => {
+	const handleShareToPlatform = async (platform: SharePlatform) => {
 		const encodedText = encodeURIComponent(shareText);
 		const encodedCaption = encodeURIComponent(trimmedShareCaption);
 		const encodedUrl = encodeURIComponent(CANONICAL_SHARE_URL);
 
 		switch (platform) {
 			case "telegram": {
-				const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
-				window.open(shareUrl, "_blank", "noopener,noreferrer");
+				if (!cardRef.current) {
+					toast.error("Card preview is not ready yet.");
+					return;
+				}
+				try {
+					toast("Preparing share card for Telegram...");
+					const dataUrl = await generateShareCardJpeg();
+
+					// Convert data URL to blob
+					const response = await fetch(dataUrl);
+					const blob = await response.blob();
+
+					// Create a File object from the blob
+					const slug =
+						playerData.riotId
+							.toLowerCase()
+							.replace(/[^a-z0-9]+/g, "-")
+							.replace(/(^-|-$)/g, "") || "rewind";
+					const fileName = `rift-rewind-${slug}-share-card.jpeg`;
+					const file = new File([blob], fileName, { type: "image/jpeg" });
+
+					// Try Web Share API first (works on mobile)
+					if (navigator.canShare && navigator.canShare({ files: [file] })) {
+						await navigator.share({
+							files: [file],
+							title: playerData.insights?.title || "My League Year",
+							text: shareText,
+						});
+						toast.success("Shared successfully!");
+					} else {
+						// Fallback: download image and open Telegram share dialog
+						const anchor = document.createElement("a");
+						anchor.download = fileName;
+						anchor.href = dataUrl;
+						anchor.click();
+
+						// Open Telegram share dialog with caption
+						setTimeout(() => {
+							const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
+							window.open(shareUrl, "_blank", "noopener,noreferrer");
+							toast.success(
+								"Share card downloaded! Upload it in Telegram along with your caption.",
+							);
+						}, 500);
+					}
+				} catch (error) {
+					console.error(error);
+					const message =
+						error instanceof Error ? error.message : "Failed to share";
+					// Check if user cancelled the share
+					if (message.includes("AbortError") || message.includes("cancel")) {
+						toast.info("Share cancelled.");
+					} else {
+						toast.error("Failed to prepare share card. Try downloading manually.");
+					}
+				}
 				break;
 			}
 			case "whatsapp": {
@@ -612,27 +666,27 @@ export const FinaleShareCustomizer = ({
 				</Button>
 			</DialogTrigger>
 			<DialogContent
-				className="max-w-[95vw] max-h-[95vh] overflow-y-auto border border-[rgba(200,170,110,0.25)] bg-[#0A1428] text-white shadow-[0_25px_60px_rgba(8,12,22,0.65)] backdrop-blur-xl"
+				className="max-w-[95vw] max-h-[95vh] overflow-y-auto border border-[rgba(200,170,110,0.25)] bg-[#0A1428] text-white shadow-[0_25px_60px_rgba(8,12,22,0.65)] backdrop-blur-xl p-4 sm:p-6"
 				style={{
 					background:
 						"linear-gradient(180deg, rgba(10,20,40,0.98) 0%, rgba(22,31,50,0.92) 65%, rgba(10,20,40,0.98) 100%)",
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle className="lol-heading text-2xl text-[#C8AA6E]">
+					<DialogTitle className="lol-heading text-xl sm:text-2xl text-[#C8AA6E]">
 						Customize Your Share Card
 					</DialogTitle>
-					<DialogDescription className="lol-body text-sm text-white/70">
+					<DialogDescription className="lol-body text-xs sm:text-sm text-white/70">
 						Tailor your recap, then generate a share-ready caption with quick
 						links for your favorite platforms.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,640px)_1fr]">
-					<div className="flex flex-col items-center">
-						<div className="relative w-[640px]">
+				<div className="mt-6 flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,640px)_1fr]">
+					<div className="flex flex-col items-center w-full">
+						<div className="relative w-full max-w-[640px]">
 							<div
 								ref={cardRef}
-								className="relative h-[388px] w-[640px] overflow-hidden rounded-[28px] border border-[rgba(200,170,110,0.28)] bg-[#0A1428] shadow-[0_25px_60px_rgba(8,12,22,0.65)] transition-all"
+								className="relative aspect-[640/388] w-full overflow-hidden rounded-2xl sm:rounded-[28px] border border-[rgba(200,170,110,0.28)] bg-[#0A1428] shadow-[0_25px_60px_rgba(8,12,22,0.65)] transition-all"
 								style={backgroundStyle}
 							>
 								<div className="absolute inset-0 bg-gradient-to-br from-[#050912]/85 via-[#0A1428]/75 to-[#050912]/95" />
@@ -677,47 +731,47 @@ export const FinaleShareCustomizer = ({
 										</div>
 									</div>
 								)}
-								<div className="relative flex h-full flex-col justify-between p-9 text-white lol-body">
-									<header className="space-y-4">
-										<p className="lol-subheading text-[0.65rem] tracking-[0.45em] text-[#C8AA6E]/70">
+								<div className="relative flex h-full flex-col justify-between p-4 sm:p-6 md:p-9 text-white lol-body">
+									<header className="space-y-2 sm:space-y-4">
+										<p className="lol-subheading text-[0.5rem] sm:text-[0.65rem] tracking-[0.45em] text-[#C8AA6E]/70">
 											Rift Rewind Chronicle
 										</p>
-										<div className="lol-accent-bar pl-4">
-											<p className="lol-subheading text-[0.65rem] tracking-[0.5em] text-[#C8AA6E]/65">
+										<div className="lol-accent-bar pl-2 sm:pl-4">
+											<p className="lol-subheading text-[0.5rem] sm:text-[0.65rem] tracking-[0.5em] text-[#C8AA6E]/65">
 												Summoner
 											</p>
-											<h2 className="lol-heading text-3xl text-white drop-shadow-[0_0_25px_rgba(10,20,40,0.65)]">
-												{playerData.riotId}
-												<span className="ml-2 text-[#C8AA6E]/70">
+											<h2 className="lol-heading text-base sm:text-xl md:text-2xl lg:text-3xl text-white drop-shadow-[0_0_25px_rgba(10,20,40,0.65)] break-words">
+												<span className="inline-block">{playerData.riotId}</span>
+												<span className="ml-1 sm:ml-2 text-[#C8AA6E]/70 inline-block">
 													#{playerData.tagLine}
 												</span>
 											</h2>
 										</div>
 									</header>
-									<div className="space-y-5">
-										<div className="space-y-2 text-left">
-											<h3 className="lol-heading text-[2.4rem] text-white tracking-[0.22em] drop-shadow-[0_0_35px_rgba(10,20,40,0.7)]">
+									<div className="space-y-3 sm:space-y-5">
+										<div className="space-y-1 sm:space-y-2 text-left">
+											<h3 className="lol-heading text-base sm:text-xl md:text-3xl lg:text-[2.4rem] text-white tracking-[0.15em] sm:tracking-[0.22em] drop-shadow-[0_0_35px_rgba(10,20,40,0.7)] break-words">
 												{playerData.persona?.codename ||
 													playerData.archetype?.name ||
 													"Unknown"}
 											</h3>
-											<p className="text-sm leading-relaxed text-white/75">
+											<p className="text-[0.65rem] sm:text-xs md:text-sm leading-relaxed text-white/75 break-words">
 												{playerData.persona?.description ||
 													playerData.archetype?.description ||
 													""}
 											</p>
 										</div>
 										{!!statBlocks.length && (
-											<div className="grid grid-cols-3 gap-3">
+											<div className="grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
 												{statBlocks.map((stat) => (
 													<div
 														key={stat.label}
-														className="lol-card border-[rgba(200,170,110,0.3)] bg-[#0A1428]/70 p-4 text-left shadow-[0_12px_20px_rgba(8,12,22,0.4)]"
+														className="lol-card border-[rgba(200,170,110,0.3)] bg-[#0A1428]/70 p-1 sm:p-2 md:p-4 text-left shadow-[0_12px_20px_rgba(8,12,22,0.4)] min-w-0"
 													>
-														<p className="lol-subheading text-[0.6rem] tracking-[0.45em] text-[#C8AA6E]/70">
-															{stat.label}
+														<p className="lol-subheading text-[0.35rem] sm:text-[0.5rem] md:text-[0.6rem] tracking-[0.2em] sm:tracking-[0.45em] text-[#C8AA6E]/70 truncate">
+															{stat.label.replace(' ', '\u00A0')}
 														</p>
-														<p className="lol-heading text-2xl text-white tracking-[0.08em]">
+														<p className="lol-heading text-xs sm:text-base md:text-xl lg:text-2xl text-white tracking-[0.02em] sm:tracking-[0.08em] break-words">
 															{stat.value}
 														</p>
 													</div>
@@ -725,12 +779,12 @@ export const FinaleShareCustomizer = ({
 											</div>
 										)}
 									</div>
-									<footer className="flex items-center justify-between lol-subheading text-[0.6rem] tracking-[0.45em] text-[#C8AA6E]/70">
-										<span className="uppercase">
+									<footer className="flex items-center justify-between gap-1 lol-subheading text-[0.4rem] sm:text-[0.5rem] md:text-[0.6rem] tracking-[0.3em] sm:tracking-[0.45em] text-[#C8AA6E]/70">
+										<span className="uppercase whitespace-nowrap">
 											Season{" "}
 											{new Date(playerData.generatedAt).getFullYear() || 2025}
 										</span>
-										<span className="uppercase">
+										<span className="uppercase truncate min-w-0">
 											{playerData.riotId.replace(/\s+/g, "")}
 										</span>
 									</footer>
@@ -740,7 +794,7 @@ export const FinaleShareCustomizer = ({
 						<Button
 							onClick={handleDownload}
 							type="button"
-							className="mt-6 w-full lol-heading bg-[#C8AA6E] text-[#0A1428] font-bold uppercase tracking-[0.2em] hover:bg-[#d7b977] border-[#C8AA6E]/60 shadow-[0_18px_40px_rgba(8,12,22,0.5)] transition-transform hover:-translate-y-0.5 focus-visible:ring-[#C8AA6E]"
+							className="mt-4 sm:mt-6 w-full lol-heading bg-[#C8AA6E] text-[#0A1428] font-bold uppercase tracking-[0.2em] hover:bg-[#d7b977] border-[#C8AA6E]/60 shadow-[0_18px_40px_rgba(8,12,22,0.5)] transition-transform hover:-translate-y-0.5 focus-visible:ring-[#C8AA6E] text-sm sm:text-base"
 							variant="hero"
 						>
 							<Download className="mr-2 h-4 w-4 text-[#0A1428]" />
@@ -750,7 +804,7 @@ export const FinaleShareCustomizer = ({
 							<Button
 								type="button"
 								onClick={onDownloadAll}
-								className="mt-2 w-full lol-heading border-[#C8AA6E]/50 bg-transparent text-[#C8AA6E] font-bold uppercase tracking-[0.2em] hover:bg-[#C8AA6E]/10"
+								className="mt-2 w-full lol-heading border-[#C8AA6E]/50 bg-transparent text-[#C8AA6E] font-bold uppercase tracking-[0.2em] hover:bg-[#C8AA6E]/10 text-sm sm:text-base"
 								variant="outline"
 								disabled={isDownloadingAll}
 							>
@@ -854,7 +908,7 @@ export const FinaleShareCustomizer = ({
 										Choose between your top champion splash art or stock
 										backdrops.
 									</p>
-									<div className="grid grid-cols-2 gap-4">
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 										{backgroundOptions.map((option) => (
 											<button
 												key={option.id}
@@ -936,11 +990,11 @@ export const FinaleShareCustomizer = ({
 									)}
 								</section>
 								<section className="space-y-4 rounded-2xl lol-card border-[rgba(200,170,110,0.25)] bg-[#0A1428]/85 p-6 shadow-[0_15px_30px_rgba(8,12,22,0.45)]">
-									<div className="flex flex-wrap gap-3">
+									<div className="flex flex-col sm:flex-row flex-wrap gap-3">
 										<Button
 											type="button"
 											variant="hero"
-											className="lol-heading flex-1 min-w-[160px] bg-[#C8AA6E] text-[#0A1428] uppercase tracking-[0.25em]"
+											className="lol-heading flex-1 min-w-[160px] bg-[#C8AA6E] text-[#0A1428] uppercase tracking-[0.25em] text-sm"
 											onClick={handleCopyShareText}
 										>
 											<Copy className="mr-2 h-4 w-4" />
@@ -949,7 +1003,7 @@ export const FinaleShareCustomizer = ({
 										<Button
 											type="button"
 											variant="outline"
-											className="lol-heading flex-1 min-w-[200px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E]"
+											className="lol-heading flex-1 min-w-[200px] uppercase tracking-[0.25em] border-[#C8AA6E]/50 text-[#C8AA6E] text-sm"
 											onClick={xSession ? handlePostToX : handleConnectToX}
 											disabled={xSession ? isPostingToX : isConnectingToX}
 										>
