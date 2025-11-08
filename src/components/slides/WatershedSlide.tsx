@@ -38,31 +38,31 @@ export const WatershedSlide = ({ playerData }: WatershedSlideProps) => {
             </p>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-4 items-center text-center">
               {/* Before */}
               <div className="space-y-2">
-                <div className="text-4xl font-bold text-gray-500 lol-body">
+                <div className="text-3xl font-bold text-gray-600 lol-body">
                   {playerData.watershedMoment.beforeAverage.toFixed(1)}
                 </div>
-                <div className="lol-subheading text-gray-600 text-xs">Before</div>
+                <div className="lol-subheading text-gray-700 text-[10px] uppercase tracking-wider">Before</div>
               </div>
 
               {/* Improvement Arrow */}
               <div className="flex flex-col items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-[#C8AA6E] flex items-center justify-center">
-                  <ArrowUp className="w-8 h-8 text-[#0A1428]" />
+                <div className="w-12 h-12 rounded-full bg-[#C8AA6E]/20 flex items-center justify-center">
+                  <ArrowUp className="w-6 h-6 text-[#C8AA6E]" />
                 </div>
-                <div className="mt-2 text-xl font-bold text-[#C8AA6E] lol-body">
+                <div className="mt-1 text-sm font-semibold text-[#C8AA6E] lol-body">
                   +{playerData.watershedMoment.improvement.toFixed(1)}
                 </div>
               </div>
 
               {/* After */}
               <div className="space-y-2">
-                <div className="text-4xl font-bold text-[#C8AA6E] lol-body">
+                <div className="text-4xl sm:text-6xl md:text-7xl font-bold text-[#C8AA6E] lol-body drop-shadow-[0_0_20px_rgba(200,170,110,0.5)]">
                   {playerData.watershedMoment.afterAverage.toFixed(1)}
                 </div>
-                <div className="lol-subheading text-gray-600 text-xs">After</div>
+                <div className="lol-subheading text-[#C8AA6E] text-sm uppercase tracking-[0.2em]">After</div>
               </div>
             </div>
 
