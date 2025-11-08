@@ -10,6 +10,7 @@ import { toPng } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { getArchetypeIcon } from "@/lib/archetypeIcons";
 
 type ShareAspectId = "story" | "grid" | "landscape";
 
@@ -125,6 +126,7 @@ interface FinaleSlideProps {
 
 export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 	const navigate = useNavigate();
+	const archetypeIcon = getArchetypeIcon(playerData.archetype.name);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [showShareCustomizer, setShowShareCustomizer] = useState(false);
 	const [typedMessage, setTypedMessage] = useState("");
@@ -399,7 +401,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 						<div className="lol-card inline-flex w-full items-center gap-3 px-6 py-3 border-[#C8AA6E]/40">
 							<div className="flex h-12 w-12 items-center justify-center bg-[#C8AA6E]/10 rounded">
 								<img
-									src={playerData.archetype.icon}
+									src={archetypeIcon}
 									alt={playerData.archetype.name}
 									className="w-8 h-8 object-contain"
 								/>

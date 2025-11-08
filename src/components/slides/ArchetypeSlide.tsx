@@ -1,12 +1,15 @@
 import type { PlayerStats } from "@/lib/api";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { getArchetypeIcon } from "@/lib/archetypeIcons";
 
 interface ArchetypeSlideProps {
 	playerData: PlayerStats;
 }
 
 export const ArchetypeSlide = ({ playerData }: ArchetypeSlideProps) => {
+	const archetypeIcon = getArchetypeIcon(playerData.archetype.name);
+
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
 			{/* Background Image */}
@@ -33,16 +36,9 @@ export const ArchetypeSlide = ({ playerData }: ArchetypeSlideProps) => {
 				<div className="lol-card p-12 border-[#C8AA6E] text-center space-y-6">
 					<div className="flex justify-center">
 						<img
-							src={playerData.archetype.icon}
+							src={archetypeIcon}
 							alt={playerData.archetype.name}
 							className="w-20 h-20 object-contain"
-							onLoad={() => {
-								console.log('✅ Archetype icon loaded successfully:', playerData.archetype.icon);
-							}}
-							onError={(e) => {
-								console.error('❌ Failed to load archetype icon:', playerData.archetype.icon);
-								console.error('Full archetype data:', playerData.archetype);
-							}}
 						/>
 					</div>
 					<div className="space-y-4">
