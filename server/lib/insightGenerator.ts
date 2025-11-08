@@ -64,7 +64,7 @@ function buildInsightPrompt(stats: PlayerStats): string {
 
   const metricsInfo = formatMetrics(derivedMetrics);
 
-  const prompt = `You are analyzing a League of Legends player's 2024 season. Create a personalized, engaging year-in-review.
+  const prompt = `You are analyzing a League of Legends player's 2025 season. Create a personalized, engaging year-in-review.
 
 Player: ${riotId}#${tagLine}
 Games Played: ${totalGames}
@@ -93,19 +93,19 @@ CRITICAL FORMATTING RULES:
 
 Return in this exact format:
 {
-  "story_arc": "250-word engaging narrative of their year, written in second person. Tell their story with specific details from the data. Make it dramatic and personal. Reference their playstyle, growth, challenges, and triumphs.",
+  "story_arc": "60-80 word engaging narrative of their year, written in second person. Tell their story with specific details from the data. Make it dramatic and personal. Reference their playstyle, growth, challenges, and triumphs.",
   "surprising_insights": [
-    "First surprising insight about hidden patterns in their play (be specific with numbers)",
-    "Second insight revealing something they might not have noticed",
-    "Third insight connecting different aspects of their gameplay"
+    "First surprising insight in 1-2 concise sentences (be specific with numbers)",
+    "Second insight in 1-2 concise sentences revealing something they might not have noticed",
+    "Third insight in 1-2 concise sentences connecting different aspects of their gameplay"
   ],
   "improvement_tips": [
-    "First specific, actionable tip based on their weaknesses (include metric names)",
-    "Second tip targeting a different area for growth",
-    "Third advanced tip to elevate their game further"
+    "First specific, actionable tip in 1 sentence based on their weaknesses (include metric names)",
+    "Second tip in 1 sentence targeting a different area for growth",
+    "Third advanced tip in 1 sentence to elevate their game further"
   ],
-  "archetype_explanation": "2-3 sentence explanation of why they fit the ${archetype.name} archetype. Reference specific metrics and playstyle patterns that led to this classification.",
-  "season_prediction": "Bold prediction for their 2025 season based on their growth trajectory and current trends. Be optimistic but realistic.",
+  "archetype_explanation": "1-2 sentence explanation of why they fit the ${archetype.name} archetype. Reference specific metrics and playstyle patterns that led to this classification.",
+  "season_prediction": "1-2 sentence bold prediction for their 2026 season based on their growth trajectory and current trends. Be optimistic but realistic.",
   "title": "A catchy 3-5 word title for their year (examples: 'The Comeback King', 'Patient Scaling Master', 'Vision Prodigy')"
 }
 
@@ -165,7 +165,7 @@ export function generateShareableText(stats: PlayerStats): string {
 
   return `${title}
 
-${riotId}'s 2024 Season:
+${riotId}'s 2025 Season:
 • ${totalGames} games • ${winRate.toFixed(1)}% WR
 • ${archetype.name}
 • ${archetype.description}
@@ -183,7 +183,7 @@ export function generateShareableTextFromSummary(
 
   return `${title}
 
-${summary.riotId}'s 2024 Season:
+${summary.riotId}'s 2025 Season:
 • ${summary.totalGames} games • ${summary.winRate.toFixed(1)}% WR
 • ${summary.archetype.name}
 • ${summary.archetype.description}
@@ -195,7 +195,7 @@ ${summary.riotId}'s 2024 Season:
  * Validate AI insights response
  */
 export function validateInsights(insights: AIInsights): boolean {
-  if (!insights.story_arc || insights.story_arc.length < 100) {
+  if (!insights.story_arc || insights.story_arc.length < 50) {
     console.warn('Story arc too short or missing');
     return false;
   }
@@ -210,12 +210,12 @@ export function validateInsights(insights: AIInsights): boolean {
     return false;
   }
 
-  if (!insights.archetype_explanation || insights.archetype_explanation.length < 50) {
+  if (!insights.archetype_explanation || insights.archetype_explanation.length < 20) {
     console.warn('Archetype explanation too short or missing');
     return false;
   }
 
-  if (!insights.season_prediction || insights.season_prediction.length < 20) {
+  if (!insights.season_prediction || insights.season_prediction.length < 15) {
     console.warn('Season prediction too short or missing');
     return false;
   }
