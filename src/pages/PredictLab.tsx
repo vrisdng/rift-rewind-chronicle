@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Activity, Brain, Sparkles, Wand2, Target } from "lucide-react";
+import type { PlayerStats } from "@/lib/api";
 
-const BASE_WR = 0.51;
-const BASELINE_STATS = {
+const DEFAULT_BASE_WR = 0.51;
+const DEFAULT_BASELINE_STATS = {
   csPerMin: 6.5,
   deaths: 5,
   vision: 1.2,
@@ -14,7 +16,7 @@ const BASELINE_STATS = {
   sessions: 3,
 };
 
-type SliderKey = keyof typeof BASELINE_STATS;
+type SliderKey = keyof typeof DEFAULT_BASELINE_STATS;
 
 type Stats = Record<SliderKey, number>;
 
@@ -95,13 +97,13 @@ type Archetype = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const computePredictedWR = (stats: Stats) => {
+const computePredictedWR = (stats: Stats, baseline: Stats, baseWR: number) => {
   const wr =
-    BASE_WR +
-    0.03 * (stats.csPerMin - BASELINE_STATS.csPerMin) -
-    0.02 * (stats.deaths - BASELINE_STATS.deaths) +
-    0.015 * (stats.vision - BASELINE_STATS.vision) +
-    0.01 * (stats.killParticipation - BASELINE_STATS.killParticipation);
+    baseWR +
+    0.03 * (stats.csPerMin - baseline.csPerMin) -
+    0.02 * (stats.deaths - baseline.deaths) +
+    0.015 * (stats.vision - baseline.vision) +
+    0.01 * (stats.killParticipation - baseline.killParticipation);
   return clamp(wr, 0.35, 0.75);
 };
 
@@ -164,11 +166,11 @@ const evaluateArchetype = (stats: Stats): Archetype => {
   };
 };
 
-const generateCommentary = (key: SliderKey, stats: Stats) => {
-  const deltaCs = stats.csPerMin - BASELINE_STATS.csPerMin;
-  const deltaDeaths = BASELINE_STATS.deaths - stats.deaths;
-  const deltaVision = stats.vision - BASELINE_STATS.vision;
-  const deltaKP = stats.killParticipation - BASELINE_STATS.killParticipation;
+const generateCommentary = (key: SliderKey, stats: Stats, baseline: Stats) => {
+  const deltaCs = stats.csPerMin - baseline.csPerMin;
+  const deltaDeaths = baseline.deaths - stats.deaths;
+  const deltaVision = stats.vision - baseline.vision;
+  const deltaKP = stats.killParticipation - baseline.killParticipation;
 
   switch (key) {
     case "csPerMin": {
@@ -224,28 +226,76 @@ const elementStyles: Record<Archetype["element"], { gradient: string; glow: stri
   },
 };
 
+const mapPlayerToBaseline = (player: PlayerStats) => {
+  const minutesPerGame = player.avgGameDuration > 0 ? player.avgGameDuration / 60 : 30;
+  const safeMinutes = minutesPerGame > 0 ? minutesPerGame : 30;
+
+  const csPerMin = player.avgCS > 0 ? player.avgCS / safeMinutes : DEFAULT_BASELINE_STATS.csPerMin;
+  const visionPerMin = player.avgVisionScore > 0 ? player.avgVisionScore / safeMinutes : DEFAULT_BASELINE_STATS.vision;
+  const rawKP = ((player.avgKills + player.avgAssists) / 22) * 100;
+  const sessionsEstimate = Math.round(Math.max(player.totalGames / 40, sliderConfig.sessions.min));
+
+  const stats: Stats = {
+    csPerMin: clamp(parseFloat(csPerMin.toFixed(2)), sliderConfig.csPerMin.min, sliderConfig.csPerMin.max),
+    deaths: clamp(parseFloat(player.avgDeaths.toFixed(2)), sliderConfig.deaths.min, sliderConfig.deaths.max),
+    vision: clamp(parseFloat(visionPerMin.toFixed(2)), sliderConfig.vision.min, sliderConfig.vision.max),
+    killParticipation: clamp(parseFloat(rawKP.toFixed(1)), sliderConfig.killParticipation.min, sliderConfig.killParticipation.max),
+    sessions: clamp(sessionsEstimate, sliderConfig.sessions.min, sliderConfig.sessions.max),
+  };
+
+  const baseWR = clamp(player.winRate / 100, 0.35, 0.75);
+
+  return { stats, baseWR };
+};
+
 const PredictLab = () => {
-  const [stats, setStats] = useState<Stats>(BASELINE_STATS);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
+  const [baselineStats, setBaselineStats] = useState<Stats>(DEFAULT_BASELINE_STATS);
+  const [baseWR, setBaseWR] = useState(DEFAULT_BASE_WR);
+  const [stats, setStats] = useState<Stats>(DEFAULT_BASELINE_STATS);
   const [lastChanged, setLastChanged] = useState<SliderKey>("csPerMin");
   const [milestones, setMilestones] = useState({ two: false, five: false });
   const audioRef = useRef<AudioContext | null>(null);
 
-  const predictedWR = useMemo(() => computePredictedWR(stats), [stats]);
+  useEffect(() => {
+    const data = location.state?.playerData as PlayerStats | undefined;
+    if (!data) {
+      navigate("/");
+      return;
+    }
+
+    setPlayerData(data);
+    const derived = mapPlayerToBaseline(data);
+    setBaselineStats(derived.stats);
+    setStats(derived.stats);
+    setLastChanged("csPerMin");
+    setBaseWR(derived.baseWR);
+  }, [location.state, navigate]);
+
+  const predictedWR = useMemo(
+    () => computePredictedWR(stats, baselineStats, baseWR),
+    [stats, baselineStats, baseWR],
+  );
   const predictedWRPercent = useMemo(() => Math.round(predictedWR * 1000) / 10, [predictedWR]);
-  const deltaWRPercent = predictedWRPercent - Math.round(BASE_WR * 1000) / 10;
+  const deltaWRPercent = predictedWRPercent - Math.round(baseWR * 1000) / 10;
   const expectedLP = useMemo(() => computeMonthlyLP(predictedWR, stats.sessions), [predictedWR, stats.sessions]);
   const archetype = useMemo(() => evaluateArchetype(stats), [stats]);
-  const baseArchetype = useMemo(() => evaluateArchetype(BASELINE_STATS), []);
-  const commentary = useMemo(() => generateCommentary(lastChanged, stats), [lastChanged, stats]);
+  const baseArchetype = useMemo(() => evaluateArchetype(baselineStats), [baselineStats]);
+  const commentary = useMemo(
+    () => generateCommentary(lastChanged, stats, baselineStats),
+    [lastChanged, stats, baselineStats],
+  );
 
   const contributions = useMemo(
     () => [
-      { label: "CS mastery", value: 0.03 * (stats.csPerMin - BASELINE_STATS.csPerMin) * 100 },
-      { label: "Risk control", value: -0.02 * (stats.deaths - BASELINE_STATS.deaths) * 100 },
-      { label: "Vision score", value: 0.015 * (stats.vision - BASELINE_STATS.vision) * 100 },
-      { label: "Team impact", value: 0.01 * (stats.killParticipation - BASELINE_STATS.killParticipation) * 100 },
+      { label: "CS mastery", value: 0.03 * (stats.csPerMin - baselineStats.csPerMin) * 100 },
+      { label: "Risk control", value: -0.02 * (stats.deaths - baselineStats.deaths) * 100 },
+      { label: "Vision score", value: 0.015 * (stats.vision - baselineStats.vision) * 100 },
+      { label: "Team impact", value: 0.01 * (stats.killParticipation - baselineStats.killParticipation) * 100 },
     ],
-    [stats],
+    [stats, baselineStats],
   );
 
   const similarAvg = useMemo(() => {
@@ -255,7 +305,7 @@ const PredictLab = () => {
     return Math.round(clamp(46 + control * 6 + macro * 5 + stability * 4, 44, 66));
   }, [stats]);
 
-  const intensity = clamp((predictedWR - BASE_WR) * 4 + 0.4, 0.3, 1);
+  const intensity = clamp((predictedWR - baseWR) * 4 + 0.4, 0.3, 1);
   const orbDimFactor = clamp(1 - (stats.deaths - 3) / 10, 0.4, 1);
 
   const handleSliderChange = (key: SliderKey, value: number[]) => {
@@ -306,6 +356,18 @@ const PredictLab = () => {
     setLastChanged("csPerMin");
   };
 
+  if (!playerData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#050910] text-white">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-[#C8AA6E]" />
+          <p className="text-sm uppercase tracking-[0.4em] text-white/60">Linking to backend</p>
+          <p className="text-white/80">Calibrating your Predict Lab...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#050910] text-white">
       <div
@@ -329,6 +391,9 @@ const PredictLab = () => {
             </h1>
             <p className="mt-2 max-w-2xl text-base text-white/80">
               Tweak your routine, watch your element orb react, and see how micro habits ripple into win rate, LP, and identity.
+            </p>
+            <p className="mt-1 text-sm uppercase tracking-[0.3em] text-white/50">
+              Linked to {playerData.riotId}#{playerData.tagLine} • {playerData.totalGames} games analyzed
             </p>
           </div>
         </header>
