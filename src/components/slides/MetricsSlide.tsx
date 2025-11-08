@@ -39,9 +39,6 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 					<h2 className="lol-heading text-4xl sm:text-5xl md:text-6xl text-[#C8AA6E]">
 						Your Playstyle
 					</h2>
-					<p className="lol-subheading text-gray-500 text-xs">
-						{playerData.persona.codename}
-					</p>
 				</div>
 
 				{/* Content Grid */}
