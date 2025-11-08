@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { useDebouncedCallback } from "use-debounce";
 
 import { cn } from "@/lib/utils";
 import { playClick, playHover } from "@/lib/sound";
@@ -42,38 +41,49 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, onClick, onMouseEnter, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-    const debouncedMouseEnter = useDebouncedCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+
+      // Set timeout to fire after 200ms
+      hoverTimeoutRef.current = setTimeout(() => {
         try {
           playHover();
         } catch {
           // swallow errors so hover still works
         }
         onMouseEnter?.(e);
-      },
-      400,
-      { leading: true, trailing: false }
-    );
+      }, 100);
+    };
 
-    const debouncedClick = useDebouncedCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
-        try {
-          playClick();
-        } catch {
-          // swallow errors so clicks still work
-        }
-        onClick?.(e);
-      },
-      300,
-      { leading: true, trailing: false }
-    );
+    const handleMouseLeave = () => {
+      // Cancel hover if mouse leaves before 200ms
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+    };
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      try {
+        playClick();
+      } catch {
+        // swallow errors so clicks still work
+      }
+      onClick?.(e);
+    };
 
     return <Comp
       className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref} {...props}
-      onMouseEnter={debouncedMouseEnter}
-      onClick={debouncedClick}
+      ref={ref}
+      {...props}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       />;
   },
 );
