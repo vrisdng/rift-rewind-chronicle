@@ -7,6 +7,7 @@ import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { playClick, playIntroThenBgm } from "@/lib/sound";
 
 // Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
@@ -181,7 +182,7 @@ const Landing = () => {
             <Button
               onClick={startAnalysis}
               disabled={isLoading}
-              className="w-full h-14 bg-[#C8AA6E] hover:bg-[#D4B982] text-[#0A1428] font-black text-lg uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
+              className="w-full h-14 bg-[#0A1428] hover:bg-[#0D1B35] text-[#C8AA6E] font-black text-lg uppercase tracking-wider transition-all duration-300 border-2 border-[#C8AA6E] hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
               style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
               {isLoading ? (
@@ -277,7 +278,14 @@ const Landing = () => {
               size="lg"
               className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
-              onClick={() => navigate("dashboard-new", { state: { playerData } })}
+              onClick={() => {
+                try {
+                  playClick();
+                  playIntroThenBgm();
+                }catch{
+                  // swallow
+                }
+                navigate("dashboard-new", { state: { playerData } })}}
             >
               Enter
             </Button>
