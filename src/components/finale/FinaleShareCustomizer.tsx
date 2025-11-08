@@ -330,7 +330,7 @@ export const FinaleShareCustomizer = ({
 		}
 		return {
 			backgroundImage: `url(${selectedBackgroundOption.value})`,
-			backgroundSize: "contain",
+			backgroundSize: "cover",
 			backgroundPosition: "center",
 			backgroundRepeat: "no-repeat",
 			backgroundColor: "#050505",
@@ -690,9 +690,9 @@ export const FinaleShareCustomizer = ({
 								className="relative aspect-[640/388] w-full overflow-hidden rounded-2xl sm:rounded-[28px] border border-[rgba(200,170,110,0.28)] bg-[#0A1428] shadow-[0_25px_60px_rgba(8,12,22,0.65)] transition-all"
 								style={backgroundStyle}
 							>
-								<div className="absolute inset-0 bg-gradient-to-br from-[#050912]/85 via-[#0A1428]/75 to-[#050912]/95" />
+								<div className="absolute inset-0 bg-gradient-to-br from-[#050912]/40 via-[#0A1428]/30 to-[#050912]/50" />
 								<div
-									className="absolute inset-0 opacity-60"
+									className="absolute inset-0 opacity-40"
 									style={{
 										background:
 											"radial-gradient(circle at 18% 20%, rgba(200,170,110,0.32) 0%, transparent 55%), radial-gradient(circle at 82% 18%, rgba(64,119,227,0.22) 0%, transparent 50%)",
