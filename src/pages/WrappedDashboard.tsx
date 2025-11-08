@@ -365,7 +365,15 @@ const WrappedDashboard = () => {
 					<ChevronRight className="relative h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
 				</Button>
 			</div>
-			<Chatbot />
+			<Chatbot 
+				onNavigateToSlide={(slideId: string) => {
+					const slideIndex = slides.findIndex(s => s.id === slideId);
+					if (slideIndex !== -1 && api) {
+						api.scrollTo(slideIndex);
+					}
+				}}
+				availableSlides={slides.map(s => ({ id: s.id, narration: s.narration }))}
+			/>
 		</div>
 	);
 };
