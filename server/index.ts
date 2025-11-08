@@ -401,7 +401,21 @@ app.post("/api/duo-synergy", async (req, res) => {
 			});
 		}
 
-		const data = await computeDuoSynergy(playerA, playerB);
+		// Check if using mock demo accounts
+		const isMockRequest =
+			(playerA.riotId === "Racchanvris" && playerA.tagLine === "VN8" && playerB.riotId === "hhjj4" && playerB.tagLine === "6983") ||
+			(playerA.riotId === "hhjj4" && playerA.tagLine === "6983" && playerB.riotId === "Racchanvris" && playerB.tagLine === "VN8");
+
+		let data;
+		if (isMockRequest) {
+			// Use mock data for testing
+			const { getMockDuoSynergy } = await import("./lib/duoSynergy.ts");
+			data = getMockDuoSynergy(playerA, playerB);
+			console.log(`[MOCK] Duo synergy returned for demo accounts: ${playerA.riotId}#${playerA.tagLine} + ${playerB.riotId}#${playerB.tagLine}`);
+		} else {
+			// Real computation
+			data = await computeDuoSynergy(playerA, playerB);
+		}
 
 		res.json({
 			success: true,

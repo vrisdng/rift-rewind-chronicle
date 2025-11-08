@@ -584,7 +584,7 @@ export async function computeDuoSynergy(
 	}
 
 	const [playerAStats, playerBStats] = await Promise.all([
-		async () => {
+		(async () => {
 			let stats =
 				(await getCachedPlayerStats(playerAInput.riotId, playerAInput.tagLine)) ||
 				null;
@@ -606,8 +606,8 @@ export async function computeDuoSynergy(
 				matches,
 				new Set<string>(), // placeholder; replaced later
 			);
-		},
-		async () => {
+		})(),
+		(async () => {
 			let stats =
 				(await getCachedPlayerStats(playerBInput.riotId, playerBInput.tagLine)) ||
 				null;
@@ -629,7 +629,7 @@ export async function computeDuoSynergy(
 				matches,
 				new Set<string>(), // placeholder; replaced later
 			);
-		},
+		})(),
 	]);
 
 	const matchesAMap = new Map(playerAStats.matches.map((m) => [m.match_id, m]));
@@ -991,4 +991,164 @@ export async function computeDuoSynergy(
 	};
 
 	return data;
+}
+
+/**
+ * Mock duo synergy data for demo purposes
+ * Demo accounts: Racchanvris#VN8 and hhjj4#6983
+ */
+export function getMockDuoSynergy(
+	playerAInput: DuoPlayerInput,
+	playerBInput: DuoPlayerInput,
+): DuoSynergyProfile {
+	const mockPlayerA: DuoPlayerProfile = {
+		identity: {
+			raw: `${playerAInput.riotId}#${playerAInput.tagLine}`,
+			gameName: playerAInput.riotId,
+			tagLine: playerAInput.tagLine,
+			display: `${playerAInput.riotId}#${playerAInput.tagLine}`,
+			short: playerAInput.riotId.substring(0, 8),
+		},
+		role: "MID",
+		champions: ["Ahri", "Syndra", "Orianna"],
+		soloWinRate: 0.52,
+		csPerMin: 7.8,
+		deathsPerGame: 3.2,
+		objectiveRate: 0.48,
+		aggression: 65,
+		roamTempo: 72,
+		controlScore: 58,
+		traitVector: [0.45, 0.75, 0.62, 0.58, 0.71],
+		traitTags: ["Mage", "Burst", "Control"],
+		fatigueSlope: -0.08,
+		tiltSensitivity: 0.42,
+		tiltResilience: 0.68,
+		styleLean: "inferno",
+		region: playerAInput.region || "sea",
+	};
+
+	const mockPlayerB: DuoPlayerProfile = {
+		identity: {
+			raw: `${playerBInput.riotId}#${playerBInput.tagLine}`,
+			gameName: playerBInput.riotId,
+			tagLine: playerBInput.tagLine,
+			display: `${playerBInput.riotId}#${playerBInput.tagLine}`,
+			short: playerBInput.riotId.substring(0, 8),
+		},
+		role: "JUNGLE",
+		champions: ["Lee Sin", "Jarvan IV", "Elise"],
+		soloWinRate: 0.49,
+		csPerMin: 5.2,
+		deathsPerGame: 4.1,
+		objectiveRate: 0.55,
+		aggression: 78,
+		roamTempo: 85,
+		controlScore: 62,
+		traitVector: [0.38, 0.82, 0.45, 0.52, 0.88],
+		traitTags: ["Fighter", "Diver", "Early Game"],
+		fatigueSlope: -0.12,
+		tiltSensitivity: 0.55,
+		tiltResilience: 0.52,
+		styleLean: "inferno",
+		region: playerBInput.region || "sea",
+	};
+
+	return {
+		playerA: mockPlayerA,
+		playerB: mockPlayerB,
+		rolePairLabel: "MID + JUNGLE",
+		statistical: {
+			wrDuo: 0.58,
+			baselineWR: 0.505,
+			deltaWR: 0.075,
+			sampleConfidence: 0.82,
+			sampleSize: 47,
+			perMatch: {
+				cs: { a: 12.5, b: -3.2 },
+				deaths: { a: -0.8, b: -1.2 },
+				objectives: { a: 0.45, b: 0.52 },
+			},
+		},
+		tactical: {
+			coKill: 0.68,
+			objectiveOverlap: 0.72,
+			leadConversion: 0.64,
+			roamSyncSeconds: 2.8,
+		},
+		style: {
+			similarity: 0.42,
+			complementarity: 0.78,
+			pairingStory:
+				"Your mage control pairs perfectly with aggressive jungle pressure. Ahri + Lee Sin is your bread and butter — charm setups into kicks create unwinnable skirmishes.",
+			tags: ["Burst", "Dive", "Pick", "Tempo"],
+		},
+		psychological: {
+			fatigueDrop: 0.09,
+			sharedCurveNote:
+				"Both of you drop 9% WR after 5 consecutive games — sync your breaks.",
+			tiltPropagation: 0.38,
+			momentumFactor: 0.72,
+			afterWinWR: 0.64,
+			afterLossWR: 0.42,
+		},
+		ai: {
+			payload: {
+				summary: {
+					WR_duo: 0.58,
+					deltaWR: 0.075,
+					coKill: 0.68,
+					objTogether: 0.72,
+					convRate: 0.64,
+					comeback: 0.35,
+				},
+				rolePair: "MID+JG",
+				bestChamps: [
+					{ a: "Ahri", b: "Lee Sin", wr: 0.71, games: 14 },
+					{ a: "Syndra", b: "Jarvan IV", wr: 0.67, games: 9 },
+					{ a: "Orianna", b: "Lee Sin", wr: 0.63, games: 8 },
+				],
+				worstChamps: [
+					{ a: "Orianna", b: "Elise", wr: 0.33, games: 6 },
+					{ a: "Ahri", b: "Elise", wr: 0.40, games: 5 },
+					{ a: "Syndra", b: "Lee Sin", wr: 0.43, games: 7 },
+				],
+			},
+			summary:
+				"You two already outperform expectations — CS efficiency jumps when paired, death count drops. Weak spot: Vision tempo dips after 20 minutes. Goal: Drop one extra control ward per 10 minutes to keep objectives lit.",
+			nextMatchAdvice:
+				"Next Match Advice: lock in Ahri + Lee Sin (71% WR). Avoid Orianna + Elise until you steady the tempo.",
+			bestCombos: [
+				{ a: "Ahri", b: "Lee Sin", wr: 0.71, games: 14 },
+				{ a: "Syndra", b: "Jarvan IV", wr: 0.67, games: 9 },
+				{ a: "Orianna", b: "Lee Sin", wr: 0.63, games: 8 },
+			],
+			worstCombos: [
+				{ a: "Orianna", b: "Elise", wr: 0.33, games: 6 },
+				{ a: "Ahri", b: "Elise", wr: 0.40, games: 5 },
+				{ a: "Syndra", b: "Lee Sin", wr: 0.43, games: 7 },
+			],
+			commentary: {
+				midFights:
+					"Your mid-game fights win because Lee's ward-hop kick chains with Ahri charm — but you arrive 2.8s apart on average. Sync roam timers tighter (ping recalls simultaneously) and you'll spike that 68% co-kill rate even higher. When one of you is split pushing, the other needs vision 10 seconds earlier.",
+				closeGames:
+					"You're at 64% lead conversion, which is solid but not elite. The pattern: after securing first baron, you wait too long to force the next objective. Goal: first baron → immediately set up vision for soul/elder within 90 seconds. Don't reset unless someone is genuinely low — your duo tempo thrives on continuous pressure.",
+				tilt:
+					"38% tilt propagation means when one of you ints, the other's mental wobbles. Counter-strategy: after a bad death, the alive player should hard-focus on farming/vision for 60 seconds instead of forcing a revenge play. Your after-loss WR is 42% but after-win is 64% — ride win streaks, pause after two losses.",
+			},
+			comebackRate: 0.35,
+		},
+		bond: {
+			score: 76,
+			type: "inferno",
+			label: "Inferno Bond",
+			nickname: "The Blood Brothers",
+			description: "Hyper-kill synergy, terrifying engages.",
+			aura: "from-orange-500/20 via-red-500/10 to-transparent",
+			triangle: {
+				mechanics: 0.875,
+				coordination: 0.70,
+				discipline: 0.68,
+			},
+		},
+	};
 }
