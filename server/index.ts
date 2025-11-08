@@ -833,10 +833,12 @@ app.post("/api/chat", async (req, res) => {
 			message,
 			history = [],
 			playerContext,
+			availableSlides = [],
 		} = req.body as {
 			message: string;
 			history?: Array<{ role: "user" | "assistant"; content: string }>;
 			playerContext?: any; // PlayerStats with insights
+			availableSlides?: Array<{ id: string; narration: string }>;
 		};
 
 		if (!message) {
@@ -850,6 +852,7 @@ app.post("/api/chat", async (req, res) => {
 				? `${playerContext.riotId}#${playerContext.tagLine} (${playerContext.totalGames} games)`
 				: "None",
 		);
+		console.log(`🎬 Available slides: ${availableSlides.length}`);
 
 		// Set headers for NDJSON streaming
 		res.set({
@@ -861,9 +864,9 @@ app.post("/api/chat", async (req, res) => {
 		res.flushHeaders();
 
 		// Build system prompt using dedicated prompt builder
-		const systemPrompt = buildChatbotSystemPrompt(playerContext);
+		const systemPrompt = buildChatbotSystemPrompt(playerContext, availableSlides);
 		console.log(
-			`📋 System prompt built with ${systemPrompt.length} chars, has player data: ${!!playerContext}`,
+			`📋 System prompt built with ${systemPrompt.length} chars, has player data: ${!!playerContext}, slides: ${availableSlides.length}`,
 		);
 
 		// Trim history to last 10 messages to avoid token limit issues
@@ -894,9 +897,9 @@ app.post("/api/chat", async (req, res) => {
 			() => {
 				console.log(`✅ [API] Stream complete, full response length: ${fullResponse.length}`);
 				
-				// Parse navigation actions from NAVIGATE lines
-				const navigatePattern = /NAVIGATE:\s*{([^}]+)}/g;
-				const navigationActions: Array<{ label: string; path: string; description?: string }> = [];
+				// Parse slide navigation from NAVIGATE_SLIDE lines
+				const navigatePattern = /NAVIGATE_SLIDE:\s*\{([^}]+)\}/g;
+				const navigationActions: Array<{ slideId: string; label: string; description?: string }> = [];
 				let match;
 				
 				while ((match = navigatePattern.exec(fullResponse)) !== null) {
@@ -904,16 +907,16 @@ app.post("/api/chat", async (req, res) => {
 						const actionJson = `{${match[1]}}`;
 						const action = JSON.parse(actionJson);
 						navigationActions.push(action);
-						console.log(`🧭 [API] Found navigation action:`, action);
+						console.log(`🧭 [API] Found slide navigation action:`, action);
 					} catch (parseErr) {
-						console.warn(`⚠️ [API] Failed to parse navigation action:`, match[0]);
+						console.warn(`⚠️ [API] Failed to parse slide navigation action:`, match[0]);
 					}
 				}
 
-				// Remove NAVIGATE lines from response
+				// Remove NAVIGATE_SLIDE lines from response
 				if (navigationActions.length > 0) {
-					const cleanedResponse = fullResponse.replace(/NAVIGATE:\s*{[^}]+}\n?/g, "").trim();
-					console.log(`🧹 [API] Cleaned response, removed ${navigationActions.length} NAVIGATE lines`);
+					const cleanedResponse = fullResponse.replace(/NAVIGATE_SLIDE:\s*\{[^}]+\}\n?/g, "").trim();
+					console.log(`🧹 [API] Cleaned response, removed ${navigationActions.length} NAVIGATE_SLIDE lines`);
 					res.write(JSON.stringify({ replaceText: cleanedResponse }) + "\n");
 					res.write(JSON.stringify({ navigationActions }) + "\n");
 				}
