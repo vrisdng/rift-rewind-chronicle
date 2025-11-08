@@ -206,11 +206,11 @@ const WrappedDashboard = () => {
 			});
 		}
 
-		// Story Arc (before finale)
-		if (playerData.insights?.story_arc) {
+		// 2026 Prediction (before finale)
+		if (playerData.insights?.season_prediction) {
 			configuredSlides.push({
 				id: "story-arc",
-				narration: "Let's weave your 2025 Rift story.",
+				narration: "What does the future hold for you on the Rift?",
 				content: <StoryArcSlide playerData={playerData} />,
 			});
 		}
