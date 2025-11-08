@@ -1,12 +1,26 @@
 import type { PlayerStats } from "@/lib/api";
 import { MetricsRadar } from "@/components/ui/metrics-radar";
 import { MetricProgress } from "@/components/ui/metric-progress";
+import cloudIcon from "@/assets/element-icons/cloud.svg";
+import infernoIcon from "@/assets/element-icons/inferno.svg";
+import oceanIcon from "@/assets/element-icons/ocean.svg";
+import terraIcon from "@/assets/element-icons/terra.svg";
+import voidIcon from "@/assets/element-icons/void.png";
 
 interface MetricsSlideProps {
 	playerData: PlayerStats;
 }
 
+const elementIcons: Record<string, string> = {
+	Gale: cloudIcon,
+	Inferno: infernoIcon,
+	Tide: oceanIcon,
+	Terra: terraIcon,
+	Void: voidIcon,
+};
+
 export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
+	const elementIcon = elementIcons[playerData.element.name];
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-start lol-bg-subtle relative overflow-hidden">
 			{/* Background Image */}
@@ -100,8 +114,12 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 					<div className="lol-card p-6 border-[#C8AA6E]">
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center gap-3">
-								<div className="text-3xl flex-shrink-0">
-									{playerData.element.icon}
+								<div className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
+									<img
+										src={elementIcon}
+										alt={playerData.element.name}
+										className="w-full h-full object-contain"
+									/>
 								</div>
 								<div className="flex-1">
 									<h3 className="text-lg font-bold text-[#C8AA6E] lol-body mb-1">
