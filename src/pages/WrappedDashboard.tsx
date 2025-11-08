@@ -45,6 +45,10 @@ type NarrationPhase = "hidden" | "entering" | "exiting";
 const NARRATION_DISPLAY_DURATION = 1400;
 const NARRATION_FADE_DURATION = 400;
 
+const SLIDE_DURATIONS: Record<string, number> = {
+	intro: 3000,
+};
+
 const WrappedDashboard = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -232,13 +236,15 @@ const WrappedDashboard = () => {
 		setNarrationText(activeSlide.narration);
 		setNarrationPhase("entering");
 
+		const displayDuration = SLIDE_DURATIONS[activeSlide.id] ?? NARRATION_DISPLAY_DURATION;
+
 		const displayTimer = window.setTimeout(() => {
 			setNarrationPhase("exiting");
-		}, NARRATION_DISPLAY_DURATION);
+		}, displayDuration);
 
 		const exitTimer = window.setTimeout(() => {
 			setNarrationPhase("hidden");
-		}, NARRATION_DISPLAY_DURATION + NARRATION_FADE_DURATION);
+		}, displayDuration + NARRATION_FADE_DURATION);
 
 		return () => {
 			window.clearTimeout(displayTimer);
@@ -267,6 +273,7 @@ const WrappedDashboard = () => {
 				opts={{
 					align: "start",
 					loop: false,
+					watchDrag: false,
 				}}
 			>
 				<div className="relative h-full w-full">
@@ -303,28 +310,37 @@ const WrappedDashboard = () => {
 			</Carousel>
 
 			{/* Navigation Controls */}
-			<div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
+			<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 md:gap-6 sm:bottom-6 md:bottom-8">
 				<Button
 					variant="outline"
 					size="icon"
 					onClick={scrollPrev}
 					disabled={current === 0}
-					className="rounded-full bg-background/80 backdrop-blur-sm border-border/50"
+					className="group relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95"
+					style={{
+						clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'
+					}}
 				>
-					<ChevronLeft className="h-4 w-4" />
+					<div className="absolute inset-0 bg-gradient-to-br from-[#C8AA6E]/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
+					<div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+						style={{
+							boxShadow: '0 0 30px rgba(200, 170, 110, 0.4), inset 0 0 20px rgba(200, 170, 110, 0.1)'
+						}}
+					/>
+					<ChevronLeft className="relative h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
 				</Button>
 
 				{/* Dots indicator */}
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2.5 px-1 sm:px-2 md:px-4">
 					{Array.from({ length: totalSlides }).map((_, index) => (
 						<button
 							key={index}
 							onClick={() => api?.scrollTo(index)}
 							className={cn(
-								"h-2 rounded-full transition-all",
+								"h-1.5 transition-all duration-300 rounded-sm border touch-manipulation",
 								current === index
-									? "w-8 bg-primary"
-									: "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50",
+									? "w-6 sm:w-8 md:w-10 bg-gold border-gold shadow-[0_0_10px_rgba(200,170,110,0.6)]"
+									: "w-1.5 bg-gold/30 border-gold/50 hover:bg-gold/50 hover:border-gold/70 hover:shadow-[0_0_6px_rgba(200,170,110,0.3)] active:bg-gold/60",
 							)}
 						/>
 					))}
@@ -335,12 +351,29 @@ const WrappedDashboard = () => {
 					size="icon"
 					onClick={scrollNext}
 					disabled={current === totalSlides - 1}
-					className="rounded-full bg-background/80 backdrop-blur-sm border-border/50"
+					className="group relative h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-none bg-[rgba(10,20,40,0.85)] border-2 border-gold hover:border-gold-emphasis hover:bg-[rgba(10,20,40,0.95)] disabled:opacity-20 disabled:cursor-not-allowed disabled:border-gold/20 transition-all duration-300 overflow-hidden active:scale-95"
+					style={{
+						clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'
+					}}
 				>
-					<ChevronRight className="h-4 w-4" />
+					<div className="absolute inset-0 bg-gradient-to-br from-[#C8AA6E]/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
+					<div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+						style={{
+							boxShadow: '0 0 30px rgba(200, 170, 110, 0.4), inset 0 0 20px rgba(200, 170, 110, 0.1)'
+						}}
+					/>
+					<ChevronRight className="relative h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-gold group-hover:text-gold-emphasis transition-colors duration-300 group-disabled:text-gold/30" />
 				</Button>
 			</div>
-			<Chatbot />
+			<Chatbot 
+				onNavigateToSlide={(slideId: string) => {
+					const slideIndex = slides.findIndex(s => s.id === slideId);
+					if (slideIndex !== -1 && api) {
+						api.scrollTo(slideIndex);
+					}
+				}}
+				availableSlides={slides.map(s => ({ id: s.id, narration: s.narration }))}
+			/>
 		</div>
 	);
 };

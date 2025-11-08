@@ -16,12 +16,14 @@ import NotFound from "./pages/NotFound";
 import ShareCardLanding from "./pages/ShareCardLanding";
 import XAuthCallback from "./pages/XAuthCallback";
 import PredictLab from "./pages/PredictLab";
+import { AudioButton } from "./components/ui/audio-toggle-button";
 
 const queryClient = new QueryClient();
 
 const App = () => (
 	<QueryClientProvider client={queryClient}>
 		<TooltipProvider>
+			<AudioButton />
 			<Toaster />
 			<Sonner />
 			<BrowserRouter>

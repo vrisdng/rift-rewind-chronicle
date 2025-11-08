@@ -32,7 +32,7 @@ export const IntroSlide = ({ playerData }: IntroSlideProps) => {
 				</div>
 
 				{/* Stats Preview */}
-				<div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto pt-4">
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto pt-4">
 					<div className="text-center">
 						<div className="text-4xl font-bold text-white lol-body mb-2">
 							{playerData.totalGames}

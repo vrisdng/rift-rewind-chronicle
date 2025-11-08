@@ -8,20 +8,22 @@ export const ChampionsSlide = ({ playerData }: ChampionsSlideProps) => {
   const topChampions = playerData.topChampions.slice(0, 3);
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
-      <div className="max-w-6xl w-full space-y-8 animate-fade-in relative z-10">
-        {/* Title */}
-        <div className="text-center space-y-2">
-          <h2 className="lol-heading text-4xl sm:text-5xl md:text-6xl text-[#C8AA6E]">
-            Champion Mastery
-          </h2>
-          <p className="lol-subheading text-gray-500 text-xs">
-            Your Top Legends
-          </p>
-        </div>
+    <div className="w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-hidden">
+      <div className="w-full h-full overflow-y-auto py-8 px-8">
+        <div className="max-w-6xl mx-auto w-full space-y-8 animate-fade-in relative z-10">
+          {/* Title */}
+          <div className="text-center space-y-2">
+            <h2 className="lol-heading text-4xl sm:text-5xl md:text-6xl text-[#C8AA6E]">
+              Champion Mastery
+            </h2>
+            
+            <p className="lol-subheading text-gray-500 text-xs">
+              Your Top Champions
+            </p>
+          </div>
 
-        {/* Champions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Champions Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-8">
           {topChampions.map((champion, index) => (
             <div
               key={champion.championName}
@@ -105,6 +107,7 @@ export const ChampionsSlide = ({ playerData }: ChampionsSlideProps) => {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 };
