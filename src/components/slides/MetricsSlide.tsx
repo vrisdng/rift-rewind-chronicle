@@ -78,85 +78,8 @@ export const MetricsSlide = ({ playerData }: MetricsSlideProps) => {
 						</div>
 					</div>
 				</div>
-
-				{/* Identity Explanations - Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					{/* Archetype Explanation */}
-					<div className="lol-card p-6 border-[#C8AA6E]">
-						<div className="flex flex-col gap-3">
-							<div className="flex items-center gap-3">
-								<div className="text-3xl flex-shrink-0">
-									{playerData.archetype.icon}
-								</div>
-								<div className="flex-1">
-									<div className="flex items-baseline justify-between gap-2 mb-1">
-										<h3 className="text-lg font-bold text-[#C8AA6E] lol-body">
-											{playerData.archetype.name}
-										</h3>
-										<div className="flex items-baseline gap-1 flex-shrink-0">
-											<span className="text-sm font-bold text-[#C8AA6E] lol-body">
-												{playerData.archetype.matchPercentage}%
-											</span>
-										</div>
-									</div>
-									<p className="lol-subheading text-gray-500 text-[10px]">
-										ARCHETYPE
-									</p>
-								</div>
-							</div>
-							<p className="text-sm text-gray-300 leading-relaxed lol-body">
-								{playerData.archetype.description}
-							</p>
-						</div>
-					</div>
-
-					{/* Element Explanation */}
-					<div className="lol-card p-6 border-[#C8AA6E]">
-						<div className="flex flex-col gap-3">
-							<div className="flex items-center gap-3">
-								<div className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
-									<img
-										src={elementIcon}
-										alt={playerData.element.name}
-										className="w-full h-full object-contain"
-									/>
-								</div>
-								<div className="flex-1">
-									<h3 className="text-lg font-bold text-[#C8AA6E] lol-body mb-1">
-										{playerData.element.name}
-									</h3>
-									<p className="lol-subheading text-gray-500 text-[10px]">
-										ELEMENT
-									</p>
-								</div>
-							</div>
-							<p className="text-sm text-gray-300 leading-relaxed lol-body">
-								{playerData.element.description}
-							</p>
-						</div>
-					</div>
-
-					{/* Persona Explanation */}
-					<div className="lol-card p-6 border-[#C8AA6E]">
-						<div className="flex flex-col gap-3">
-							<div className="flex items-center gap-3">
-								<div className="flex-1">
-									<h3 className="text-lg font-bold text-[#C8AA6E] lol-body mb-1">
-										{playerData.persona.codename}
-									</h3>
-									<p className="lol-subheading text-gray-500 text-[10px]">
-										PERSONA
-									</p>
-								</div>
-							</div>
-							<p className="text-sm text-gray-300 leading-relaxed lol-body">
-								{playerData.persona.description}
-							</p>
-						</div>
-					</div>
-				</div>
 			</div>
-			</div>
+		</div>
 		</div>
 	);
 };
