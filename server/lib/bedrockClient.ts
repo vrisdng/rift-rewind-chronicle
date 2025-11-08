@@ -22,6 +22,7 @@ interface BedrockRequest {
     role: 'user' | 'assistant';
     content: string;
   }>;
+  system?: string; // System prompt (optional)
   temperature?: number;
   top_p?: number;
 }
@@ -110,7 +111,8 @@ export async function invokeBedrockClaudeStream(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   onChunk: (text: string) => void,
   onComplete?: () => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  systemPrompt?: string
 ): Promise<void> {
   // Check for AWS credentials
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
@@ -135,6 +137,11 @@ export async function invokeBedrockClaudeStream(
       temperature: 0.7,
       top_p: 0.9,
     };
+
+    // Add system prompt if provided
+    if (systemPrompt) {
+      request.system = systemPrompt;
+    }
 
     const client = new BedrockRuntimeClient({
       region: AWS_REGION,

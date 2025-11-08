@@ -542,6 +542,16 @@ All colors MUST be HSL.
       transform: translate3d(0, 0, 0);
     }
   }
+
+  /* Hide scrollbar for elements */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
 }
 
 @layer base {
