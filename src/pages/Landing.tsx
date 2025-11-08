@@ -115,8 +115,8 @@ const Landing = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
-        <div className="animate-fade-in max-w-5xl">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 text-center overflow-x-hidden">
+        <div className="animate-fade-in w-full max-w-5xl">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-[#C8AA6E]/10 border-2 border-[#C8AA6E]/40 mb-8 backdrop-blur-sm" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
             <Sparkles className="w-4 h-4 text-[#C8AA6E]" />
@@ -137,33 +137,33 @@ const Landing = () => {
           <p className="text-lg md:text-xl text-gray-200 mb-16 max-w-2xl mx-auto font-medium tracking-wide drop-shadow-lg">
             Your year on the Rift. Every win. Every play. Every legend forged.
           </p>
-          {!playerData && (
-            <div>
+          {!playerData && !isLoading && (
+            <div className="w-full">
           {/* Summoner Search */}
-          <div className="flex flex-col gap-3 max-w-xl mx-auto mb-8">
-            <div className="flex gap-3 items-center">
+          <div className="flex flex-col gap-3 w-full max-w-xl mx-auto mb-8 px-2 sm:px-0">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 items-center justify-center">
               <Input
                 type="text"
                 placeholder="Summoner Name"
                 value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
-                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors"
+                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-12 sm:h-14 text-base sm:text-lg font-semibold focus:border-[#C8AA6E] transition-colors flex-1 min-w-0"
                 style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
-              <span className="text-2xl text-[#C8AA6E] font-bold">#</span>
+              <span className="text-xl sm:text-2xl text-[#C8AA6E] font-bold flex-shrink-0">#</span>
               <Input
                 type="text"
                 placeholder="TAG"
                 value={tagLine}
                 onChange={(e) => setTagLine(e.target.value)}
-                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-14 w-32 text-lg font-semibold uppercase focus:border-[#C8AA6E] transition-colors"
+                className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white placeholder:text-gray-400 h-12 sm:h-14 w-24 sm:w-32 text-base sm:text-lg font-semibold uppercase focus:border-[#C8AA6E] transition-colors flex-shrink-0"
                 style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
               />
             </div>
 
             {/* Region Selector */}
             <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors [&>span]:text-white" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-12 sm:h-14 text-base sm:text-lg font-semibold focus:border-[#C8AA6E] transition-colors [&>span]:text-white w-full" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
                 <div className="flex items-center gap-2">
                   <Globe className="w-5 h-5 text-[#C8AA6E]" />
                   <SelectValue placeholder="Select Region" className="text-white" />
@@ -185,7 +185,7 @@ const Landing = () => {
             <Button
               onClick={startAnalysis}
               disabled={isLoading}
-              className="w-full h-14 bg-[#0A1428] hover:bg-[#0D1B35] text-[#C8AA6E] font-black text-lg uppercase tracking-wider transition-all duration-300 border-2 border-[#C8AA6E] hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
+              className="w-full h-12 sm:h-14 bg-[#0A1428] hover:bg-[#0D1B35] text-[#C8AA6E] font-black text-base sm:text-lg uppercase tracking-wider transition-all duration-300 border-2 border-[#C8AA6E] hover:shadow-[0_0_30px_rgba(200,170,110,0.5)] disabled:opacity-50"
               style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
               {isLoading ? (
@@ -206,8 +206,8 @@ const Landing = () => {
 
           {/* Progress Bar */}
           {isLoading && (
-            <div className="max-w-xl mx-auto mb-8 p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
-              <div className="space-y-4">
+            <div className="w-full max-w-xl mx-2 sm:mx-auto mb-8 p-4 sm:p-6 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E]/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+              <div className="space-y-3 sm:space-y-4">
                 {/* Progress Bar */}
                 <div className="w-full bg-[#0A1428] h-3 overflow-hidden border border-[#C8AA6E]/40">
                   <div
@@ -217,14 +217,14 @@ const Landing = () => {
                 </div>
 
                 {/* Progress Text */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-300 font-bold uppercase tracking-wide">{progressStage}</span>
-                  <span className="text-[#C8AA6E] font-black text-base">{progress}%</span>
+                <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
+                  <span className="text-gray-300 font-bold uppercase tracking-wide truncate">{progressStage}</span>
+                  <span className="text-[#C8AA6E] font-black text-sm sm:text-base flex-shrink-0">{progress}%</span>
                 </div>
 
                 {/* Loading Message */}
                 {loadingMessage && (
-                  <p className="text-sm text-gray-400 text-center font-medium">
+                  <p className="text-xs sm:text-sm text-gray-400 text-center font-medium break-words">
                     {loadingMessage}
                   </p>
                 )}
@@ -234,7 +234,7 @@ const Landing = () => {
 
           {/* Player Data Display */}
           {playerData && (
-            <div className="mb-8 p-8 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E] max-w-2xl mx-auto shadow-[0_0_40px_rgba(200,170,110,0.3)]" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
+            <div className="mb-8 p-4 sm:p-8 bg-[#0A1428]/90 backdrop-blur-md border-2 border-[#C8AA6E] w-full max-w-2xl mx-2 sm:mx-auto shadow-[0_0_40px_rgba(200,170,110,0.3)]" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
               <h3 className="text-3xl font-black mb-2 text-white uppercase tracking-wide">
                 {playerData.riotId} <span className="text-[#C8AA6E]">#{playerData.tagLine}</span>
               </h3>
