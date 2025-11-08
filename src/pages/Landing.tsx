@@ -163,10 +163,10 @@ const Landing = () => {
 
             {/* Region Selector */}
             <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+              <SelectTrigger className="bg-[#0A1428]/80 backdrop-blur-md border-2 border-[#C8AA6E]/30 text-white h-14 text-lg font-semibold focus:border-[#C8AA6E] transition-colors [&>span]:text-white" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
                 <div className="flex items-center gap-2">
                   <Globe className="w-5 h-5 text-[#C8AA6E]" />
-                  <SelectValue placeholder="Select Region" />
+                  <SelectValue placeholder="Select Region" className="text-white" />
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-[#0A1428]/95 backdrop-blur-md border-2 border-[#C8AA6E]/40">
@@ -174,7 +174,7 @@ const Landing = () => {
                   <SelectItem
                     key={r.value}
                     value={r.value}
-                    className="text-white hover:bg-[#C8AA6E]/20 focus:bg-[#C8AA6E]/20 cursor-pointer"
+                    className="text-white hover:bg-[#C8AA6E]/20 focus:bg-[#C8AA6E]/20 cursor-pointer data-[state=checked]:text-white"
                   >
                     {r.label}
                   </SelectItem>
