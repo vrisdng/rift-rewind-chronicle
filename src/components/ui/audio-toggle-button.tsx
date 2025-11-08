@@ -1,5 +1,5 @@
 // src/components/AudioButton.tsx
-import { startAudioExperience, toggleBackgroundMusic, isAudioPlaying, initSounds } from '../../lib/sound';
+import { toggleBackgroundMusic, initSounds, isBgmPlaying } from '../../lib/sound';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -9,19 +9,15 @@ export function AudioButton() {
 
   useEffect(() => {
     initSounds();
+    // Always start BGM on mount (regardless of refresh)
+    setHasStarted(true);
+    setIsPlaying(true);
   }, []);
 
   const handleClick = () => {
-    if (!hasStarted) {
-      // First click - start intro then BGM
-      startAudioExperience();
-      setHasStarted(true);
-      setIsPlaying(true);
-    } else {
-      // Subsequent clicks - toggle BGM
-      toggleBackgroundMusic();
-      setIsPlaying(isAudioPlaying());
-    }
+    // Only toggle BGM, don't touch intro or SFX
+    toggleBackgroundMusic();
+    setIsPlaying(isBgmPlaying());
   };
 
   return (

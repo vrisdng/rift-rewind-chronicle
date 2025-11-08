@@ -58,28 +58,25 @@ export function initSounds() {
 }
 
 /**
- * Play intro music once, then start BGM rotation
- * Must be called from user gesture
+ * Play intro audio ONCE, then start BGM
+ * Call this only when user clicks Enter
  */
-export function startAudioExperience() {
+export function playIntroThenBgm() {
   initSounds();
   
-  if (!introPlayed && introAudio) {
-    introAudio.play().catch(() => {
-      // If intro fails, go straight to BGM
-      startBackgroundMusic();
-    });
-    
-    // When intro ends, start BGM
-    introAudio.addEventListener('ended', () => {
-      startBackgroundMusic();
-    }, { once: true });
-    
-    introPlayed = true;
-  } else {
-    // Intro already played, just start/resume BGM
+  if (!introAudio) return;
+  
+  // Reset intro to start
+  introAudio.currentTime = 0;
+  introAudio.play().catch(() => {
+    // If intro fails, go straight to BGM
     startBackgroundMusic();
-  }
+  });
+  
+  // When intro ends, start BGM
+  introAudio.addEventListener('ended', () => {
+    startBackgroundMusic();
+  }, { once: true });
 }
 
 /**
@@ -112,6 +109,8 @@ function playNextBgm() {
   bgmAudios[currentBgmIndex].play().catch(() => {});
 }
 
+let bgmPausedByUser = false;
+
 /**
  * Toggle background music on/off
  */
@@ -122,9 +121,25 @@ export function toggleBackgroundMusic() {
   const currentBgm = bgmAudios[currentBgmIndex];
   if (currentBgm.paused) {
     currentBgm.play().catch(() => {});
+    bgmPausedByUser = false
   } else {
     currentBgm.pause();
+    bgmPausedByUser = true;
   }
+}
+
+/**
+ * Check if BGM is currently playing
+ */
+export function isBgmPlaying(): boolean {
+  return bgmAudios.some(audio => !audio.paused);
+}
+
+/**
+ * Check if user manually paused BGM
+ */
+export function isBgmPausedByUser(): boolean {
+  return bgmPausedByUser;
 }
 
 /**
@@ -204,7 +219,6 @@ export function isAudioPlaying(): boolean {
 
 export default {
   initSounds,
-  startAudioExperience,
   startBackgroundMusic,
   toggleBackgroundMusic,
   stopAllAudio,
@@ -212,4 +226,6 @@ export default {
   setBgVolume,
   setSfxVolume,
   isAudioPlaying,
+  isBgmPlaying,
+  isBgmPausedByUser,
 };

@@ -7,7 +7,7 @@ import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState,  } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { playClick, startAudioExperience } from "@/lib/sound";
+import { playClick, playIntroThenBgm } from "@/lib/sound";
 
 // Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
@@ -278,7 +278,7 @@ const Landing = () => {
               onClick={() => {
                 try {
                   playClick();
-                  startAudioExperience();
+                  playIntroThenBgm();
                 }catch{
                   // swallow
                 }
