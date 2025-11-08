@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Activity, Brain, Sparkles, Wand2, Target } from "lucide-react";
 import type { PlayerStats } from "@/lib/api";
+import { loadPlayerSnapshot } from "@/lib/player-storage";
 
 const DEFAULT_BASE_WR = 0.51;
 const DEFAULT_BASELINE_STATS = {
@@ -260,7 +261,9 @@ const PredictLab = () => {
   const audioRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
-    const data = location.state?.playerData as PlayerStats | undefined;
+    const data =
+      (location.state?.playerData as PlayerStats | undefined) ?? loadPlayerSnapshot() ?? null;
+
     if (!data) {
       navigate("/");
       return;

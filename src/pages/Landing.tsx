@@ -4,9 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
 import { Search, Sparkles, Loader2, Globe } from "lucide-react";
-import { useState,  } from "react";
+import { useState } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { savePlayerSnapshot } from "@/lib/player-storage";
 
 // Riot API Routing Regions (matches backend regionMap)
 const REGIONS = [
@@ -58,6 +59,7 @@ const Landing = () => {
         // Complete callback
         (data, cached) => {
           setPlayerData(data);
+          savePlayerSnapshot(data);
           setIsLoading(false);
 
           toast({
@@ -78,12 +80,13 @@ const Landing = () => {
           });
         }
       );
-    } catch (error: any) {
+    } catch (error) {
       setIsLoading(false);
       console.error('Failed to analyze player:', error);
+      const message = error instanceof Error ? error.message : "Could not analyze player. Please try again.";
       toast({
         title: "Analysis Failed",
-        description: error.message || "Could not analyze player. Please try again.",
+        description: message,
         variant: "destructive",
       });
     }
