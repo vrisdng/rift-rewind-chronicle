@@ -833,10 +833,12 @@ app.post("/api/chat", async (req, res) => {
 			message,
 			history = [],
 			playerContext,
+			availableSlides = [],
 		} = req.body as {
 			message: string;
 			history?: Array<{ role: "user" | "assistant"; content: string }>;
 			playerContext?: any; // PlayerStats with insights
+			availableSlides?: Array<{ id: string; narration: string }>;
 		};
 
 		if (!message) {
@@ -850,6 +852,7 @@ app.post("/api/chat", async (req, res) => {
 				? `${playerContext.riotId}#${playerContext.tagLine} (${playerContext.totalGames} games)`
 				: "None",
 		);
+		console.log(`🎬 Available slides: ${availableSlides.length}`);
 
 		// Set headers for NDJSON streaming
 		res.set({
@@ -861,9 +864,9 @@ app.post("/api/chat", async (req, res) => {
 		res.flushHeaders();
 
 		// Build system prompt using dedicated prompt builder
-		const systemPrompt = buildChatbotSystemPrompt(playerContext);
+		const systemPrompt = buildChatbotSystemPrompt(playerContext, availableSlides);
 		console.log(
-			`📋 System prompt built with ${systemPrompt.length} chars, has player data: ${!!playerContext}`,
+			`📋 System prompt built with ${systemPrompt.length} chars, has player data: ${!!playerContext}, slides: ${availableSlides.length}`,
 		);
 
 		// Trim history to last 10 messages to avoid token limit issues
@@ -880,7 +883,64 @@ app.post("/api/chat", async (req, res) => {
 		// Accumulate full response to parse navigation actions
 		let fullResponse = "";
 		let streamedText = ""; // Track what we've already sent to client
+
+		await invokeBedrockClaudeStream(
+			messages,
+			// onChunk: Stream each token to client
+			(text: string) => {
+				console.log(`📤 [API] Streaming chunk (${text.length} chars)`);
+				fullResponse += text;
+				streamedText += text;
+				res.write(JSON.stringify({ delta: text }) + "\n");
+			},
+			// onComplete: Parse navigation actions and send done
+			() => {
+				console.log(`✅ [API] Stream complete, full response length: ${fullResponse.length}`);
+				
+				// Parse slide navigation from NAVIGATE_SLIDE lines
+				const navigatePattern = /NAVIGATE_SLIDE:\s*\{([^}]+)\}/g;
+				const navigationActions: Array<{ slideId: string; label: string; description?: string }> = [];
+				let match;
+				
+				while ((match = navigatePattern.exec(fullResponse)) !== null) {
+					try {
+						const actionJson = `{${match[1]}}`;
+						const action = JSON.parse(actionJson);
+						navigationActions.push(action);
+						console.log(`🧭 [API] Found slide navigation action:`, action);
+					} catch (parseErr) {
+						console.warn(`⚠️ [API] Failed to parse slide navigation action:`, match[0]);
+					}
+				}
+
+				// Remove NAVIGATE_SLIDE lines from response
+				if (navigationActions.length > 0) {
+					const cleanedResponse = fullResponse.replace(/NAVIGATE_SLIDE:\s*\{[^}]+\}\n?/g, "").trim();
+					console.log(`🧹 [API] Cleaned response, removed ${navigationActions.length} NAVIGATE_SLIDE lines`);
+					res.write(JSON.stringify({ replaceText: cleanedResponse }) + "\n");
+					res.write(JSON.stringify({ navigationActions }) + "\n");
+				}
+
+				res.write(JSON.stringify({ done: true }) + "\n");
+				res.end();
+				console.log(`🏁 [API] Response stream ended`);
+			},
+			// onError: Handle streaming errors
+			(error: Error) => {
+				console.error(`❌ [API] Stream error:`, error.message);
+				console.error(`❌ [API] Error stack:`, error.stack);
+				res.write(JSON.stringify({ error: error.message }) + "\n");
+				res.end();
+			}
+		);
 	} catch (error: any) {
-		console.error("Error in /api/chat:", error);
+		console.error("❌ [API] Error in /api/chat:", error);
+		console.error("❌ [API] Error stack:", error.stack);
+		if (!res.headersSent) {
+			res.status(500).json({ success: false, error: error.message });
+		} else {
+			res.write(JSON.stringify({ error: error.message }) + "\n");
+			res.end();
+		}
 	}
 });

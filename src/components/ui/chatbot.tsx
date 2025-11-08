@@ -10,9 +10,14 @@ const API_URL = import.meta.env.MODE === 'production'
   ? (import.meta.env.VITE_API_URL || 'http://localhost:3000')
   : ''; // Empty string means relative URLs (uses Vite proxy)
 
+interface SlideInfo {
+  id: string;
+  narration: string;
+}
+
 interface NavigationAction {
+  slideId: string;
   label: string;
-  path: string;
   description?: string;
 }
 
@@ -27,9 +32,17 @@ interface ChatMessage {
 interface ChatbotProps {
   // If true, the chat bubble will be hidden (useful for first dashboard page)
   hide?: boolean;
+  // Callback to navigate to a specific slide (for carousel navigation)
+  onNavigateToSlide?: (slideId: string) => void;
+  // Available slides for navigation
+  availableSlides?: SlideInfo[];
 }
 
-export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
+export const Chatbot: React.FC<ChatbotProps> = ({ 
+  hide = false, 
+  onNavigateToSlide,
+  availableSlides = []
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -195,7 +208,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
       const conversationHistory = messages
         .filter(msg => msg.role !== 'system' && msg.text && msg.text.trim().length > 0)
         .map(msg => ({ role: msg.role, content: msg.text }));
-
+      
       // Create abort controller for this request
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
@@ -204,10 +217,11 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: userText, 
+        body: JSON.stringify({
+          message: userText,
           history: conversationHistory,
-          playerContext: playerData // Send full player data including insights
+          playerContext: playerData, // Send full player data including insights
+          availableSlides: availableSlides // Send available slides for navigation
         }),
         signal: abortController.signal,
       });
@@ -451,37 +465,37 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
         )}
 
         {open && (
-          <div className="w-96 max-w-[90vw] h-[520px] bg-card/90 rounded-xl shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between p-3 border-b border-border bg-gradient-to-b from-background/70 to-background/50">
+          <div className="w-[480px] max-w-[90vw] h-[580px] lol-card border-[#C8AA6E] border-2 rounded-lg shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-[#C8AA6E]/30 bg-gradient-to-b from-[#0A1428]/70 to-[#161f32]/50">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center">
                   <img src="/poro.png" alt="Poro" className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="font-semibold">RiftRewind Coach</div>
-                  <div className="text-xs text-muted-foreground">Brutally honest. Occasionally helpful.</div>
+                  <div className="lol-heading text-sm text-[#C8AA6E]">RiftRewind Coach</div>
+                  <div className="lol-body text-xs text-gray-500">Brutally honest. Occasionally helpful.</div>
                 </div>
               </div>
-              <button onClick={handleCloseChat} className="p-1 rounded hover:bg-muted">
-                <X className="w-4 h-4" />
+              <button onClick={handleCloseChat} className="p-1.5 rounded hover:bg-[#C8AA6E]/10 transition-colors">
+                <X className="w-4 h-4 text-gray-400 hover:text-[#C8AA6E]" />
               </button>
             </div>
 
-            <div ref={listRef} className="flex-1 p-3 overflow-auto space-y-3">
+            <div ref={listRef} className="flex-1 p-4 overflow-auto space-y-4 bg-gradient-to-b from-[#0A1428] to-[#161f32]">
               {/* First-time welcome message with roasting personality */}
               {isFirstTime && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* Welcome roast with avatar */}
-                  <div className="flex gap-2 justify-start">
+                  <div className="flex gap-3 justify-start">
                     {/* Coach avatar */}
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center flex-shrink-0">
                       <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                     </div>
-                    
+
                     {/* Welcome message */}
-                    <div className="max-w-[80%] p-3 rounded-lg bg-card/50 text-foreground border border-primary/20">
-                      <div className="font-semibold text-primary mb-1">Coach</div>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{roastingWelcome}</div>
+                    <div className="max-w-[80%] p-4 rounded-lg bg-[#161f32]/80 backdrop-blur-sm text-gray-200 border border-[#C8AA6E]/20">
+                      <div className="lol-subheading text-[#C8AA6E] mb-2 text-xs">Coach</div>
+                      <div className="lol-body text-sm" style={{ whiteSpace: 'pre-wrap' }}>{roastingWelcome}</div>
                     </div>
                   </div>
 
@@ -492,7 +506,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                         key={idx}
                         onClick={() => sendMessage(suggestion)}
                         disabled={isStreaming}
-                        className="text-xs px-3 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="lol-body text-xs px-3 py-2 rounded-md bg-[#C8AA6E]/10 hover:bg-[#C8AA6E]/20 text-[#C8AA6E] border border-[#C8AA6E]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {suggestion}
                       </button>
@@ -505,24 +519,24 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
                 return (
                 <React.Fragment key={m.id}>
                   {/* Message row */}
-                  <div className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {/* Avatar for assistant */}
                     {m.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 overflow-hidden">
+                      <div className="w-9 h-9 rounded-full bg-[#C8AA6E]/10 border border-[#C8AA6E]/30 flex items-center justify-center flex-shrink-0">
                         <img src="/poro.png" alt="Poro Coach" className="w-6 h-6" />
                       </div>
                     )}
-                    
+
                     {/* Message bubble */}
-                    <div className={`p-3 rounded-lg max-w-[75%] ${
-                      m.role === 'user' 
-                        ? 'bg-primary text-white' 
-                        : 'bg-card/50 text-foreground border border-border'
+                    <div className={`p-4 rounded-lg max-w-[75%] lol-body text-sm ${
+                      m.role === 'user'
+                        ? 'bg-[#C8AA6E]/20 text-white border border-[#C8AA6E]/40'
+                        : 'bg-[#161f32]/80 backdrop-blur-sm text-gray-200 border border-[#C8AA6E]/20'
                     }`}>
                       {m.isLoading && m.text === '' ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span className="text-sm">Thinking...</span>
+                          <Loader2 className="w-4 h-4 animate-spin text-[#C8AA6E]" />
+                          <span className="text-sm text-gray-400">Thinking...</span>
                         </div>
                       ) : (
                         <div style={{ whiteSpace: 'pre-wrap' }}>{m.text || '...'}</div>
@@ -531,7 +545,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
 
                     {/* Avatar for user */}
                     {m.role === 'user' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm border-2 border-primary/30">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C8AA6E] to-[#C8AA6E]/80 flex items-center justify-center flex-shrink-0 text-[#0A1428] lol-heading text-sm border-2 border-[#C8AA6E]/50">
                         {playerData?.riotId?.[0]?.toUpperCase() || '?'}
                       </div>
                     )}
@@ -539,20 +553,26 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
 
                   {/* Navigation buttons (rendered separately below message) */}
                   {m.role === 'assistant' && m.navigationActions && m.navigationActions.length > 0 && (
-                    <div className="flex gap-2 pl-10">
-                      <div className="flex flex-col gap-1.5 max-w-[75%]">
+                    <div className="flex gap-3 pl-12">
+                      <div className="flex flex-col gap-2 max-w-[75%]">
                         {m.navigationActions.map((action, idx) => {
                           return (
                             <button
                               key={idx}
                               onClick={() => {
-                                navigate(action.path, { state: { playerData } });
-                                setOpen(false);
+                                if (onNavigateToSlide && action.slideId) {
+                                  // Navigate to slide in carousel
+                                  onNavigateToSlide(action.slideId);
+                                  console.log('🧭 [CHATBOT] Navigating to slide:', action.slideId);
+                                } else {
+                                  // Fallback to page navigation if no slide navigation available
+                                  console.warn('⚠️ [CHATBOT] No slide navigation handler, slideId:', action.slideId);
+                                }
                               }}
-                              className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-sm transition-colors group"
+                              className="flex items-center justify-between gap-2 px-4 py-2.5 rounded-md bg-[#C8AA6E]/10 hover:bg-[#C8AA6E]/20 border border-[#C8AA6E]/40 text-[#C8AA6E] text-sm transition-all group lol-body hover:border-[#C8AA6E]/60"
                             >
-                              <span className="font-medium">{action.label}</span>
-                              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                              <span className="font-semibold">{action.label}</span>
+                              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                           );
                         })}
@@ -564,19 +584,20 @@ export const Chatbot: React.FC<ChatbotProps> = ({ hide = false }) => {
               })}
             </div>
 
-            <div className="p-3 border-t border-border bg-background/60">
+            <div className="p-4 border-t border-[#C8AA6E]/30 bg-[#0A1428]/80 backdrop-blur-sm">
               <div className="flex gap-2">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); }}
-                  className="flex-1 rounded-md border border-border px-3 py-2 bg-transparent text-sm focus:outline-none"
+                  className="flex-1 rounded-md border border-[#C8AA6E]/30 px-4 py-2.5 bg-[#161f32]/60 text-gray-200 text-sm focus:outline-none focus:border-[#C8AA6E]/60 lol-body placeholder:text-gray-500 transition-colors"
                   placeholder="Ask about your season, tips, or playstyle..."
                   disabled={isStreaming}
                 />
-                <Button 
-                  onClick={() => sendMessage()} 
+                <Button
+                  onClick={() => sendMessage()}
                   disabled={!input.trim() || isStreaming}
+                  className="bg-[#C8AA6E] hover:bg-[#C8AA6E]/90 text-[#0A1428] lol-body font-semibold px-5 transition-colors disabled:opacity-50"
                 >
                   Send
                 </Button>
