@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { Activity, Brain, Sparkles, Wand2, Target } from "lucide-react";
+import { Activity, Brain, Sparkles, Wand2, Target, ChevronLeft } from "lucide-react";
 import type { PlayerStats } from "@/lib/api";
 import { loadPlayerSnapshot } from "@/lib/player-storage";
 
@@ -373,6 +373,17 @@ const PredictLab = () => {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#050910] text-white">
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg text-[#C8AA6E] hover:text-[#F0E6D2] hover:bg-[#0A1428]/50 transition-colors uppercase tracking-widest text-xs font-semibold"
+        aria-label="Go back"
+      >
+        <ChevronLeft className="w-5 h-5" />
+        Back
+      </button>
+
       <div
         className="absolute inset-0 opacity-90"
         style={{

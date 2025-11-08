@@ -248,6 +248,128 @@ export interface XPostTweetResponse {
 	error?: string;
 }
 
+export type DuoBondType = "inferno" | "tide" | "terra" | "gale";
+
+export interface DuoSynergyIdentity {
+	raw: string;
+	gameName: string;
+	tagLine: string;
+	display: string;
+	short: string;
+}
+
+export type DuoRoleKey = "TOP" | "JUNGLE" | "MID" | "ADC" | "SUPPORT";
+
+export interface DuoPairCombo {
+	a: string;
+	b: string;
+	wr: number;
+	games: number;
+}
+
+export interface DuoSynergyPlayerProfile {
+	identity: DuoSynergyIdentity;
+	role: DuoRoleKey;
+	champions: string[];
+	soloWinRate: number;
+	csPerMin: number;
+	deathsPerGame: number;
+	objectiveRate: number;
+	aggression: number;
+	roamTempo: number;
+	controlScore: number;
+	traitVector: number[];
+	traitTags: string[];
+	fatigueSlope: number;
+	tiltSensitivity: number;
+	tiltResilience: number;
+	styleLean: DuoBondType;
+	region: string;
+}
+
+export interface DuoSynergyProfile {
+	playerA: DuoSynergyPlayerProfile;
+	playerB: DuoSynergyPlayerProfile;
+	rolePairLabel: string;
+	statistical: {
+		wrDuo: number;
+		baselineWR: number;
+		deltaWR: number;
+		sampleConfidence: number;
+		sampleSize: number;
+		perMatch: {
+			cs: { a: number; b: number };
+			deaths: { a: number; b: number };
+			objectives: { a: number; b: number };
+		};
+	};
+	tactical: {
+		coKill: number;
+		objectiveOverlap: number;
+		leadConversion: number;
+		roamSyncSeconds: number;
+	};
+	style: {
+		similarity: number;
+		complementarity: number;
+		pairingStory: string;
+		tags: string[];
+	};
+	psychological: {
+		fatigueDrop: number;
+		sharedCurveNote: string;
+		tiltPropagation: number;
+		momentumFactor: number;
+		afterWinWR: number;
+		afterLossWR: number;
+	};
+	ai: {
+		payload: {
+			summary: {
+				WR_duo: number;
+				deltaWR: number;
+				coKill: number;
+				objTogether: number;
+				convRate: number;
+				comeback: number;
+			};
+			rolePair: string;
+			bestChamps: DuoPairCombo[];
+			worstChamps: DuoPairCombo[];
+		};
+		summary: string;
+		nextMatchAdvice: string;
+		bestCombos: DuoPairCombo[];
+		worstCombos: DuoPairCombo[];
+		commentary: Record<string, string>;
+		comebackRate: number;
+	};
+	bond: {
+		score: number;
+		type: DuoBondType;
+		label: string;
+		nickname: string;
+		description: string;
+		aura: string;
+		triangle: {
+			mechanics: number;
+			coordination: number;
+			discipline: number;
+		};
+	};
+}
+
+export interface DuoSynergyRequest {
+	playerA: { riotId: string; tagLine: string; region?: string };
+	playerB: { riotId: string; tagLine: string; region?: string };
+}
+
+export interface DuoSynergyResponse {
+	success: boolean;
+	data?: DuoSynergyProfile;
+	error?: string;
+}
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 export const CANONICAL_SHARE_URL = "https://rift-rewind-chronicle.vercel.app/";
 
@@ -414,6 +536,29 @@ export async function getPlayer(
 			error: error.message || "Failed to fetch player",
 		};
 	}
+}
+
+/**
+ * Fetch duo synergy analysis
+ */
+export async function fetchDuoSynergy(
+	request: DuoSynergyRequest,
+): Promise<DuoSynergyProfile> {
+	const response = await fetch(`${API_URL}/api/duo-synergy`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(request),
+	});
+
+	const result = await readJsonBody<DuoSynergyResponse>(response);
+
+	if (!response.ok || !result.success || !result.data) {
+		throw new Error(
+			result.error || `Failed to compute duo synergy (${response.status})`,
+		);
+	}
+
+	return result.data;
 }
 
 /**

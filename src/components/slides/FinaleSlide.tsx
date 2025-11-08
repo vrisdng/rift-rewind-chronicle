@@ -1,11 +1,5 @@
 import {
-	forwardRef,
-	useCallback,
-	useMemo,
-	useRef,
-	useState,
-	useEffect,
-} from "react";
+	forwardRef,useCallback, useMemo, useRef, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { ChampionStats, PlayerStats } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -46,8 +40,10 @@ interface LeagueTwinCopy {
 	similarity?: number;
 }
 
-const PREDICT_LAB_PROMPT =
-	"Want to know how hitting 1 more creep per minute will increase your win rate by 2%? Explore the Prediction Lab.";
+const CTA_BUBBLE_MESSAGES = [
+	"Want to know how hitting 1 more creep per minute will increase your win rate by 2%? Explore the Prediction Lab.",
+	"Want to know how your synergy is with your friend? Check out Synergy Duo.",
+] as const;
 
 const SHARE_ASPECTS: ShareAspect[] = [
 	{
@@ -132,6 +128,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [showShareCustomizer, setShowShareCustomizer] = useState(false);
 	const [typedMessage, setTypedMessage] = useState("");
+	const [ctaIndex, setCtaIndex] = useState(0);
 	const cardRefs = useRef<Record<ShareAspectId, HTMLDivElement | null>>({
 		story: null,
 		grid: null,
@@ -273,18 +270,31 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 	useEffect(() => {
 		let index = 0;
 		setTypedMessage("");
+		const message = CTA_BUBBLE_MESSAGES[ctaIndex];
 		const interval = window.setInterval(() => {
 			index += 1;
-			setTypedMessage(PREDICT_LAB_PROMPT.slice(0, index));
-			if (index >= PREDICT_LAB_PROMPT.length) {
+			setTypedMessage(message.slice(0, index));
+			if (index >= message.length) {
 				window.clearInterval(interval);
 			}
 		}, 35);
 
 		return () => window.clearInterval(interval);
-	}, []);
+	}, [ctaIndex]);
 
-	const caretVisible = typedMessage.length < PREDICT_LAB_PROMPT.length;
+	useEffect(() => {
+		const message = CTA_BUBBLE_MESSAGES[ctaIndex];
+		if (typedMessage.length !== message.length) {
+			return;
+		}
+		const timeout = window.setTimeout(() => {
+			setCtaIndex((prev) => (prev + 1) % CTA_BUBBLE_MESSAGES.length);
+		}, 3000);
+		return () => window.clearTimeout(timeout);
+	}, [typedMessage, ctaIndex]);
+
+	const caretVisible =
+		typedMessage.length < CTA_BUBBLE_MESSAGES[ctaIndex].length;
 
 	return (
 		<>
@@ -300,18 +310,21 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 				<div className="absolute left-6 top-6 z-20 flex max-w-xs flex-col items-start gap-3 text-left">
 					<div className="rounded-2xl border border-white/20 bg-black/80 px-4 py-3 text-sm leading-relaxed text-white shadow-lg backdrop-blur">
 						<span>{typedMessage}</span>
-						{caretVisible && (
-							<span className="ml-1 inline-block animate-pulse align-middle">
-								|
-							</span>
-						)}
+						{caretVisible && <span className="ml-1 inline-block animate-pulse align-middle">|</span>}
 					</div>
 					<Button
 						size="sm"
 						onClick={() => navigate("/predict-lab")}
 						className="bg-[#C8AA6E] text-[#0A1428] font-bold shadow-[0_0_20px_rgba(200,170,110,0.45)] transition transform hover:-translate-y-1 hover:bg-[#D4B982]"
 					>
-						Explore Prediction Lab
+						Prediction Lab
+					</Button>
+					<Button
+						size="sm"
+						onClick={() => navigate("/duo-synergy")}
+						className="bg-white/10 text-white font-semibold border border-white/30 shadow-[0_0_20px_rgba(200,170,110,0.18)] transition transform hover:-translate-y-1"
+					>
+						Synergy Duo
 					</Button>
 				</div>
 
@@ -358,18 +371,18 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 						{/* Main champion stacked below on mobile */}
 						<div className="lol-card p-4 text-center relative overflow-hidden">
 							{/* Champion Splash Art Background */}
-							{playerData.topChampions[0]?.championName &&
+							{playerData.topChampions[0]?.championName && 
 								playerData.topChampions[0]?.championName !== "N/A" && (
-									<div
-										className="absolute inset-0 bg-cover bg-center opacity-30"
-										style={{
-											backgroundImage: `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${playerData.topChampions[0].championName.replace(/[^a-zA-Z]/g, "")}_0.jpg)`,
-										}}
-									/>
-								)}
+								<div 
+									className="absolute inset-0 bg-cover bg-center opacity-30"
+									style={{
+										backgroundImage: `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${playerData.topChampions[0].championName.replace(/[^a-zA-Z]/g, '')}_0.jpg)`
+									}}
+								/>
+							)}
 							{/* Gradient overlay for better text readability */}
 							<div className="absolute inset-0 bg-gradient-to-t from-[#0A1428] via-[#0A1428]/80 to-transparent" />
-
+							
 							{/* Content */}
 							<div className="relative z-10">
 								<div className="text-xl md:text-2xl font-bold text-[#C8AA6E] lol-body truncate">
@@ -412,7 +425,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 						</Button>
 						<Button
 							size="lg"
-							onClick={() => (window.location.href = "/")}
+							onClick={() => window.location.href = '/'}
 							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
 							Start Again
