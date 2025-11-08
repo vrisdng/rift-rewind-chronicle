@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { useDebouncedCallback } from "use-debounce";
 
 import { cn } from "@/lib/utils";
 import { playClick, playHover } from "@/lib/sound";
-import e from "express";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -43,29 +43,37 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, onClick, onMouseEnter, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
 
-    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-      try {
-        // play hover sound effect
-        playHover();
-      } catch {
-        // swallow errors so hover still works
-      }
-      onMouseEnter?.(e);
-    }
+    const debouncedMouseEnter = useDebouncedCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        try {
+          playHover();
+        } catch {
+          // swallow errors so hover still works
+        }
+        onMouseEnter?.(e);
+      },
+      400,
+      { leading: true, trailing: false }
+    );
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      try {
-        playClick(); // play global sfx
-      } catch {
-        // swallow errors so clicks still work
-      }
-      onClick?.(e);
-    };
-    return <Comp 
-      className={cn(buttonVariants({ variant, size, className }))} 
-      ref={ref} {...props} 
-      onMouseEnter={handleMouseEnter}
-      onClick={handleClick} 
+    const debouncedClick = useDebouncedCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        try {
+          playClick();
+        } catch {
+          // swallow errors so clicks still work
+        }
+        onClick?.(e);
+      },
+      300,
+      { leading: true, trailing: false }
+    );
+
+    return <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref} {...props}
+      onMouseEnter={debouncedMouseEnter}
+      onClick={debouncedClick}
       />;
   },
 );

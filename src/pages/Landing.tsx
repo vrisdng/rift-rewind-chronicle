@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import heroImage from "@/assets/hero-bg.jpg";
 import { Search, Sparkles, Loader2, Globe } from "lucide-react";
 import { useState } from "react";
 import { analyzePlayerWithProgress, type PlayerStats } from "@/lib/api";
@@ -97,19 +96,16 @@ const Landing = () => {
     <div className="relative min-h-screen w-full overflow-hidden">
       {/* Background Video - Full coverage */}
       <div className="fixed inset-0 w-full h-full bg-black">
-        {/* YouTube embed as background - muted and looping */}
-        <iframe
-          className="absolute inset-0 w-full h-full pointer-events-none border-0 opacity-0 animate-[fadeIn_3s_ease-in_3s_forwards]"
-          style={{
-            width: '100vw',
-            height: '100vh',
-            transform: 'scale',
-            objectFit: 'cover'
-          }}
-          src="https://www.youtube.com/embed/xBCBOoHyeSU?autoplay=1&mute=1&loop=1&playlist=xBCBOoHyeSU&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd1080&start=1"
-          title="Background video"
-          allow="autoplay; encrypted-media"
-        />
+        {/* Local video as background - muted and looping */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-0 animate-[fadeIn_3s_ease-in_3s_forwards]"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source src="/videos/League_of_Legends.mp4" type="video/mp4" />
+        </video>
         {/* Minimal vignette overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none" />
       </div>
@@ -117,14 +113,8 @@ const Landing = () => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 text-center overflow-x-hidden">
         <div className="animate-fade-in w-full max-w-5xl">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-[#C8AA6E]/10 border-2 border-[#C8AA6E]/40 mb-8 backdrop-blur-sm" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-            <Sparkles className="w-4 h-4 text-[#C8AA6E]" />
-            <span className="text-sm font-bold uppercase tracking-wider text-[#C8AA6E]">Season 2025</span>
-          </div>
-
           {/* Main Heading */}
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-8 uppercase tracking-tight leading-none">
+          <h1 className="mt-1 font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-8 uppercase tracking-tight leading-none">
             <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
               Rift{" "}
             </span>
@@ -272,12 +262,7 @@ const Landing = () => {
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* CTA Button */}
-          {playerData && (
-            <Button
+              <Button
               size="lg"
               className="px-16 py-7 h-auto bg-[#C8AA6E] hover:bg-[#F0E6D2] text-[#0A1428] font-black text-2xl uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_50px_rgba(200,170,110,0.8)] hover:scale-105"
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
@@ -292,7 +277,12 @@ const Landing = () => {
             >
               Enter
             </Button>
+            </div>
+
+            
           )}
+
+          {/* CTA Button */}
         </div>
       </div>
     </div>

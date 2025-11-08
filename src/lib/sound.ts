@@ -47,12 +47,12 @@ export function initSounds() {
   // Initialize hover SFX
   hoverAudio = new Audio('/sounds/button-sound-effect-hover.mp3');
   hoverAudio.preload = 'auto';
-  hoverAudio.volume = 0.45;
+  hoverAudio.volume = 0.15;
 
   // Initialize click SFX
   clickAudio = new Audio('/sounds/button-sound-effect-click.mp3');
   clickAudio.preload = 'auto';
-  clickAudio.volume = 0.45;
+  clickAudio.volume = 0.15;
 
   audioInitialized = true;
 }
