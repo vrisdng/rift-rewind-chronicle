@@ -280,29 +280,49 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					</div>
 
 					{/* Stats Summary */}
-					<div className="grid grid-cols-3 gap-4">
-						<div className="lol-card p-4 text-center">
-							<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
-								{playerData.totalGames}
+					<div className="flex flex-col sm:grid sm:grid-cols-3 gap-4">
+						{/* Battles and Victory in one row on mobile */}
+						<div className="grid grid-cols-2 sm:contents gap-4">
+							<div className="lol-card p-4 text-center">
+								<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
+									{playerData.totalGames}
+								</div>
+								<div className="lol-subheading text-gray-600 text-xs mt-1">
+									Battles
+								</div>
 							</div>
-							<div className="lol-subheading text-gray-600 text-xs mt-1">
-								Battles
+							<div className="lol-card p-4 text-center border-[#C8AA6E]/40">
+								<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
+									{playerData.winRate.toFixed(0)}%
+								</div>
+								<div className="lol-subheading text-gray-600 text-xs mt-1">
+									Victory
+								</div>
 							</div>
 						</div>
-						<div className="lol-card p-4 text-center border-[#C8AA6E]/40">
-							<div className="text-3xl md:text-4xl font-bold text-[#C8AA6E] lol-body">
-								{playerData.winRate.toFixed(0)}%
-							</div>
-							<div className="lol-subheading text-gray-600 text-xs mt-1">
-								Victory
-							</div>
-						</div>
-						<div className="lol-card p-4 text-center">
-							<div className="text-xl md:text-2xl font-bold text-[#C8AA6E] lol-body truncate">
-								{playerData.topChampions[0]?.championName || "N/A"}
-							</div>
-							<div className="lol-subheading text-gray-600 text-xs mt-1">
-								Main
+						{/* Main champion stacked below on mobile */}
+						<div className="lol-card p-4 text-center relative overflow-hidden">
+							{/* Champion Splash Art Background */}
+							{playerData.topChampions[0]?.championName && 
+								playerData.topChampions[0]?.championName !== "N/A" && (
+								<div 
+									className="absolute inset-0 bg-cover bg-center opacity-30"
+									style={{
+										backgroundImage: `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${playerData.topChampions[0].championName.replace(/[^a-zA-Z]/g, '')}_0.jpg)`
+									}}
+								/>
+							)}
+							{/* Gradient overlay for better text readability */}
+							<div className="absolute inset-0 bg-gradient-to-t from-[#0A1428] via-[#0A1428]/80 to-transparent" />
+							
+							{/* Content */}
+							<div className="relative z-10">
+								<div className="text-xl md:text-2xl font-bold text-[#C8AA6E] lol-body truncate">
+									{playerData.topChampions[0]?.championName || "N/A"}
+								</div>
+								<div className="lol-subheading text-gray-600 text-xs mt-1">
+									Main
+								</div>
 							</div>
 						</div>
 					</div>
@@ -325,22 +345,22 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					</div>
 
 					{/* CTA Buttons */}
-					<div className="flex justify-center gap-3 pt-2">
+					<div className="flex flex-col sm:flex-row justify-center gap-3 pt-2 w-full sm:w-auto">
 						<Button
 							size="lg"
 							variant="outline"
 							onClick={() => setShowShareCustomizer(true)}
-							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading"
+							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
 							<Share2 className="mr-2 h-4 w-4" />
 							Share Results
 						</Button>
 						<Button
 							size="lg"
-							onClick={onContinue}
-							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading"
+							onClick={() => window.location.href = '/'}
+							className="bg-[#C8AA6E] text-[#0A1428] font-bold hover:bg-[#C8AA6E]/90 transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
-							Continue
+							Start Again
 							<ArrowRight className="ml-2 h-4 w-4" />
 						</Button>
 					</div>
