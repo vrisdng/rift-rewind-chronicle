@@ -32,7 +32,7 @@ import {
 	Sparkles,
 	Twitter,
 } from "lucide-react";
-import { toJpeg } from "html-to-image";
+import { toPng } from "html-to-image";
 import { toast } from "@/components/ui/sonner";
 import {
 	PolarAngleAxis,
@@ -223,14 +223,20 @@ export const FinaleShareCustomizer = ({
 		if (!cardRef.current) {
 			throw new Error("Card preview is not ready yet.");
 		}
-		return toJpeg(cardRef.current, {
-			cacheBust: true,
-			width: 1280,
-			height: 776,
-			pixelRatio: 1,
-			backgroundColor: "#050505",
-			quality: 0.9,
-		});
+
+		try {
+			// Capture at actual rendered size with high quality
+			const dataUrl = await toPng(cardRef.current, {
+				cacheBust: true,
+				pixelRatio: 2, // 2x for high quality/retina displays
+				backgroundColor: "#050505",
+			});
+
+			return dataUrl;
+		} catch (error) {
+			console.error("Failed to generate share card:", error);
+			throw error;
+		}
 	}, [cardRef]);
 
 	// Use controlled state if provided, otherwise use internal state
@@ -433,13 +439,13 @@ export const FinaleShareCustomizer = ({
 					.toLowerCase()
 					.replace(/[^a-z0-9]+/g, "-")
 					.replace(/(^-|-$)/g, "") || "rewind";
-			anchor.download = `rift-rewind-${slug}-share-card.jpeg`;
+			anchor.download = `rift-rewind-${slug}-share-card.png`;
 			anchor.href = dataUrl;
 			anchor.click();
 			toast.success("Share card downloaded!");
 		} catch (error) {
 			console.error(error);
-			toast.error("Failed to create JPEG. Try again.");
+			toast.error("Failed to create image. Try again.");
 		}
 	};
 	const handlePrepareShareCard = useCallback(
@@ -510,62 +516,8 @@ export const FinaleShareCustomizer = ({
 
 		switch (platform) {
 			case "telegram": {
-				if (!cardRef.current) {
-					toast.error("Card preview is not ready yet.");
-					return;
-				}
-				try {
-					toast("Preparing share card for Telegram...");
-					const dataUrl = await generateShareCardJpeg();
-
-					// Convert data URL to blob
-					const response = await fetch(dataUrl);
-					const blob = await response.blob();
-
-					// Create a File object from the blob
-					const slug =
-						playerData.riotId
-							.toLowerCase()
-							.replace(/[^a-z0-9]+/g, "-")
-							.replace(/(^-|-$)/g, "") || "rewind";
-					const fileName = `rift-rewind-${slug}-share-card.jpeg`;
-					const file = new File([blob], fileName, { type: "image/jpeg" });
-
-					// Try Web Share API first (works on mobile)
-					if (navigator.canShare && navigator.canShare({ files: [file] })) {
-						await navigator.share({
-							files: [file],
-							title: playerData.insights?.title || "My League Year",
-							text: shareText,
-						});
-						toast.success("Shared successfully!");
-					} else {
-						// Fallback: download image and open Telegram share dialog
-						const anchor = document.createElement("a");
-						anchor.download = fileName;
-						anchor.href = dataUrl;
-						anchor.click();
-
-						// Open Telegram share dialog with caption
-						setTimeout(() => {
-							const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
-							window.open(shareUrl, "_blank", "noopener,noreferrer");
-							toast.success(
-								"Share card downloaded! Upload it in Telegram along with your caption.",
-							);
-						}, 500);
-					}
-				} catch (error) {
-					console.error(error);
-					const message =
-						error instanceof Error ? error.message : "Failed to share";
-					// Check if user cancelled the share
-					if (message.includes("AbortError") || message.includes("cancel")) {
-						toast.info("Share cancelled.");
-					} else {
-						toast.error("Failed to prepare share card. Try downloading manually.");
-					}
-				}
+				const shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedCaption || encodedUrl}`;
+				window.open(shareUrl, "_blank", "noopener,noreferrer");
 				break;
 			}
 			case "whatsapp": {
@@ -799,7 +751,7 @@ export const FinaleShareCustomizer = ({
 							variant="hero"
 						>
 							<Download className="mr-2 h-4 w-4 text-[#0A1428]" />
-							Download JPEG
+							Download Image
 						</Button>
 						{onDownloadAll && (
 							<Button
