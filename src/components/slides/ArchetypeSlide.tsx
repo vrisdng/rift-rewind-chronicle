@@ -1,4 +1,6 @@
 import type { PlayerStats } from "@/lib/api";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface ArchetypeSlideProps {
 	playerData: PlayerStats;
@@ -44,9 +46,23 @@ export const ArchetypeSlide = ({ playerData }: ArchetypeSlideProps) => {
 					</div>
 
 					<div className="flex items-baseline justify-center gap-2 pt-4">
-						<span className="lol-subheading text-gray-500 text-xs">
-							Match Strength:
-						</span>
+						<div className="flex items-baseline gap-1">
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Info className="w-3 h-3 text-gray-500 cursor-help" />
+									</TooltipTrigger>
+									<TooltipContent side="bottom" className="max-w-xs">
+										<p className="text-xs">
+											Our confidence score in matching you to this archetype based on your gameplay patterns and statistics.
+										</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<span className="lol-subheading text-gray-500 text-xs">
+								Match Strength:
+							</span>
+						</div>
 						<span className="text-3xl font-bold text-[#C8AA6E] lol-body">
 							{playerData.archetype.matchPercentage}%
 						</span>
