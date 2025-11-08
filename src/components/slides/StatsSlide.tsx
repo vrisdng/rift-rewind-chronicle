@@ -9,7 +9,7 @@ export const StatsSlide = ({ playerData }: StatsSlideProps) => {
     <div className="w-full h-screen flex flex-col items-center justify-start lol-bg-subtle relative overflow-hidden">
       {/* Background Image */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat "
         style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
       />
       {/* Dark Overlay */}

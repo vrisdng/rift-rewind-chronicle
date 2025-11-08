@@ -11,7 +11,7 @@ export const StoryArcSlide = ({ playerData }: StoryArcSlideProps) => {
     <div className="w-full h-screen flex flex-col items-center lol-bg-subtle relative overflow-hidden">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-in"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat "
         style={{ backgroundImage: 'url(/images/background-2.jpg)' }}
       />
       {/* Dark Overlay */}

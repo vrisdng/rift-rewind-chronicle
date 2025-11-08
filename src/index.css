@@ -543,14 +543,6 @@ All colors MUST be HSL.
     }
   }
 
-  /* Background zoom animations */
-  .animate-bg-zoom-in {
-    animation: bgZoomIn 20s ease-in-out infinite alternate;
-  }
-
-  .animate-bg-zoom-out {
-    animation: bgZoomOut 20s ease-in-out infinite alternate;
-  }
 
   @keyframes bgZoomIn {
     0% {
