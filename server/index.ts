@@ -880,7 +880,64 @@ app.post("/api/chat", async (req, res) => {
 		// Accumulate full response to parse navigation actions
 		let fullResponse = "";
 		let streamedText = ""; // Track what we've already sent to client
+
+		await invokeBedrockClaudeStream(
+			messages,
+			// onChunk: Stream each token to client
+			(text: string) => {
+				console.log(`📤 [API] Streaming chunk (${text.length} chars)`);
+				fullResponse += text;
+				streamedText += text;
+				res.write(JSON.stringify({ delta: text }) + "\n");
+			},
+			// onComplete: Parse navigation actions and send done
+			() => {
+				console.log(`✅ [API] Stream complete, full response length: ${fullResponse.length}`);
+				
+				// Parse navigation actions from NAVIGATE lines
+				const navigatePattern = /NAVIGATE:\s*{([^}]+)}/g;
+				const navigationActions: Array<{ label: string; path: string; description?: string }> = [];
+				let match;
+				
+				while ((match = navigatePattern.exec(fullResponse)) !== null) {
+					try {
+						const actionJson = `{${match[1]}}`;
+						const action = JSON.parse(actionJson);
+						navigationActions.push(action);
+						console.log(`🧭 [API] Found navigation action:`, action);
+					} catch (parseErr) {
+						console.warn(`⚠️ [API] Failed to parse navigation action:`, match[0]);
+					}
+				}
+
+				// Remove NAVIGATE lines from response
+				if (navigationActions.length > 0) {
+					const cleanedResponse = fullResponse.replace(/NAVIGATE:\s*{[^}]+}\n?/g, "").trim();
+					console.log(`🧹 [API] Cleaned response, removed ${navigationActions.length} NAVIGATE lines`);
+					res.write(JSON.stringify({ replaceText: cleanedResponse }) + "\n");
+					res.write(JSON.stringify({ navigationActions }) + "\n");
+				}
+
+				res.write(JSON.stringify({ done: true }) + "\n");
+				res.end();
+				console.log(`🏁 [API] Response stream ended`);
+			},
+			// onError: Handle streaming errors
+			(error: Error) => {
+				console.error(`❌ [API] Stream error:`, error.message);
+				console.error(`❌ [API] Error stack:`, error.stack);
+				res.write(JSON.stringify({ error: error.message }) + "\n");
+				res.end();
+			}
+		);
 	} catch (error: any) {
-		console.error("Error in /api/chat:", error);
+		console.error("❌ [API] Error in /api/chat:", error);
+		console.error("❌ [API] Error stack:", error.stack);
+		if (!res.headersSent) {
+			res.status(500).json({ success: false, error: error.message });
+		} else {
+			res.write(JSON.stringify({ error: error.message }) + "\n");
+			res.end();
+		}
 	}
 });
