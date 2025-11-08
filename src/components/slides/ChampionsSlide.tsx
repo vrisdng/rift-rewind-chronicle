@@ -17,7 +17,7 @@ export const ChampionsSlide = ({ playerData }: ChampionsSlideProps) => {
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/60" />
       
-      <div className="w-full h-full overflow-y-auto py-8 px-8 relative z-10">
+      <div className="w-full h-full overflow-y-auto py-8 px-8 relative z-10 flex items-center">
         <div className="max-w-6xl mx-auto w-full space-y-8 animate-fade-in relative z-10">
           {/* Title */}
           <div className="text-center space-y-2">
