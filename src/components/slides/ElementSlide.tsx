@@ -4,6 +4,7 @@ import infernoIcon from "@/assets/element-icons/inferno.svg";
 import oceanIcon from "@/assets/element-icons/ocean.svg";
 import terraIcon from "@/assets/element-icons/terra.svg";
 import voidIcon from "@/assets/element-icons/void.png";
+import { getElementFilter } from "@/lib/elementFilters";
 
 interface ElementSlideProps {
 	playerData: PlayerStats;
@@ -21,16 +22,32 @@ export const ElementSlide = ({ playerData }: ElementSlideProps) => {
 	if (!playerData.element) return null;
 
 	const elementIcon = elementIcons[playerData.element.name];
+	const videoFilter = getElementFilter(playerData.element.name);
 
 	return (
 		<div className="w-full h-screen flex flex-col items-center justify-center lol-bg-subtle relative overflow-hidden p-8">
-			{/* Background Image */}
-			<div 
-				className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom-out"
-				style={{ backgroundImage: 'url(/images/background-1.jpg)' }}
-			/>
-			{/* Dark Overlay */}
-			<div className="absolute inset-0 bg-black/60" />
+			{/* YouTube Video Background with Element-based Color Filter */}
+			<div className="absolute inset-0 w-full h-full bg-black">
+				<iframe
+					className="absolute inset-0 w-full h-full pointer-events-none border-0"
+					style={{
+						width: '177.77777778vh', // 16:9 aspect ratio
+						height: '56.25vw', // 16:9 aspect ratio
+						minWidth: '100%',
+						minHeight: '100%',
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%) scale(1.2)',
+						filter: videoFilter,
+					}}
+					src="https://www.youtube.com/embed/fsJVmreYIvI?autoplay=1&mute=1&loop=1&playlist=fsJVmreYIvI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd1080"
+					title="Element background video"
+					allow="autoplay; encrypted-media"
+				/>
+			</div>
+			{/* Dark Overlay for readability */}
+			<div className="absolute inset-0 bg-black/50" />
 			
 			<div className="max-w-4xl w-full space-y-8 animate-fade-in relative z-10">
 				{/* Title */}
