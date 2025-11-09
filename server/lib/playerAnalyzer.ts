@@ -125,17 +125,48 @@ export async function analyzePlayer(
   const account = await client.getAccountByRiotId(riotId, tagLine);
   const { puuid } = account;
 
-  // IMPORTANT: Save player to database FIRST, before attempting to fetch cached matches
-  // This ensures the player exists before any foreign key references are attempted
+  // Step 2: Fetch ALL 2025 match IDs FIRST (before creating database records)
+  // This way we fail early if matches can't be fetched
+  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching 2025 match list...' });
+
+  let matchIds: string[];
+  try {
+    matchIds = await fetchAll2025MatchIds(client, puuid);
+  } catch (error: any) {
+    // Failed to fetch match IDs - don't create any database records
+    throw new Error(`Unable to fetch matches from Riot API. Please try again in a few moments. Error: ${error.message}`);
+  }
+
+  // Check if player exists in database
+  const existingPlayer = await getPlayerByRiotId(riotId, tagLine);
+
+  // Step 3: Check which matches we already have in cache
+  let cachedMatches: DBMatch[] = [];
+  if (existingPlayer) {
+    cachedMatches = await getMatches(puuid);
+  }
+
+  let newMatchIds = matchIds.filter(id => !new Set(cachedMatches.map(m => m.match_id)).has(id));
+
+  // CRITICAL CHECK: If no new matches AND no cached matches, fail completely
+  if (matchIds.length === 0 && cachedMatches.length === 0) {
+    throw new Error('No matches found in 2025 for this player. They may not have played any games yet this year. Please try again later.');
+  }
+
+  if (newMatchIds.length === 0 && cachedMatches.length === 0) {
+    throw new Error('Unable to load match data. Please try again in a few moments.');
+  }
+
+  // Only NOW create/update player record (after we know we have matches)
   onProgress?.({ stage: 'account', progress: 15, message: 'Creating player record...' });
-  
+
   await upsertPlayer({
     puuid,
     riot_id: riotId,
     tag_line: tagLine,
     region,
   });
-  
+
   console.log(`✅ Player ${riotId}#${tagLine} created/updated in database`);
 
   // Check if we have recent cached data
@@ -143,20 +174,6 @@ export async function analyzePlayer(
 
   if (!shouldRefresh) {
     onProgress?.({ stage: 'cache', progress: 100, message: 'Using cached data' });
-  }
-
-  // Step 2: Fetch ALL 2025 match IDs (with pagination)
-  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching 2025 match list...' });
-
-  const matchIds = await fetchAll2025MatchIds(client, puuid);
-
-  // Step 3: Check which matches we already have in cache (safe now that player exists)
-  let cachedMatches = await getMatches(puuid);
-  let newMatchIds = matchIds.filter(id => !new Set(cachedMatches.map(m => m.match_id)).has(id));
-  
-  // If no new matches found via API but we have cached matches, use those
-  if (newMatchIds.length === 0 && cachedMatches.length === 0) {
-    throw new Error('No matches found in 2025 for this player');
   }
 
   if (newMatchIds.length === 0 && cachedMatches.length > 0) {
@@ -178,32 +195,54 @@ export async function analyzePlayer(
 
   // Step 4: Fetch new match details concurrently
   let newMatches: DBMatch[] = [];
-  
+
   if (newMatchIds.length > 0) {
-    const rawMatches = await client.fetchMatchesConcurrent(newMatchIds, 10);
-    
-    // Convert to DB format
-    for (const matchData of rawMatches) {
-      const dbMatch = convertMatchToDBFormat(matchData, puuid);
-      if (dbMatch) {
-        newMatches.push(dbMatch);
+    let rawMatches: any[] = [];
+
+    try {
+      rawMatches = await client.fetchMatchesConcurrent(newMatchIds, 10);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch match details:', error);
+
+      // If we have cached matches, continue with those
+      if (cachedMatches.length > 0) {
+        console.log(`⚠️ Using ${cachedMatches.length} cached matches due to fetch error`);
+      } else {
+        // No cached matches and can't fetch new ones - fail completely
+        throw new Error('Unable to fetch match details from Riot API. Please try again in a few moments.');
       }
     }
-    
-    // Save new matches to cache
-    if (newMatches.length > 0) {
-      await insertMatches(newMatches);
-      console.log(`💾 Saved ${newMatches.length} new matches to cache`);
+
+    // Convert to DB format
+    if (rawMatches.length > 0) {
+      for (const matchData of rawMatches) {
+        const dbMatch = convertMatchToDBFormat(matchData, puuid);
+        if (dbMatch) {
+          newMatches.push(dbMatch);
+        }
+      }
+
+      // Save new matches to cache
+      if (newMatches.length > 0) {
+        await insertMatches(newMatches);
+        console.log(`💾 Saved ${newMatches.length} new matches to cache`);
+      }
     }
   }
 
   // Combine cached and new matches
   const allMatches = [...cachedMatches, ...newMatches];
-  
+
   console.log(`✅ Total matches for analysis: ${allMatches.length}`);
 
+  // FINAL VALIDATION: Must have at least some matches to analyze
   if (allMatches.length === 0) {
-    throw new Error('No valid matches found for this player');
+    throw new Error('Unable to load any match data. Please try again in a few moments. If this persists, the player may not have any ranked games in 2025.');
+  }
+
+  // Require a minimum number of matches for meaningful analysis
+  if (allMatches.length < 5) {
+    throw new Error(`Not enough match data for analysis (found ${allMatches.length} matches). Players need at least 5 ranked games in 2025 for a complete year-in-review.`);
   }
 
   onProgress?.({
