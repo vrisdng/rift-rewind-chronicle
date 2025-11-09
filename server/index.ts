@@ -446,7 +446,6 @@ app.post("/api/share-cards", async (req, res) => {
 				player_tag_line: player.tagLine,
 				caption: finalCaption,
 				image_path: filePath,
-				player_snapshot: player,
 			});
 
 			const payload = buildShareCardPayload(cardRecord);
