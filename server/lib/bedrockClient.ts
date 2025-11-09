@@ -232,7 +232,7 @@ function getMockInsights(): AIInsights {
       "decisive late-game impact. This playstyle mirrors professional ADC players who prioritize safe laning " +
       "and teamfight positioning over early skirmishes.",
     season_prediction:
-      "Based on your improvement trajectory, expect to climb 2-3 divisions in 2025. " +
+      "Based on your improvement trajectory, expect to climb 2-3 divisions in 2026. " +
       "Your consistency improvements suggest you're ready to maintain higher ranks. " +
       "Focus on reducing your tilt factor and you could be looking at Diamond/Master territory.",
     title: 'The Patient Scaler',
