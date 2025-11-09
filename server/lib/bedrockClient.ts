@@ -11,7 +11,6 @@ const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
 
-// Bedrock model ID for Claude 3.5 Sonnet (v2 model)
 // Use cross-region inference profile for on-demand throughput
 const MODEL_ID = 'us.anthropic.claude-3-haiku-20240307-v1:0';
 
