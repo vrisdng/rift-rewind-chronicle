@@ -208,45 +208,6 @@ export interface GetShareCardResponse {
 	error?: string;
 }
 
-export interface XRequestTokenResponse {
-	success: boolean;
-	data?: {
-		authUrl: string;
-		oauthToken: string;
-	};
-	error?: string;
-}
-
-export interface XAuthSessionPayload {
-	oauthToken: string;
-	oauthTokenSecret: string;
-	screenName: string;
-	userId: string;
-}
-
-export interface XAccessTokenResponse {
-	success: boolean;
-	data?: XAuthSessionPayload;
-	error?: string;
-}
-
-export interface XPostTweetRequest {
-	caption: string;
-	cardDataUrl: string;
-	oauthToken: string;
-	oauthTokenSecret: string;
-}
-
-export interface XPostTweetResponse {
-	success: boolean;
-	data?: {
-		tweetUrl: string;
-		tweetId: string;
-		truncated?: boolean;
-	};
-	error?: string;
-}
-
 export type DuoBondType = "inferno" | "tide" | "terra" | "gale";
 
 export interface DuoSynergyIdentity {
@@ -474,44 +435,6 @@ export async function analyzePlayerWithProgress(
 }
 
 /**
- * Analyze a player (or get from cache) - Legacy non-streaming version
- */
-export async function analyzePlayer(
-	riotId: string,
-	tagLine: string,
-	region: string = "sg2",
-): Promise<{
-	success: boolean;
-	data?: PlayerStats;
-	error?: string;
-	cached?: boolean;
-}> {
-	try {
-		const response = await fetch(`${API_URL}/api/analyze`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ riotId, tagLine, region }),
-		});
-
-		const result = await response.json();
-
-		if (!response.ok) {
-			throw new Error(result.error || "Failed to analyze player");
-		}
-
-		return result;
-	} catch (error: any) {
-		console.error("Error analyzing player:", error);
-		return {
-			success: false,
-			error: error.message || "Failed to analyze player",
-		};
-	}
-}
-
-/**
  * Get cached player data
  */
 export async function getPlayer(
@@ -650,61 +573,6 @@ export async function fetchShareCard(slug: string): Promise<ShareCardPayload> {
 		throw new Error(
 			result.error || `Share card not found (${response.status})`,
 		);
-	}
-
-	return result.data;
-}
-
-export async function startXAuthSession(): Promise<{
-	authUrl: string;
-	oauthToken: string;
-}> {
-	const response = await fetch(`${API_URL}/api/x/request-token`, {
-		method: "POST",
-	});
-
-	const result = await readJsonBody<XRequestTokenResponse>(response);
-	if (!response.ok || !result.success || !result.data) {
-		throw new Error(result.error || `Failed to contact X (${response.status})`);
-	}
-	return result.data;
-}
-
-export async function completeXAuthSession(
-	oauthToken: string,
-	oauthVerifier: string,
-): Promise<XAuthSessionPayload> {
-	const response = await fetch(`${API_URL}/api/x/access-token`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({ oauthToken, oauthVerifier }),
-	});
-
-	const result = await readJsonBody<XAccessTokenResponse>(response);
-	if (!response.ok || !result.success || !result.data) {
-		throw new Error(
-			result.error || `Failed to finalize X login (${response.status})`,
-		);
-	}
-	return result.data;
-}
-
-export async function postRecapToX(
-	payload: XPostTweetRequest,
-): Promise<{ tweetUrl: string; tweetId: string; truncated?: boolean }> {
-	const response = await fetch(`${API_URL}/api/x/post-tweet`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(payload),
-	});
-
-	const result = await readJsonBody<XPostTweetResponse>(response);
-	if (!response.ok || !result.success || !result.data) {
-		throw new Error(result.error || `Failed to post on X (${response.status})`);
 	}
 
 	return result.data;

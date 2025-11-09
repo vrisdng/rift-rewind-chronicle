@@ -178,7 +178,7 @@ const generateCommentary = (key: SliderKey, stats: Stats, baseline: Stats) => {
       const wrBump = (deltaCs * 3).toFixed(1);
       return deltaCs >= 0
         ? `You're farming like a pro — +${deltaCs.toFixed(1)} CS/min adds ~${wrBump}% WR. Keep it up!`
-        : `Missed waves cost wins — recover ${Math.abs(deltaCs).toFixed(1)} CS/min for ~${Math.abs(wrBump)}% WR back.`;
+        : `Missed waves cost wins — recover ${Math.abs(deltaCs).toFixed(1)} CS/min for ~${Math.abs(Number(wrBump))}% WR back.`;
     }
     case "deaths": {
       const wrBump = (deltaDeaths * 2).toFixed(1);

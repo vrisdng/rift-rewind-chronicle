@@ -11,7 +11,6 @@ const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
 
-// Bedrock model ID for Claude 3.5 Sonnet (v2 model)
 // Use cross-region inference profile for on-demand throughput
 const MODEL_ID = 'us.anthropic.claude-3-haiku-20240307-v1:0';
 
@@ -233,7 +232,7 @@ function getMockInsights(): AIInsights {
       "decisive late-game impact. This playstyle mirrors professional ADC players who prioritize safe laning " +
       "and teamfight positioning over early skirmishes.",
     season_prediction:
-      "Based on your improvement trajectory, expect to climb 2-3 divisions in 2025. " +
+      "Based on your improvement trajectory, expect to climb 2-3 divisions in 2026. " +
       "Your consistency improvements suggest you're ready to maintain higher ranks. " +
       "Focus on reducing your tilt factor and you could be looking at Diamond/Master territory.",
     title: 'The Patient Scaler',

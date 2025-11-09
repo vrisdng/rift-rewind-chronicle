@@ -25,19 +25,9 @@ import {
 	GetShareCardResponse,
 	ShareCardPayload,
 	DBShareCard,
-	XRequestTokenResponse,
-	XAccessTokenRequest,
-	XAccessTokenResponse,
-	XPostTweetRequest,
-	XPostTweetResponse,
 } from "./types/index.ts";
 import { generateShareableTextFromSummary } from "./lib/insightGenerator.ts";
 import { nanoid } from "nanoid";
-import {
-	requestXAuthToken,
-	exchangeXAccessToken,
-	postTweetWithImage,
-} from "./lib/xClient.ts";
 import { computeDuoSynergy } from "./lib/duoSynergy.ts";
 
 // ==================== HELPER FUNCTIONS ====================
@@ -206,64 +196,6 @@ app.use(
 app.use(express.json({ limit: "15mb" })); // Increase limit for base64 image uploads
 
 // ==================== PLAYER ANALYSIS ====================
-
-/**
- * POST /api/analyze
- * Analyze a player completely: fetch matches, calculate metrics, generate insights
- * Optional: forceRegenerateInsights - if true, will regenerate AI insights even if cached
- */
-app.post("/api/analyze", async (req, res) => {
-	try {
-		const {
-			riotId,
-			tagLine,
-			region = "sg2",
-			forceRegenerateInsights = false,
-		} = req.body as AnalyzePlayerRequest & {
-			forceRegenerateInsights?: boolean;
-		};
-
-		if (!riotId || !tagLine) {
-			return res.status(400).json({
-				success: false,
-				error: "Missing required fields: riotId and tagLine",
-			});
-		}
-
-		console.log(
-			`📊 Starting analysis for ${riotId}#${tagLine}${forceRegenerateInsights ? " (force regenerate insights)" : ""}`,
-		);
-
-
-		// Perform full analysis
-		const playerStats = await analyzePlayer(
-			riotId,
-			tagLine,
-			region,
-			(update: ProgressUpdate) => {
-				console.log(
-					`📈 Progress: ${update.stage} - ${update.message} (${update.progress}%)`,
-				);
-				// In production, you could send progress via WebSocket or SSE
-			},
-			forceRegenerateInsights,
-		);
-
-		console.log(`✅ Analysis complete for ${riotId}#${tagLine}`);
-
-		res.json({
-			success: true,
-			data: playerStats,
-			cached: false,
-		});
-	} catch (error: any) {
-		console.error("Error analyzing player:", error);
-		res.status(500).json({
-			success: false,
-			error: error.message || "Failed to analyze player",
-		});
-	}
-});
 
 /**
  * POST /api/analyze-stream
@@ -514,7 +446,6 @@ app.post("/api/share-cards", async (req, res) => {
 				player_tag_line: player.tagLine,
 				caption: finalCaption,
 				image_path: filePath,
-				player_snapshot: player,
 			});
 
 			const payload = buildShareCardPayload(cardRecord);
@@ -671,87 +602,6 @@ app.get("/share/:slug/preview", async (req, res) => {
 			.set("Content-Type", "text/html; charset=utf-8")
 			.set("Cache-Control", "no-store")
 			.send(html);
-	}
-});
-
-// ==================== X AUTH & POSTING ====================
-
-app.post("/api/x/request-token", async (_req, res) => {
-	try {
-		const data = await requestXAuthToken();
-		const response: XRequestTokenResponse = {
-			success: true,
-			data,
-		};
-		return res.json(response);
-	} catch (error: any) {
-		console.error("Error requesting X token:", error);
-		const response: XRequestTokenResponse = {
-			success: false,
-			error: error.message || "Failed to reach X",
-		};
-		return res.status(500).json(response);
-	}
-});
-
-app.post("/api/x/access-token", async (req, res) => {
-	const { oauthToken, oauthVerifier } = req.body as XAccessTokenRequest;
-	if (!oauthToken || !oauthVerifier) {
-		const response: XAccessTokenResponse = {
-			success: false,
-			error: "oauthToken and oauthVerifier are required",
-		};
-		return res.status(400).json(response);
-	}
-
-	try {
-		const data = await exchangeXAccessToken(oauthToken, oauthVerifier);
-		const response: XAccessTokenResponse = {
-			success: true,
-			data,
-		};
-		return res.json(response);
-	} catch (error: any) {
-		console.error("Error exchanging X token:", error);
-		const response: XAccessTokenResponse = {
-			success: false,
-			error: error.message || "Failed to confirm X login",
-		};
-		return res.status(400).json(response);
-	}
-});
-
-app.post("/api/x/post-tweet", async (req, res) => {
-	const { caption, cardDataUrl, oauthToken, oauthTokenSecret } =
-		req.body as XPostTweetRequest;
-	if (!caption || !cardDataUrl || !oauthToken || !oauthTokenSecret) {
-		const response: XPostTweetResponse = {
-			success: false,
-			error:
-				"caption, cardDataUrl, oauthToken, and oauthTokenSecret are required",
-		};
-		return res.status(400).json(response);
-	}
-
-	try {
-		const data = await postTweetWithImage({
-			caption,
-			cardDataUrl,
-			oauthToken,
-			oauthTokenSecret,
-		});
-		const response: XPostTweetResponse = {
-			success: true,
-			data,
-		};
-		return res.json(response);
-	} catch (error: any) {
-		console.error("Error posting to X:", error);
-		const response: XPostTweetResponse = {
-			success: false,
-			error: error.message || "Failed to post on X",
-		};
-		return res.status(500).json(response);
 	}
 });
 

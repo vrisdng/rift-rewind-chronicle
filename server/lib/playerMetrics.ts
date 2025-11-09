@@ -791,7 +791,6 @@ export function determineArchetypeRelative(metrics: DerivedMetrics): PlayerArche
     description: archetypeScores[0].description,
     distance: 0,
     matchPercentage: archetypeScores[0].matchPercentage,
-    icon: archetypeScores[0].icon,
   };
 }
 
@@ -809,7 +808,6 @@ export function getTopArchetypes(metrics: DerivedMetrics): PlayerArchetype[] {
       description: archetype.description,
       distance,
       matchPercentage: Math.round(matchPercentage),
-      icon: archetype.icon,
     };
   });
 
