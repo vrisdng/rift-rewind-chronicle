@@ -317,14 +317,14 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					<Button
 						size="sm"
 						onClick={() => navigate("/predict-lab")}
-						className="bg-[#C8AA6E] text-[#0A1428] font-bold shadow-[0_0_20px_rgba(200,170,110,0.45)] transition transform hover:-translate-y-1 hover:bg-[#D4B982]"
+						className="bg-[#C8AA6E] text-[#0A1428] font-bold shadow-[0_0_20px_rgba(200,170,110,0.45)] transition transform  hover:bg-[#D4B982]"
 					>
 						Prediction Lab
 					</Button>
 					<Button
 						size="sm"
 						onClick={() => navigate("/duo-synergy")}
-						className="bg-white/10 text-white font-semibold border border-white/30 shadow-[0_0_20px_rgba(200,170,110,0.18)] transition transform hover:-translate-y-1"
+						className="bg-white/10 text-white font-semibold border hover:bg-[#C8AA6E]/50 border-white/30 shadow-[0_0_20px_rgba(200,170,110,0.18)] transition transform"
 					>
 						Synergy Duo
 					</Button>
@@ -430,7 +430,7 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 							size="lg"
 							variant="outline"
 							onClick={() => window.location.href = '/'}
-							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 font-bold transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
+							className="border-[#C8AA6E] text-[#C8AA6E] hover:bg-[#C8AA6E]/10 hover:border-[#C8AA6E] font-bold transition-all duration-300 lol-heading w-full sm:w-auto text-sm sm:text-base"
 						>
 							Start Again
 							<ArrowRight className="ml-2 h-4 w-4" />

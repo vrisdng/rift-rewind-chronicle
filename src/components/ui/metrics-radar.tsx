@@ -142,8 +142,8 @@ export function MetricsRadar({ metrics, title, className }: MetricsRadarProps) {
             <Radar
               name="Metrics"
               dataKey="value"
-              stroke="hsl(var(--primary))"
-              fill="hsl(var(--primary))"
+              stroke="hsl(var(--lol-gold))"
+              fill="hsl(var(--lol-gold))"
               fillOpacity={0.3}
             />
             <Tooltip
