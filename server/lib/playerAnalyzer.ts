@@ -187,15 +187,15 @@ export async function analyzePlayer(
   const shouldRefresh = await needsRefresh(puuid, 24);
 
   if (!shouldRefresh) {
-    onProgress?.({ stage: 'cache', progress: 100, message: 'Using cached data' });
+    onProgress?.({ stage: 'cache', progress: 100, message: 'Using saved data' });
   }
 
   if (newMatchIds.length === 0 && cachedMatches.length > 0) {
-    console.log(`📊 No new matches found, but using ${cachedMatches.length} cached matches`);
+    console.log(`📊 No new matches found, but using ${cachedMatches.length} saved matches`);
     onProgress?.({
       stage: 'processing',
       progress: 35,
-      message: `Using ${cachedMatches.length} cached matches from previous analysis...`,
+      message: `Using ${cachedMatches.length} saved matches from previous analysis...`,
     });
   } else {
     console.log(`📊 Cache status: ${cachedMatches.length} cached, ${newMatchIds.length} new matches`);
@@ -203,7 +203,7 @@ export async function analyzePlayer(
     onProgress?.({
       stage: 'processing',
       progress: 35,
-      message: `Fetching ${newMatchIds.length} new matches (${cachedMatches.length} cached)...`,
+      message: `Fetching ${newMatchIds.length} new matches (${cachedMatches.length} saved)...`,
     });
   }
 
