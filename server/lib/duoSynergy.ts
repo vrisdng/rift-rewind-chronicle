@@ -583,19 +583,34 @@ export async function computeDuoSynergy(
 		throw new Error("Player B Riot ID and tag line are required");
 	}
 
+	const playerARegion = playerAInput.region || "sea";
+	const playerBRegion = playerBInput.region || playerARegion;
+
+	const normalizedPlayerA = { ...playerAInput, region: playerARegion };
+	const normalizedPlayerB = { ...playerBInput, region: playerBRegion };
+
 	const [playerAStats, playerBStats] = await Promise.all([
 		(async () => {
 			let stats =
-				(await getCachedPlayerStats(playerAInput.riotId, playerAInput.tagLine)) ||
+				(await getCachedPlayerStats(
+					normalizedPlayerA.riotId,
+					normalizedPlayerA.tagLine,
+				)) ||
 				null;
 			if (!stats) {
 				stats = await analyzePlayer(
-					playerAInput.riotId,
-					playerAInput.tagLine,
-					playerAInput.region || "sea",
+					normalizedPlayerA.riotId,
+					normalizedPlayerA.tagLine,
+					normalizedPlayerA.region || "sea",
 				);
 			}
 			const matches = await getMatches(stats.puuid);
+			console.log(
+				`[DUO] Retrieved ${matches.length} matches for ${stats.riotId}#${stats.tagLine} (first ids: ${matches
+					.slice(0, 5)
+					.map((match) => match.match_id)
+					.join(", ") || "none"})`,
+			);
 			if (!matches.length) {
 				throw new Error(
 					`No matches found for ${stats.riotId}#${stats.tagLine}. Analyze them first.`,
@@ -609,16 +624,25 @@ export async function computeDuoSynergy(
 		})(),
 		(async () => {
 			let stats =
-				(await getCachedPlayerStats(playerBInput.riotId, playerBInput.tagLine)) ||
+				(await getCachedPlayerStats(
+					normalizedPlayerB.riotId,
+					normalizedPlayerB.tagLine,
+				)) ||
 				null;
 			if (!stats) {
 				stats = await analyzePlayer(
-					playerBInput.riotId,
-					playerBInput.tagLine,
-					playerBInput.region || "sea",
+					normalizedPlayerB.riotId,
+					normalizedPlayerB.tagLine,
+					normalizedPlayerB.region || "sea",
 				);
 			}
 			const matches = await getMatches(stats.puuid);
+			console.log(
+				`[DUO] Retrieved ${matches.length} matches for ${stats.riotId}#${stats.tagLine} (first ids: ${matches
+					.slice(0, 5)
+					.map((match) => match.match_id)
+					.join(", ") || "none"})`,
+			);
 			if (!matches.length) {
 				throw new Error(
 					`No matches found for ${stats.riotId}#${stats.tagLine}. Analyze them first.`,
@@ -632,23 +656,52 @@ export async function computeDuoSynergy(
 		})(),
 	]);
 
+	console.log(
+		`[DUO] Starting synergy: ${playerAStats.stats.riotId}#${playerAStats.stats.tagLine} (${playerAStats.matches.length} matches) x ${playerBStats.stats.riotId}#${playerBStats.stats.tagLine} (${playerBStats.matches.length} matches)`,
+	);
+
 	const matchesAMap = new Map(playerAStats.matches.map((m) => [m.match_id, m]));
 	const matchesBMap = new Map(playerBStats.matches.map((m) => [m.match_id, m]));
 
 	const duoPairs: DuoMatchPair[] = [];
+	const sharedMatchDebug: Array<{
+		id: string;
+		teamA: string | number | null;
+		teamB: string | number | null;
+		date: string | number | null;
+	}> = [];
+
 	for (const match of playerAStats.matches) {
 		const opponent = matchesBMap.get(match.match_id);
-		if (opponent && opponent.team_id === match.team_id) {
-			duoPairs.push({
+		if (opponent) {
+			sharedMatchDebug.push({
 				id: match.match_id,
-				a: match,
-				b: opponent,
-				date: new Date(match.game_date).getTime(),
+				teamA: match.team_id,
+				teamB: opponent.team_id,
+				date: match.game_date,
 			});
+			if (opponent.team_id === match.team_id) {
+				duoPairs.push({
+					id: match.match_id,
+					a: match,
+					b: opponent,
+					date: new Date(match.game_date).getTime(),
+				});
+			}
 		}
 	}
 
 	if (!duoPairs.length) {
+		const sharedCount = sharedMatchDebug.length;
+		const sample = sharedMatchDebug.slice(0, 5).map((match) => {
+			const sameTeam = match.teamA === match.teamB;
+			return `${match.id} (teamA=${match.teamA} teamB=${match.teamB} sameTeam=${sameTeam})`;
+		});
+		console.warn(
+			`[DUO] No shared same-team matches for ${playerAStats.stats.riotId}#${playerAStats.stats.tagLine} & ${playerBStats.stats.riotId}#${playerBStats.stats.tagLine}. Shared match ids=${sharedCount}, sample=${sample.join(
+				"; ",
+			) || "none"}`,
+		);
 		throw new Error(
 			"No shared matches found for this duo in the analyzed timeframe.",
 		);
