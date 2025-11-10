@@ -18,6 +18,6 @@ jobs:
       - name: Ping Render web service
         shell: bash
         run: |
-          URL="${$DEFAULT_PING_URL}"
+          URL="${RENDER_PING_URL:-$DEFAULT_PING_URL}"
           echo "Sending keep-alive request to ${URL}"
           curl -sSf -o /dev/null "${URL}"
