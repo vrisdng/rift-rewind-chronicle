@@ -67,7 +67,7 @@ const Landing = () => {
           toast({
             title: cached ? "Data Retrieved" : "Analysis Complete!",
             description: cached
-              ? "Using cached analysis data"
+              ? "Using saved data"
               : `Analyzed ${data.totalGames} matches successfully`,
           });
         },
