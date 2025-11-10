@@ -195,6 +195,15 @@ app.use(
 );
 app.use(express.json({ limit: "15mb" })); // Increase limit for base64 image uploads
 
+// Simple health endpoint so uptime monitors can keep the service warm on Render
+app.get("/health", (_req, res) => {
+	res.json({
+		status: "ok",
+		uptime: process.uptime(),
+		timestamp: Date.now(),
+	});
+});
+
 // ==================== PLAYER ANALYSIS ====================
 
 /**

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RENDER_PING_URL: ${{ secrets.RENDER_PING_URL }}
-      DEFAULT_PING_URL: https://rift-rewind-chronicle.onrender.com/
+      DEFAULT_PING_URL: https://rift-rewind-chronicle.onrender.com/health
     steps:
       - name: Ping Render web service
         shell: bash
