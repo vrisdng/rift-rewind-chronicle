@@ -328,6 +328,13 @@ export const FinaleSlide = ({ playerData, onContinue }: FinaleSlideProps) => {
 					>
 						Synergy Duo
 					</Button>
+					<Button
+						size="sm"
+						onClick={() => navigate("/coaches", { state: { playerData } })}
+						className="bg-[#C8AA6E]/20 text-[#C8AA6E] font-semibold border border-[#C8AA6E]/40 shadow-[0_0_20px_rgba(200,170,110,0.25)] transition transform hover:-translate-y-1"
+					>
+						Specialized Coaches
+					</Button>
 				</div>
 
 				<div className="max-w-4xl w-full space-y-6 animate-fade-in relative z-10">

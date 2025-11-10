@@ -10,6 +10,7 @@ import { BedrockRuntimeClient, InvokeModelCommand, InvokeModelWithResponseStream
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
+const HAS_BEDROCK_CREDENTIALS = Boolean(AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY);
 
 // Bedrock model ID for Claude 3.5 Sonnet (v2 model)
 // Use cross-region inference profile for on-demand throughput
@@ -32,7 +33,7 @@ interface BedrockRequest {
  */
 export async function invokeBedrockClaude(prompt: string): Promise<AIInsights> {
   // Check for AWS credentials
-  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+  if (!HAS_BEDROCK_CREDENTIALS) {
     console.warn('⚠️  AWS credentials not configured. Using mock AI insights.');
     return getMockInsights();
   }
@@ -115,7 +116,7 @@ export async function invokeBedrockClaudeStream(
   systemPrompt?: string
 ): Promise<void> {
   // Check for AWS credentials
-  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+  if (!HAS_BEDROCK_CREDENTIALS) {
     console.warn('⚠️  AWS credentials not configured. Using mock streaming.');
     const mockText = "I'm your RiftRewind assistant! I can help you understand your gameplay, suggest improvements, and answer questions about your season. What would you like to know?";
     
@@ -346,7 +347,7 @@ export function parseAIResponse(responseText: string): AIInsights {
  * Health check for Bedrock availability
  */
 export async function checkBedrockHealth(): Promise<boolean> {
-  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+  if (!HAS_BEDROCK_CREDENTIALS) {
     return false;
   }
 
@@ -368,3 +369,73 @@ export default {
   checkBedrockHealth,
   getMockInsights,
 };
+
+export async function invokeBedrockClaudeText(options: {
+  message: string;
+  systemPrompt?: string;
+  maxTokens?: number;
+  temperature?: number;
+  top_p?: number;
+}): Promise<string> {
+  if (!HAS_BEDROCK_CREDENTIALS) {
+    console.warn('⚠️  AWS credentials not configured. Falling back to mock text response.');
+    return '';
+  }
+
+  const {
+    message,
+    systemPrompt,
+    maxTokens = 1200,
+    temperature = 0.7,
+    top_p = 0.9,
+  } = options;
+
+  const request: BedrockRequest = {
+    anthropic_version: 'bedrock-2023-05-31',
+    max_tokens: maxTokens,
+    messages: [
+      {
+        role: 'user',
+        content: message,
+      },
+    ],
+    temperature,
+    top_p,
+  };
+
+  if (systemPrompt) {
+    request.system = systemPrompt;
+  }
+
+  const client = new BedrockRuntimeClient({
+    region: AWS_REGION,
+    credentials: {
+      accessKeyId: AWS_ACCESS_KEY_ID,
+      secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    },
+  });
+
+  const command = new InvokeModelCommand({
+    modelId: MODEL_ID,
+    contentType: 'application/json',
+    accept: 'application/json',
+    body: JSON.stringify(request),
+  });
+
+  const response = await client.send(command);
+  const body = response.body ? new TextDecoder().decode(response.body) : '';
+  if (!body) {
+    throw new Error('Empty response from Bedrock text invocation');
+  }
+
+  const parsed = JSON.parse(body);
+  const text = Array.isArray(parsed.content)
+    ? parsed.content.map((chunk: any) => chunk.text || '').join('')
+    : parsed.output_text || '';
+
+  return (text || '').trim();
+}
+
+export function hasBedrockCredentials(): boolean {
+  return HAS_BEDROCK_CREDENTIALS;
+}

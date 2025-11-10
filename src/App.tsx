@@ -8,6 +8,8 @@ import WrappedDashboard from "./pages/WrappedDashboard";
 import NotFound from "./pages/NotFound";
 import PredictLab from "./pages/PredictLab";
 import DuoSynergy from "./pages/DuoSynergy";
+import Coaches from "./pages/Coaches";
+import CoachTrainingRoom from "./pages/CoachTrainingRoom";
 import { AudioButton } from "./components/ui/audio-toggle-button";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
 					<Route path="/dashboard" element={<WrappedDashboard />} />
 					<Route path="/predict-lab" element={<PredictLab />} />
 					<Route path="/duo-synergy" element={<DuoSynergy />} />
+					<Route path="/coaches" element={<Coaches />} />
+					<Route path="/coaches/:coachId" element={<CoachTrainingRoom />} />
 					{/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 					<Route path="*" element={<NotFound />} />
 				</Routes>

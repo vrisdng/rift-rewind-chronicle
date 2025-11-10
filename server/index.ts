@@ -14,6 +14,8 @@ import {
 import {
 	invokeBedrockClaude,
 	invokeBedrockClaudeStream,
+	invokeBedrockClaudeText,
+	hasBedrockCredentials,
 } from "./lib/bedrockClient.ts";
 import { buildChatbotSystemPrompt } from "./prompts/chatbot-system-prompt.ts";
 import {
@@ -39,6 +41,18 @@ import {
 	postTweetWithImage,
 } from "./lib/xClient.ts";
 import { computeDuoSynergy } from "./lib/duoSynergy.ts";
+import {
+	COACHES_BY_ID,
+	MOCK_PLAYER_METRICS,
+	formatCoachMetricValue,
+} from "../shared/coaches.ts";
+import type {
+	CoachAdviceContent,
+	CoachId,
+	CoachMetricKey,
+	CoachProfile,
+	PlayerMetricsPayload,
+} from "../shared/coaches.ts";
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -96,6 +110,12 @@ const SHARE_CARD_PREVIEW_CACHE_SECONDS = Math.max(
 );
 const SHARE_CARD_PREVIEW_DEFAULT_DESCRIPTION =
 	"Relive this summoner's Rift Rewind Chronicle and craft your own wrap-up.";
+const COACH_TEMPERATURES: Record<CoachId, number> = {
+	farming: 0.6,
+	aggression: 0.85,
+	vision: 0.55,
+	teamfight: 0.65,
+};
 
 function buildSlug(riotId: string): string {
 	const normalized = riotId
@@ -418,6 +438,63 @@ app.post("/api/duo-synergy", async (req, res) => {
 		res.status(isClientError ? 400 : 500).json({
 			success: false,
 			error: message,
+		});
+	}
+});
+
+/**
+ * POST /api/coach/:coachId
+ * Generate specialized coach feedback
+ */
+app.post("/api/coach/:coachId", async (req, res) => {
+	const coachIdParam = (req.params.coachId || "").toLowerCase() as CoachId;
+	const coach = COACHES_BY_ID[coachIdParam as CoachId];
+
+	if (!coach) {
+		return res.status(404).json({
+			success: false,
+			error: "Unknown coach requested",
+		});
+	}
+
+	const payload = buildCoachPayload(req.body as Partial<PlayerMetricsPayload>, coach.id);
+
+	try {
+		let source: "ai" | "mock" = "mock";
+		let content: CoachAdviceContent;
+
+		if (hasBedrockCredentials()) {
+			const aiText = await invokeBedrockClaudeText({
+				message: buildCoachUserMessage(payload),
+				systemPrompt: coach.systemPrompt,
+				maxTokens: 1500,
+				temperature: COACH_TEMPERATURES[coach.id] ?? 0.7,
+			});
+
+			if (aiText) {
+				content = parseCoachAdvice(aiText);
+				source = "ai";
+			} else {
+				content = buildMockCoachAdvice(coach, payload);
+			}
+		} else {
+			content = buildMockCoachAdvice(coach, payload);
+		}
+
+		return res.json({
+			success: true,
+			coachId: coach.id,
+			content,
+			source,
+		});
+	} catch (error: any) {
+		console.error("Coach endpoint error:", error);
+		const fallback = buildMockCoachAdvice(coach, payload);
+		return res.status(200).json({
+			success: true,
+			coachId: coach.id,
+			content: fallback,
+			source: "mock",
 		});
 	}
 });
@@ -986,3 +1063,381 @@ app.post("/api/chat", async (req, res) => {
 		}
 	}
 });
+
+function buildCoachPayload(
+	input: Partial<PlayerMetricsPayload> | undefined,
+	coachId: CoachId,
+): PlayerMetricsPayload {
+	const base = MOCK_PLAYER_METRICS;
+	const partial = input ?? {};
+
+	const metrics = {
+		...base.metrics,
+		...(partial.metrics ?? {}),
+	};
+
+	const trends = {
+		csPerMinOverTime:
+			Array.isArray(partial.trends?.csPerMinOverTime) &&
+			partial.trends?.csPerMinOverTime.length
+				? partial.trends.csPerMinOverTime
+				: [...base.trends.csPerMinOverTime],
+		deathsOverTime:
+			Array.isArray(partial.trends?.deathsOverTime) &&
+			partial.trends?.deathsOverTime.length
+				? partial.trends.deathsOverTime
+				: [...base.trends.deathsOverTime],
+		visionOverTime:
+			Array.isArray(partial.trends?.visionOverTime) &&
+			partial.trends?.visionOverTime.length
+				? partial.trends.visionOverTime
+				: [...base.trends.visionOverTime],
+	};
+
+	const benchmarks = {
+		...base.benchmarks,
+		...(partial.benchmarks ?? {}),
+	};
+
+	const topChampions =
+		Array.isArray(partial.topChampions) && partial.topChampions.length
+			? partial.topChampions
+			: base.topChampions
+				? [...(base.topChampions ?? [])]
+				: undefined;
+
+	return {
+		...base,
+		...partial,
+		coachId,
+		playerName: partial.playerName || base.playerName,
+		persona: partial.persona || base.persona,
+		role: partial.role || base.role,
+		rank: partial.rank || base.rank,
+		metrics,
+		trends,
+		benchmarks,
+		topChampions,
+		situations:
+			Array.isArray(partial.situations) && partial.situations.length
+				? partial.situations
+				: [...base.situations],
+		question: partial.question || base.question,
+	};
+}
+
+function buildCoachUserMessage(payload: PlayerMetricsPayload): string {
+	return [
+		"Analyze this League of Legends player's metrics. You must follow your personality brief and coaching duties.",
+		"Address the player directly by the exact string found in playerName (their username). Do not mention persona.",
+		"Player JSON:",
+		JSON.stringify(payload, null, 2),
+		"Respond with JSON only, respecting the required schema.",
+	].join("\n");
+}
+
+function parseCoachAdvice(raw: string): CoachAdviceContent {
+	const parsed = parseCoachAdviceJson(raw);
+
+	const lessons = Array.isArray(parsed.lessons)
+		? parsed.lessons.slice(0, 3).map((lesson: any, index: number) => ({
+				title: String(lesson?.title || `Lesson ${index + 1}`),
+				focus: String(lesson?.focus || ""),
+				assignment: String(lesson?.assignment || ""),
+			}))
+		: [];
+
+	const trainingFocus = Array.isArray(parsed.trainingFocus)
+		? parsed.trainingFocus
+				.map((entry: any) => String(entry).trim())
+				.filter(Boolean)
+				.slice(0, 3)
+		: [];
+
+	const keyStats = Array.isArray(parsed.keyStats)
+		? parsed.keyStats.slice(0, 3).map((stat: any, index: number) => ({
+				label: String(stat?.label || `Stat ${index + 1}`),
+				value: String(stat?.value || "—"),
+				insight: String(stat?.insight || ""),
+			}))
+		: [];
+
+	const statAnnotations = Array.isArray(parsed.statAnnotations)
+		? parsed.statAnnotations.slice(0, 5).map((annotation: any, index: number) => ({
+				key: String(annotation?.key || `metric-${index}`) as CoachMetricKey,
+				label: String(annotation?.label || `Metric ${index + 1}`),
+				comment: String(annotation?.comment || ""),
+			}))
+		: [];
+
+	const championNotes = Array.isArray(parsed.championNotes)
+		? parsed.championNotes.slice(0, 3).map((note: any) => ({
+				champion: String(note?.champion || "Champion"),
+				verdict: String(note?.verdict || "Note"),
+				focus: String(note?.focus || ""),
+			}))
+		: [];
+
+	const strengths = Array.isArray(parsed.strengths)
+		? parsed.strengths.slice(0, 3).map((entry: any, index: number) => ({
+				label: String(entry?.label || `Strength ${index + 1}`),
+				detail: String(entry?.detail || ""),
+			}))
+		: [];
+
+	const weaknesses = Array.isArray(parsed.weaknesses)
+		? parsed.weaknesses.slice(0, 3).map((entry: any, index: number) => {
+				const actionables = Array.isArray(entry?.actionables)
+					? entry.actionables
+							.map((tip: any) => String(tip || "").trim())
+							.filter(Boolean)
+							.slice(0, 3)
+					: [];
+				return {
+					label: String(entry?.label || `Weakness ${index + 1}`),
+					detail: String(entry?.detail || ""),
+					actionables: actionables.length ? actionables : ["Plan the adjustment", "Practice consciously", "Review the results"],
+				};
+			})
+		: [];
+
+	const courses = Array.isArray(parsed.courses)
+		? parsed.courses.slice(0, 3).map((course: any, index: number) => ({
+				title: String(course?.title || `Course ${index + 1}`),
+				situation: String(course?.situation || ""),
+				assignment: String(course?.assignment || ""),
+			}))
+		: [];
+
+	return {
+		summary: String(parsed.summary || ""),
+		feedback: String(parsed.feedback || ""),
+		advice: String(parsed.advice || ""),
+		lessons,
+		trainingFocus,
+		keyStats,
+		statAnnotations,
+		championNotes,
+		strengths,
+		weaknesses,
+		courses,
+		signOff: String(parsed.signOff || ""),
+	};
+}
+
+function parseCoachAdviceJson(raw: string): any {
+	if (!raw || !raw.trim()) {
+		throw new Error("Empty AI response");
+	}
+
+	const jsonPayload = extractCoachJsonPayload(raw);
+	const attempts = prepareCoachJsonAttempts(jsonPayload);
+	let lastError: unknown;
+
+	for (const attempt of attempts) {
+		try {
+			return JSON.parse(attempt);
+		} catch (error) {
+			lastError = error;
+			continue;
+		}
+	}
+
+	console.error("Failed to parse coach JSON after repairs:", lastError, {
+		rawPreview: raw.slice(0, 400),
+	});
+
+	if (lastError instanceof Error) {
+		throw lastError;
+	}
+
+	throw new Error("Unable to parse coach advice JSON");
+}
+
+function extractCoachJsonPayload(raw: string): string {
+	let text = raw.trim();
+
+	if (text.startsWith("```")) {
+		const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+		if (fenceMatch) {
+			text = fenceMatch[1].trim();
+		}
+	}
+
+	const firstBrace = text.indexOf("{");
+	const lastBrace = text.lastIndexOf("}");
+
+	if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+		return text.slice(firstBrace, lastBrace + 1);
+	}
+
+	return text;
+}
+
+function prepareCoachJsonAttempts(jsonText: string): string[] {
+	const attempts: string[] = [];
+	const seen = new Set<string>();
+
+	const pushAttempt = (value: string) => {
+		const trimmed = value.trim();
+		if (trimmed && !seen.has(trimmed)) {
+			attempts.push(trimmed);
+			seen.add(trimmed);
+		}
+	};
+
+	pushAttempt(jsonText);
+
+	const normalizedQuotes = normalizeSmartQuotes(jsonText);
+	pushAttempt(normalizedQuotes);
+
+	const escapedControlChars = escapeControlCharsInJsonStrings(normalizedQuotes);
+	pushAttempt(escapedControlChars);
+
+	const noTrailingCommas = escapedControlChars.replace(/,\s*(?=[}\]])/g, "");
+	pushAttempt(noTrailingCommas);
+
+	const collapsedWhitespace = noTrailingCommas
+		.replace(/\r\n/g, "\n")
+		.replace(/\n+/g, "\n")
+		.replace(/\u00a0/g, " ")
+		.trim();
+	pushAttempt(collapsedWhitespace);
+
+	const flattenedWhitespace = collapsedWhitespace.replace(/\s{2,}/g, " ");
+	pushAttempt(flattenedWhitespace);
+
+	return attempts;
+}
+
+function escapeControlCharsInJsonStrings(value: string): string {
+	return value.replace(
+		/"([^"\\]*(\\.[^"\\]*)*)"/g,
+		(match) =>
+			match
+				.replace(/\u2028/g, "\\u2028")
+				.replace(/\u2029/g, "\\u2029")
+				.replace(/\n/g, "\\n")
+				.replace(/\r/g, "\\r")
+				.replace(/\t/g, "\\t"),
+	);
+}
+
+function normalizeSmartQuotes(value: string): string {
+	return value
+		.replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+		.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+}
+
+function buildMockCoachAdvice(
+	coach: CoachProfile,
+	payload: PlayerMetricsPayload,
+): CoachAdviceContent {
+	const playerLabel = payload.playerName || payload.persona || "Summoner";
+	const games = payload.metrics.gamesAnalyzed || 0;
+	const winRate = formatCoachMetricValue(payload.metrics.winRate, "percent");
+	const primaryStat = coach.statKeys[0];
+	const secondaryStat = coach.statKeys[1];
+
+	const lessons = coach.statKeys.slice(0, 3).map((stat, index) => ({
+		title: `${coach.nickname} Course ${index + 1}`,
+		focus: `Sharpen ${stat.label}`,
+		assignment:
+			stat.helper ??
+			`Record ${stat.label} across three games and note how it changes key fights.`,
+	}));
+
+	const trainingFocus = [
+		primaryStat
+			? `Track ${primaryStat.label} every game for a week—log the number after each lobby.`
+			: null,
+		secondaryStat
+			? `VOD review: pause every time ${secondaryStat.label} dips and note what caused it.`
+			: null,
+		`Keep this in mind: ${coach.signatureQuote}`,
+	].filter(Boolean) as string[];
+
+	const keyStats = coach.statKeys.map((stat) => ({
+		label: stat.label,
+		value: formatCoachMetricValue(payload.metrics[stat.key], stat.format),
+		insight:
+			stat.helper ||
+			`Improve ${stat.label} to level up your ${coach.focusArea} impact.`,
+	}));
+
+	const statAnnotations = coach.statKeys.map((stat) => ({
+		key: stat.key,
+		label: stat.label,
+		comment: "",
+	}));
+
+	const fallbackChampions =
+		(payload.topChampions && payload.topChampions.length
+			? payload.topChampions
+			: [
+					{
+						name: "Orianna",
+						games: 50,
+						csPerMin: 6.8,
+						winRate: 0.56,
+						description: "Control mage comfort pick.",
+					},
+				]).slice(0, 3);
+
+	const verdicts = ["Signature Pick", "Reliable Flex", "Spicy Pocket"];
+	const championNotes = fallbackChampions.map((champ, index) => ({
+		champion: champ.name,
+		verdict: verdicts[index] || "Specialist",
+		focus: `${champ.description || "Staple choice"} — averaging ${champ.csPerMin.toFixed(1)} CS/min with ${Math.round(champ.winRate * 100)}% wins. Keep the same wave plan even when pressured.`,
+	}));
+
+	const strengthsCandidate = coach.statKeys.slice(0, 2).map((stat) => ({
+		label: `${stat.label} discipline`,
+		detail: `Trending at ${formatCoachMetricValue(payload.metrics[stat.key], stat.format)} which keeps ${coach.focusArea.toLowerCase()} stable.`,
+	}));
+	const strengths =
+		strengthsCandidate.length > 0
+			? strengthsCandidate
+			: [
+					{
+						label: "Preparation",
+						detail: "Your fundamentals keep lanes balanced even on rough draft days.",
+					},
+				];
+
+	const baseSituations =
+		(Array.isArray(payload.situations) && payload.situations.length
+			? payload.situations
+			: ["Needs sharper recall discipline."]).slice(0, 2);
+
+	const weaknesses = baseSituations.map((situation, index) => ({
+		label: situation,
+		detail: `${coach.name} flags this as a ${coach.focusArea.toLowerCase()} leak.`,
+		actionables: [
+			`Log what triggers "${situation}" for three games.`,
+			`Pause VOD at the moment it happens and write the better ${coach.focusArea} choice.`,
+			`Re-run the scenario in practice tool or next queue with that note visible.`,
+		],
+	}));
+
+	const courses = baseSituations.map((situation, index) => ({
+		title: `${coach.nickname} Clinic ${index + 1}`,
+		situation,
+		assignment: `Run a customs session where you recreate "${situation}" and practice the corrected wave timing three times in a row.`,
+	}));
+
+	return {
+		summary: `${playerLabel}, ${coach.name} sees ${games} games of evidence that your ${coach.focusArea} adds up to a ${winRate} split.`,
+		feedback: `You're holding steady but not spiking yet. ${primaryStat ? `Your ${primaryStat.label} sits at ${formatCoachMetricValue(payload.metrics[primaryStat.key], primaryStat.format)}, which leaves gold and pressure on the table.` : "Dial in your fundamentals to open more map pressure."}`,
+		advice: `Until my full AI briefing arrives, run focused reps: jot down every ${coach.focusArea} mistake, tie it to the situations listed, and plan a better reaction. Fast notes now = sharper instincts later.`,
+		lessons,
+		trainingFocus,
+		keyStats,
+		statAnnotations,
+		championNotes,
+		strengths,
+		weaknesses,
+		courses,
+		signOff: `${coach.signatureQuote}`,
+	};
+}

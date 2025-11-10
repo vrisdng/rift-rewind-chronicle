@@ -3,6 +3,12 @@
  * Handles all communication with the backend
  */
 
+import type {
+	CoachEndpointResponse,
+	CoachId,
+	PlayerMetricsPayload,
+} from "../../shared/coaches";
+
 // Import types from server (would normally be shared package)
 export interface PlayerStats {
 	puuid: string;
@@ -708,4 +714,27 @@ export async function postRecapToX(
 	}
 
 	return result.data;
+}
+
+export async function fetchCoachAdvice(
+	coachId: CoachId,
+	payload: PlayerMetricsPayload,
+): Promise<CoachEndpointResponse> {
+	const response = await fetch(`${API_URL}/api/coach/${coachId}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const result = await readJsonBody<CoachEndpointResponse>(response);
+
+	if (!response.ok || !result.success) {
+		throw new Error(
+			result.error || `Failed to load coach advice (${response.status})`,
+		);
+	}
+
+	return result;
 }
