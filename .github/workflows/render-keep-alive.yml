@@ -1,0 +1,23 @@
+name: Render Keep Alive
+
+on:
+  schedule:
+    - cron: "0 * * * *" # hourly (UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    env:
+      RENDER_PING_URL: ${{ secrets.RENDER_PING_URL }}
+      DEFAULT_PING_URL: https://rift-rewind-chronicle.onrender.com/
+    steps:
+      - name: Ping Render web service
+        shell: bash
+        run: |
+          URL="${RENDER_PING_URL:-$DEFAULT_PING_URL}"
+          echo "Sending keep-alive request to ${URL}"
+          curl -sSf -o /dev/null "${URL}"
