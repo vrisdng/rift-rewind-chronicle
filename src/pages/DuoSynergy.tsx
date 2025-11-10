@@ -37,7 +37,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
 	type DuoSynergyProfile,
 	type DuoBondType,
+	type PlayerStats,
+	type ProgressUpdate,
+	analyzePlayerWithProgress,
 	fetchDuoSynergy,
+	getPlayer,
 } from "@/lib/api";
 import { loadPlayerSnapshot } from "@/lib/player-storage";
 import { ArrowLeft } from "lucide-react";
@@ -91,10 +95,12 @@ const DuoSynergy = () => {
 	const navigate = useNavigate();
 	const snapshot = loadPlayerSnapshot();
 	const { toast } = useToast();
-	const defaultPlayer = snapshot
+	const playerAHandle = snapshot
 		? `${snapshot.riotId}${snapshot.tagLine ? `#${snapshot.tagLine}` : ""}`
 		: "";
-	const [inputs, setInputs] = useState({ a: defaultPlayer, b: "" });
+	const sessionRegion = snapshot?.region || "sea";
+	const [partnerHandle, setPartnerHandle] = useState("");
+	const [partnerProgress, setPartnerProgress] = useState<ProgressUpdate | null>(null);
 	const [analysis, setAnalysis] = useState<DuoSynergyProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -137,8 +143,59 @@ const DuoSynergy = () => {
 		];
 	}, [analysis]);
 
+	const ensurePartnerReady = async (
+		riotId: string,
+		tagLine: string,
+	): Promise<PlayerStats> => {
+		const cached = await getPlayer(riotId, tagLine);
+		if (cached.success && cached.data) {
+			return cached.data;
+		}
+
+		toast({
+			title: "Fetching duo partner",
+			description: `Pulling matches for ${riotId}#${tagLine}...`,
+		});
+
+		return new Promise<PlayerStats>((resolve, reject) => {
+			setPartnerProgress({
+				stage: "queued",
+				message: "Contacting Riot API...",
+				progress: 5,
+			});
+			analyzePlayerWithProgress(
+				riotId,
+				tagLine,
+				sessionRegion,
+				(update) => setPartnerProgress(update),
+				(data) => {
+					setPartnerProgress(null);
+					resolve(data);
+				},
+				(errorMessage) => {
+					setPartnerProgress(null);
+					reject(
+						new Error(errorMessage || "Failed to analyze duo partner."),
+					);
+				},
+			).catch((error) => {
+				setPartnerProgress(null);
+				reject(error);
+			});
+		});
+	};
+
 	const handleAnalyze = async () => {
-		if (!inputs.a.trim() || !inputs.b.trim()) {
+		if (!snapshot) {
+			toast({
+				title: "Player missing",
+				description: "Analyze your own profile first from the landing page.",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		if (!partnerHandle.trim()) {
 			toast({
 				title: "Missing duo info",
 				description: "Enter both Riot IDs to compute synergy.",
@@ -147,10 +204,9 @@ const DuoSynergy = () => {
 			return;
 		}
 
-		const handleA = parseHandle(inputs.a);
-		const handleB = parseHandle(inputs.b);
+		const handleB = parseHandle(partnerHandle);
 
-		if (!handleA.gameName || !handleB.gameName) {
+		if (!handleB.gameName) {
 			toast({
 				title: "Invalid Riot ID",
 				description: "Use format GameName#TAG",
@@ -163,15 +219,25 @@ const DuoSynergy = () => {
 		setError(null);
 
 		try {
+			await ensurePartnerReady(handleB.gameName, handleB.tagLine);
+
 			const data = await fetchDuoSynergy({
-				playerA: { riotId: handleA.gameName, tagLine: handleA.tagLine },
-				playerB: { riotId: handleB.gameName, tagLine: handleB.tagLine },
+				playerA: {
+					riotId: snapshot.riotId,
+					tagLine: snapshot.tagLine,
+					region: sessionRegion,
+				},
+				playerB: {
+					riotId: handleB.gameName,
+					tagLine: handleB.tagLine,
+					region: sessionRegion,
+				},
 			});
 			setAnalysis(data);
 			setAdviceRevealed(false);
 			toast({
 				title: "Synergy generated",
-				description: `${handleA.display} + ${handleB.display}`,
+				description: `${playerAHandle || snapshot.riotId} + ${handleB.display}`,
 			});
 		} catch (err) {
 			const message =
@@ -186,6 +252,7 @@ const DuoSynergy = () => {
 			});
 		} finally {
 			setIsLoading(false);
+			setPartnerProgress(null);
 		}
 	};
 
@@ -321,7 +388,7 @@ const DuoSynergy = () => {
 							<CardHeader>
 								<CardTitle>Duo Inputs</CardTitle>
 								<p className="text-sm text-white/70">
-									Enter Riot IDs (GameName#TAG). We&apos;ll use cached analyses when available.
+									Player one comes from your last analysis. Add your duo partner&apos;s Riot ID (we&apos;ll reuse your region automatically) and we&apos;ll pull Riot API data.
 								</p>
 							</CardHeader>
 							<CardContent className="space-y-4">
@@ -330,31 +397,50 @@ const DuoSynergy = () => {
 										Player One (you)
 									</label>
 									<Input
-										value={inputs.a}
-										onChange={(event) =>
-											setInputs((prev) => ({ ...prev, a: event.target.value }))
-										}
-										className="bg-black/40 border-white/10"
-										placeholder="ArcaneAegis#SEA"
+										value={playerAHandle}
+										readOnly
+										disabled={!snapshot}
+										className={cn(
+											"bg-black/40 border-white/10",
+											!snapshot && "opacity-60",
+										)}
+										placeholder="Analyze yourself first"
 									/>
+									<p className="text-xs text-white/50">
+										Locked to your latest analysis session. Re-run it to update.
+									</p>
 								</div>
 								<div className="space-y-2">
 									<label className="text-xs uppercase text-white/60">
 										Duo Partner
 									</label>
 									<Input
-										value={inputs.b}
-										onChange={(event) =>
-											setInputs((prev) => ({ ...prev, b: event.target.value }))
-										}
+										value={partnerHandle}
+										onChange={(event) => setPartnerHandle(event.target.value)}
 										className="bg-black/40 border-white/10"
 										placeholder="ThreshSensei#NA1"
 									/>
+									<p className="text-xs text-white/50">
+										Region locks to your session ({sessionRegion.toUpperCase()}).
+									</p>
 								</div>
+								{partnerProgress && (
+									<div className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-2 text-xs text-white/70">
+										<div className="flex items-center justify-between uppercase text-[11px] tracking-wide text-white/50">
+											<span>{partnerProgress.stage}</span>
+											<span>{Math.round(partnerProgress.progress ?? 0)}%</span>
+										</div>
+										<Progress
+											value={partnerProgress.progress}
+											className="h-2 bg-white/10"
+										/>
+										<p className="text-white/60">{partnerProgress.message}</p>
+									</div>
+								)}
 								<Button
 									className="w-full bg-[#C8AA6E] text-black font-semibold hover:bg-[#d7bd8f]"
 									onClick={handleAnalyze}
-									disabled={isLoading}
+									disabled={isLoading || !snapshot}
 								>
 									{isLoading ? (
 										<>

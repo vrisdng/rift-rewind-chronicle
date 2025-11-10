@@ -42,27 +42,29 @@ const QUEUE_TYPES = {
   RANKED_FLEX: 440,           // Ranked Flex
   NORMAL_DRAFT: 400,          // Normal Draft Pick
   NORMAL_BLIND: 430,          // Normal Blind Pick
+  ARAM: 450,                  // ARAM
+  ARENA: 1700,                // Arena
 };
 
 /**
- * Get Unix timestamp for start of 2025
+ * Get Unix timestamp for earliest match we care about
  */
-function get2025StartTimestamp(): number {
-  return Math.floor(new Date('2025-01-01T00:00:00Z').getTime() / 1000);
+function getAnalysisStartTimestamp(): number {
+  return Math.floor(new Date('2024-01-01T00:00:00Z').getTime() / 1000);
 }
 
 /**
- * Fetch ALL match IDs from 2025 (handles pagination)
- * Fetches from all queue types: RANKED_SOLO, RANKED_FLEX, NORMAL_DRAFT, NORMAL_BLIND
+ * Fetch ALL match IDs from the configured analysis window (handles pagination)
+ * Fetches from all queue types defined in QUEUE_TYPES
  */
-async function fetchAll2025MatchIds(client: any, puuid: string): Promise<string[]> {
-  const startTime = get2025StartTimestamp();
+async function fetchAllRecentMatchIds(client: any, puuid: string): Promise<string[]> {
+  const startTime = getAnalysisStartTimestamp();
   const endTime = Math.floor(Date.now() / 1000);
   
   let allMatchIds: string[] = [];
   const pageSize = 100; // Max per request
   
-  console.log(`📅 Fetching ALL matches from 2025-01-01 onwards...`);
+  console.log(`📅 Fetching matches from ${new Date(startTime * 1000).toISOString()} onwards...`);
   console.log(`⏰ Time range: ${new Date(startTime * 1000).toISOString()} to ${new Date(endTime * 1000).toISOString()}`);
   console.log(`🎮 Queue types: ${Object.entries(QUEUE_TYPES).map(([k, v]) => `${k}(${v})`).join(', ')}`);
   
@@ -107,7 +109,7 @@ async function fetchAll2025MatchIds(client: any, puuid: string): Promise<string[
 }
 
 /**
- * Analyze a player completely: fetch ALL 2025 matches, calculate metrics, generate insights
+ * Analyze a player completely: fetch all matches in the configured window, calculate metrics, generate insights
  * @param forceRegenerateInsights - If true, will regenerate AI insights even if cached
  */
 export async function analyzePlayer(
@@ -125,16 +127,28 @@ export async function analyzePlayer(
   const account = await client.getAccountByRiotId(riotId, tagLine);
   const { puuid } = account;
 
-  // Step 2: Fetch ALL 2025 match IDs FIRST (before creating database records)
+  // Step 2: Fetch match IDs FIRST (before creating database records)
   // This way we fail early if matches can't be fetched
-  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching 2025 match list...' });
+  onProgress?.({ stage: 'matches', progress: 20, message: 'Fetching match list...' });
 
   let matchIds: string[];
   try {
-    matchIds = await fetchAll2025MatchIds(client, puuid);
+    matchIds = await fetchAllRecentMatchIds(client, puuid);
   } catch (error: any) {
     // Failed to fetch match IDs - don't create any database records
     throw new Error(`Unable to fetch matches from Riot API. Please try again in a few moments. Error: ${error.message}`);
+  }
+
+  const matchIdSample = matchIds.slice(0, 5).join(', ') || 'none';
+  console.log(
+    `🎯 Riot returned ${matchIds.length} match IDs for ${riotId}#${tagLine} [region=${region}] (sample: ${matchIdSample})`,
+  );
+  if (matchIds.length <= 1) {
+    console.warn(
+      `⚠️ Low match count for ${riotId}#${tagLine}. startTime=${getAnalysisStartTimestamp()} queue filters=${Object.values(QUEUE_TYPES).join(
+        ',',
+      )}`,
+    );
   }
 
   // Check if player exists in database
@@ -150,7 +164,7 @@ export async function analyzePlayer(
 
   // CRITICAL CHECK: If no new matches AND no cached matches, fail completely
   if (matchIds.length === 0 && cachedMatches.length === 0) {
-    throw new Error('No matches found in 2025 for this player. They may not have played any games yet this year. Please try again later.');
+    throw new Error('No recent matches found for this player. They may not have queued in the selected timeframe yet. Please try again later.');
   }
 
   if (newMatchIds.length === 0 && cachedMatches.length === 0) {
@@ -237,18 +251,18 @@ export async function analyzePlayer(
 
   // FINAL VALIDATION: Must have at least some matches to analyze
   if (allMatches.length === 0) {
-    throw new Error('Unable to load any match data. Please try again in a few moments. If this persists, the player may not have any ranked games in 2025.');
+    throw new Error('Unable to load any match data. Please try again in a few moments. If this persists, the player may not have any ranked games in the selected timeframe.');
   }
 
   // Require a minimum number of matches for meaningful analysis
   if (allMatches.length < 5) {
-    throw new Error(`Not enough match data for analysis (found ${allMatches.length} matches). Players need at least 5 ranked games in 2025 for a complete year-in-review.`);
+    throw new Error(`Not enough match data for analysis (found ${allMatches.length} matches). Players need at least 5 eligible games for a complete year-in-review.`);
   }
 
   onProgress?.({
     stage: 'matches',
     progress: 30,
-    message: `Found ${matchIds.length} matches in 2025. Downloading details...`,
+    message: `Found ${matchIds.length} matches in scope. Downloading details...`,
   });
 
   // Step 5: Calculate statistics
